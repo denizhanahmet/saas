@@ -1,0 +1,243 @@
+{% extends "base.html" %} {% block title %}{{ user.username }} - Kullanıcı Detayı{% endblock %} {% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-person"></i> {{ user.get_full_name() }}</h2>
+                <div>
+                    <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Geri Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kullanıcı Bilgileri -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Kullanıcı Bilgileri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Kullanıcı Adı:</strong></td>
+                                    <td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ad Soyad:</strong></td>
+                                    <td>{{ user.get_full_name() }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>E-posta:</strong></td>
+                                    <td>{{ user.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Telefon:</strong></td>
+                                    <td>{{ user.phone or '-' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Şirket:</strong></td>
+                                    <td>{{ user.company_name or '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Rol:</strong></td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                        <span class="badge bg-danger">Admin</span> {% else %}
+                                        <span class="badge bg-primary">{{ user.role }}</span> {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Durum:</strong></td>
+                                    <td>
+                                        {% if user.is_active %}
+                                        <span class="badge bg-success">Aktif</span> {% else %}
+                                        <span class="badge bg-secondary">Pasif</span> {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Kayıt Tarihi:</strong></td>
+                                    <td>{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart"></i> SMS İstatistikleri
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <h3 class="text-primary">{{ user.sms_quota }}</h3>
+                        <p class="text-muted mb-0">Aylık Kota</p>
+                    </div>
+                    <div class="mb-3">
+                        <h3 class="text-success">{{ sms_stats.successful }}</h3>
+                        <p class="text-muted mb-0">Başarılı SMS</p>
+                    </div>
+                    <div class="mb-3">
+                        <h3 class="text-warning">{{ sms_stats.failed }}</h3>
+                        <p class="text-muted mb-0">Başarısız SMS</p>
+                    </div>
+                    <div class="progress mb-2">
+                        {% set quota_usage = (sms_stats.successful / user.sms_quota * 100) if user.sms_quota > 0 else 0 %}
+                        <div class="progress-bar" role="progressbar" style="width: {{ '%.1f'|format(quota_usage) }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ "%.1f"|format(quota_usage) }}% kullanıldı</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- İşlemler -->
+    {% if user.id != current_user.id %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear"></i> Kullanıcı İşlemleri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-{% if user.is_active %}warning{% else %}success{% endif %}">
+                                <i class="bi bi-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
+                                {% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
+                            </button>
+                        </form>
+                        <a href="{{ url_for('admin.quota_management') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-pie-chart"></i> Kota Yönetimi
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Son Randevular -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-calendar-event"></i> Son Randevular
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Başlık</th>
+                                    <th>Tarih</th>
+                                    <th>Saat</th>
+                                    <th>Süre</th>
+                                    <th>Durum</th>
+                                    <th>Lokasyon</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in appointments %}
+                                <tr>
+                                    <td>{{ appointment.title }}</td>
+                                    <td>{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</td>
+                                    <td>{{ appointment.appointment_time.strftime('%H:%M') }}</td>
+                                    <td>{{ appointment.duration }} dk</td>
+                                    <td>
+                                        <span class="badge {{ appointment.get_status_badge_class() }}">
+                                            {{ appointment.get_status_text() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ appointment.location or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-calendar-x fs-1"></i>
+                        <p>Henüz randevu bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son SMS Logları -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-chat-dots"></i> Son SMS Logları
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if sms_logs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>Mesaj</th>
+                                    <th>Durum</th>
+                                    <th>Maliyet</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sms in sms_logs %}
+                                <tr>
+                                    <td>{{ sms.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>
+                                        <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ sms.message }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ sms.get_status_badge_class() }}">
+                                            {{ sms.get_status_text() }}
+                                        </span>
+                                    </td>
+                                    <td>₺{{ "%.2f"|format(sms.cost or 0) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-chat-x fs-1"></i>
+                        <p>Henüz SMS logu bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

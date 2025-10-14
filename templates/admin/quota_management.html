@@ -1,0 +1,171 @@
+{% extends "base.html" %} {% block title %}SMS Kota Yönetimi{% endblock %} {% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-pie-chart"></i> SMS Kota Yönetimi</h2>
+                <div class="text-muted">
+                    <small>Bu ayın kotası</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Genel İstatistikler -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>{{ users_with_quotas|sum(attribute='sms_quota') or 0 }}</h3>
+                    <p class="mb-0">Toplam Kota</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>{{ users_with_quotas|sum(attribute='used_sms') or 0 }}</h3>
+                    <p class="mb-0">Kullanılan SMS</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    {% set total_quota = users_with_quotas|sum(attribute='sms_quota') or 0 %} {% set total_used = users_with_quotas|sum(attribute='used_sms') or 0 %} {% set remaining = total_quota - total_used %}
+                    <h3>{{ remaining }}</h3>
+                    <p class="mb-0">Kalan Kota</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    {% set usage_percentage = (total_used / total_quota * 100) if total_quota > 0 else 0 %}
+                    <h3>{{ "%.1f"|format(usage_percentage) }}%</h3>
+                    <p class="mb-0">Kullanım Oranı</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kota Yönetimi Tablosu -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ul"></i> Kullanıcı Kota Durumları
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if users_with_quotas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Kullanıcı Adı</th>
+                                    <th>E-posta</th>
+                                    <th>Aylık Kota</th>
+                                    <th>Kullanılan SMS</th>
+                                    <th>Kalan Kota</th>
+                                    <th>Kullanım Oranı</th>
+                                    <th>Durum</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user_quota in users_with_quotas %}
+                                <tr>
+                                    <td><strong>{{ user_quota.username }}</strong></td>
+                                    <td>{{ user_quota.email }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ user_quota.sms_quota }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ user_quota.used_sms }}</span>
+                                    </td>
+                                    <td>
+                                        {% set remaining = user_quota.sms_quota - user_quota.used_sms %} {% if remaining >= 0 %}
+                                        <span class="badge bg-success">{{ remaining }}</span> {% else %}
+                                        <span class="badge bg-danger">{{ remaining }}</span> {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set usage_percentage = (user_quota.used_sms / user_quota.sms_quota * 100) if user_quota.sms_quota > 0 else 0 %}
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if usage_percentage > 90 %}bg-danger{% elif usage_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ '%.1f'|format(usage_percentage) }}%">
+                                                {{ "%.1f"|format(usage_percentage) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if usage_percentage > 90 %}
+                                        <span class="badge bg-danger">Kritik</span> {% elif usage_percentage > 70 %}
+                                        <span class="badge bg-warning">Uyarı</span> {% else %}
+                                        <span class="badge bg-success">Normal</span> {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editQuotaModal{{ user_quota.id }}">
+                                                <i class="bi bi-pencil"></i> Düzenle
+                                            </button>
+                                            <a href="{{ url_for('admin.user_detail', user_id=user_quota.id) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-person-x fs-1"></i>
+                        <p>Henüz kullanıcı bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kota Düzenleme Modal'ları -->
+{% for user_quota in users_with_quotas %}
+<div class="modal fade" id="editQuotaModal{{ user_quota.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">SMS Kotası Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.update_quota', user_id=user_quota.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kullanıcı</label>
+                        <input type="text" class="form-control" value="{{ user_quota.username }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sms_quota{{ user_quota.id }}" class="form-label">Aylık SMS Kotası</label>
+                        <input type="number" class="form-control" id="sms_quota{{ user_quota.id }}" name="sms_quota" value="{{ user_quota.sms_quota }}" min="0" required>
+                        <div class="form-text">Bu ay için kullanıcının SMS kotası.</div>
+                    </div>
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>Mevcut Durum:</strong><br>
+                            Kullanılan: {{ user_quota.used_sms }} SMS<br>
+                            Kalan: {{ user_quota.sms_quota - user_quota.used_sms }} SMS
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %} {% endblock %}

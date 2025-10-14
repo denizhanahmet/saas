@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}İstatistikler{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-chart-bar"></i> İstatistikler</h2>
+
+            <!-- Genel İstatistikler -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.total_appointments }}</h4>
+                                    <p class="card-text">Toplam Randevu</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-calendar-alt fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.completed_appointments }}</h4>
+                                    <p class="card-text">Tamamlanan</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.scheduled_appointments }}</h4>
+                                    <p class="card-text">Planlanan</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-clock fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.cancelled_appointments }}</h4>
+                                    <p class="card-text">İptal Edilen</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-times-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aylık İstatistikler -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Bu Ayın Randevuları</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="monthlyChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Durum Dağılımı</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="statusChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detaylı İstatistikler -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">En Aktif Günler</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if stats.busiest_days %}
+                            <div class="list-group">
+                                {% for day, count in stats.busiest_days %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ day }}
+                                    <span class="badge badge-primary badge-pill">{{ count }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted">Henüz yeterli veri bulunmuyor.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">En Aktif Saatler</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if stats.busiest_hours %}
+                            <div class="list-group">
+                                {% for hour, count in stats.busiest_hours %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ hour }}:00
+                                    <span class="badge badge-primary badge-pill">{{ count }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted">Henüz yeterli veri bulunmuyor.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Aylık randevu grafiği
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyChart = new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: {
+                {
+                    monthly_labels | tojson
+                }
+            },
+            datasets: [{
+                label: 'Randevu Sayısı',
+                data: {
+                    {
+                        monthly_data | tojson
+                    }
+                },
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Durum dağılımı grafiği
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Planlandı', 'Tamamlandı', 'İptal Edildi'],
+            datasets: [{
+                data: [{
+                        {
+                            stats.scheduled_appointments
+                        }
+                    },
+                    {
+                        {
+                            stats.completed_appointments
+                        }
+                    },
+                    {
+                        {
+                            stats.cancelled_appointments
+                        }
+                    }
+                ],
+                backgroundColor: [
+                    '#ffc107',
+                    '#28a745',
+                    '#dc3545'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

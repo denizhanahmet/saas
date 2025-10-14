@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Sunucu Hatası - 500{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="error-template">
+                <h1 class="display-1 text-danger">500</h1>
+                <h2 class="mb-4">Sunucu Hatası</h2>
+                <div class="error-details mb-4">
+                    <p class="text-muted">Üzgünüz, sunucuda bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+                </div>
+                <div class="error-actions">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home"></i> Ana Sayfaya Dön
+                    </a>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg ms-2">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .error-template {
+        padding: 40px 15px;
+        text-align: center;
+    }
+
+    .error-template h1 {
+        font-size: 120px;
+        font-weight: bold;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+
+    .error-template h2 {
+        font-size: 30px;
+        margin-bottom: 20px;
+    }
+
+    .error-actions {
+        margin-top: 30px;
+    }
+
+    .error-actions .btn {
+        margin: 5px;
+    }
+</style>
+{% endblock %}

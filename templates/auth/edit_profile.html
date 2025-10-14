@@ -1,0 +1,131 @@
+{% extends "base.html" %} {% block title %}Profil Düzenle{% endblock %} {% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit"></i> Profil Düzenle
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="first_name">Ad *</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="last_name">Soyad *</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="username">Kullanıcı Adı *</label>
+                                    <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="email">E-posta *</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="phone">Telefon</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="company_name">Şirket Adı</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" value="{{ user.company_name or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="logo">Logo</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="logo" name="logo" accept="image/*">
+                                <label class="custom-file-label" for="logo">Logo seçin...</label>
+                            </div>
+                            {% if user.logo_path %}
+                            <small class="form-text text-muted">
+                                Mevcut logo: <a href="{{ url_for('static', filename='uploads/' + user.logo_path) }}" target="_blank">Görüntüle</a>
+                            </small> {% endif %}
+                        </div>
+
+                        <hr>
+
+                        <h5>Şifre Değiştir</h5>
+                        <p class="text-muted">Şifrenizi değiştirmek istemiyorsanız bu alanları boş bırakın.</p>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="current_password">Mevcut Şifre</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="new_password">Yeni Şifre</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="confirm_password">Şifre Tekrar</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Güncelle
+                            </button>
+                            <a href="{{ url_for('auth.profile') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dosya seçimi için label güncelleme
+    document.getElementById('logo').addEventListener('change', function(e) {
+        var fileName = e.target.files[0] ? e.target.files[0].name : 'Logo seçin...';
+        e.target.nextElementSibling.textContent = fileName;
+    });
+
+    // Şifre doğrulama
+    document.getElementById('confirm_password').addEventListener('input', function() {
+        var newPassword = document.getElementById('new_password').value;
+        var confirmPassword = this.value;
+
+        if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+            this.setCustomValidity('Şifreler eşleşmiyor');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+</script>
+{% endblock %}

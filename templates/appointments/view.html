@@ -1,0 +1,92 @@
+{% extends "base.html" %} {% block title %}Randevu Detayı{% endblock %} {% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ appointment.title }}</h4>
+                    <span class="badge {{ appointment.get_status_badge_class() }}">
+                        {{ appointment.get_status_text() }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-calendar"></i> Tarih</h6>
+                            <p>{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
+
+                            <h6><i class="fas fa-clock"></i> Saat</h6>
+                            <p>{{ appointment.appointment_time.strftime('%H:%M') }}</p>
+
+                            <h6><i class="fas fa-hourglass-half"></i> Süre</h6>
+                            <p>{{ appointment.duration }} dakika</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if appointment.location %}
+                            <h6><i class="fas fa-map-marker-alt"></i> Konum</h6>
+                            <p>{{ appointment.location }}</p>
+                            {% endif %} {% if appointment.client %}
+                            <h6><i class="fas fa-user"></i> Müşteri</h6>
+                            <p>{{ appointment.client.name }} - {{ appointment.client.phone }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if appointment.description %}
+                    <hr>
+                    <h6><i class="fas fa-info-circle"></i> Açıklama</h6>
+                    <p>{{ appointment.description }}</p>
+                    {% endif %} {% if appointment.notes %}
+                    <hr>
+                    <h6><i class="fas fa-sticky-note"></i> Notlar</h6>
+                    <p>{{ appointment.notes }}</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('appointments.edit', appointment_id=appointment.id) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Düzenle
+                        </a>
+                        <a href="{{ url_for('dashboard.appointments') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Geri Dön
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Randevu İşlemleri</h5>
+                </div>
+                <div class="card-body">
+                    {% if appointment.status == 'scheduled' %}
+                    <form method="POST" action="{{ url_for('appointments.update_status', appointment_id=appointment.id) }}" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="completed">
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fas fa-check"></i> Tamamlandı Olarak İşaretle
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ url_for('appointments.update_status', appointment_id=appointment.id) }}" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="cancelled">
+                        <button type="submit" class="btn btn-danger btn-block" onclick="return confirm('Bu randevuyu iptal etmek istediğinizden emin misiniz?')">
+                            <i class="fas fa-times"></i> İptal Et
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <hr>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-plus"></i> Oluşturulma: {{ appointment.created_at.strftime('%d.%m.%Y %H:%M') }}<br>
+                        <i class="fas fa-calendar-check"></i> Son Güncelleme: {{ appointment.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

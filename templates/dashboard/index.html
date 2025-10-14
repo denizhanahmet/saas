@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Randevu Sistemi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-speedometer2"></i>
+        Dashboard
+    </h2>
+    <div class="text-muted">
+        Hoş geldiniz, <strong>{{ current_user.get_full_name() }}</strong>
+    </div>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Toplam Randevu</h6>
+                        <h3 class="mb-0">{{ total_appointments }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-calendar-event fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Bugünkü Randevular</h6>
+                        <h3 class="mb-0">{{ today_count }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-calendar-day fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Yaklaşan Randevular</h6>
+                        <h3 class="mb-0">{{ upcoming_count }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-calendar-check fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Bu Ay</h6>
+                        <h3 class="mb-0">{{ monthly_appointments|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-calendar-month fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hızlı İşlemler -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i>
+                    Hızlı İşlemler
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('appointments.create') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle"></i>
+                            Yeni Randevu
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('dashboard.appointments') }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-list-ul"></i>
+                            Tüm Randevular
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('dashboard.calendar') }}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-calendar3"></i>
+                            Takvim Görünümü
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('dashboard.stats') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-graph-up"></i>
+                            İstatistikler
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Bugünkü Randevular -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-day"></i>
+                    Bugünkü Randevular
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if today_appointments %}
+                    {% for appointment in today_appointments %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ appointment.title }}</h6>
+                                    <p class="text-muted mb-1">
+                                        <i class="bi bi-clock"></i>
+                                        {{ appointment.appointment_time.strftime('%H:%M') }}
+                                    </p>
+                                    {% if appointment.location %}
+                                        <p class="text-muted mb-0">
+                                            <i class="bi bi-geo-alt"></i>
+                                            {{ appointment.location }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                <span class="badge {{ appointment.get_status_badge_class() }}">
+                                    {{ appointment.get_status_text() }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-calendar-x fs-1"></i>
+                        <p class="mt-2">Bugün randevunuz yok</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Yaklaşan Randevular -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-check"></i>
+                    Yaklaşan Randevular
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_appointments %}
+                    {% for appointment in upcoming_appointments %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ appointment.title }}</h6>
+                                    <p class="text-muted mb-1">
+                                        <i class="bi bi-calendar"></i>
+                                        {{ appointment.appointment_date.strftime('%d.%m.%Y') }}
+                                    </p>
+                                    <p class="text-muted mb-0">
+                                        <i class="bi bi-clock"></i>
+                                        {{ appointment.appointment_time.strftime('%H:%M') }}
+                                    </p>
+                                </div>
+                                <a href="{{ url_for('appointments.view', appointment_id=appointment.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-calendar-plus fs-1"></i>
+                        <p class="mt-2">Yaklaşan randevunuz yok</p>
+                        <a href="{{ url_for('appointments.create') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i>
+                            Yeni Randevu Oluştur
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Durum İstatistikleri -->
+{% if status_counts %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i>
+                    Randevu Durumları
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for status, count in status_counts.items() %}
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <h6 class="mb-0">
+                                        {% if status == 'scheduled' %}
+                                            <i class="bi bi-clock text-primary"></i> Planlandı
+                                        {% elif status == 'completed' %}
+                                            <i class="bi bi-check-circle text-success"></i> Tamamlandı
+                                        {% elif status == 'cancelled' %}
+                                            <i class="bi bi-x-circle text-danger"></i> İptal Edildi
+                                        {% else %}
+                                            <i class="bi bi-question-circle text-secondary"></i> {{ status }}
+                                        {% endif %}
+                                    </h6>
+                                </div>
+                                <span class="badge bg-secondary fs-6">{{ count }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

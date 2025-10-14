@@ -1,0 +1,172 @@
+{% extends "base.html" %} {% block title %}Yeni Randevu - Randevu Sistemi{% endblock %} {% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-plus-circle"></i> Yeni Randevu Oluştur
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="appointmentForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">Randevu Başlığı *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-bookmark"></i>
+                                </span>
+                                <input type="text" class="form-control" id="title" name="title" required placeholder="Örn: Doktor Randevusu" value="{{ request.form.title if request.form.title }}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="duration" class="form-label">Süre (dakika) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-clock"></i>
+                                </span>
+                                <select class="form-select" id="duration" name="duration">
+                                    <option value="30" {{ 'selected' if request.form.duration == '30' }}>30 dakika</option>
+                                    <option value="60" {{ 'selected' if request.form.duration == '60' or not request.form.duration }}>1 saat</option>
+                                    <option value="90" {{ 'selected' if request.form.duration == '90' }}>1.5 saat</option>
+                                    <option value="120" {{ 'selected' if request.form.duration == '120' }}>2 saat</option>
+                                    <option value="180" {{ 'selected' if request.form.duration == '180' }}>3 saat</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Randevu hakkında detaylar...">{{ request.form.description if request.form.description }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="appointment_date" class="form-label">Tarih *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-calendar"></i>
+                                </span>
+                                <input type="date" class="form-control" id="appointment_date" name="appointment_date" required value="{{ request.form.appointment_date if request.form.appointment_date }}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="appointment_time" class="form-label">Saat *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-clock"></i>
+                                </span>
+                                <input type="time" class="form-control" id="appointment_time" name="appointment_time" required value="{{ request.form.appointment_time if request.form.appointment_time }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Konum</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-geo-alt"></i>
+                            </span>
+                            <input type="text" class="form-control" id="location" name="location" placeholder="Örn: Hastane, Ofis, Online..." value="{{ request.form.location if request.form.location }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notlar</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Özel notlarınız...">{{ request.form.notes if request.form.notes }}</textarea>
+                    </div>
+
+                    <!-- Çakışma Uyarısı -->
+                    <div id="conflictWarning" class="alert alert-warning d-none" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Uyarı:</strong> <span id="conflictMessage"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i>
+                            Randevu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} {% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('appointmentForm');
+        const dateInput = document.getElementById('appointment_date');
+        const timeInput = document.getElementById('appointment_time');
+        const durationSelect = document.getElementById('duration');
+        const conflictWarning = document.getElementById('conflictWarning');
+        const conflictMessage = document.getElementById('conflictMessage');
+
+        // Minimum tarih bugün olarak ayarla
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+
+        // Eğer form gönderilmişse ve tarih boşsa, bugünü varsayılan yap
+        if (!dateInput.value) {
+            dateInput.value = today;
+        }
+
+        // Çakışma kontrolü fonksiyonu
+        function checkConflict() {
+            const date = dateInput.value;
+            const time = timeInput.value;
+            const duration = durationSelect.value;
+
+            if (!date || !time || !duration) return;
+
+            fetch('{{ url_for("appointments.check_conflict") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        date: date,
+                        time: time,
+                        duration: duration
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.has_conflict) {
+                        conflictMessage.textContent = `Bu saatte zaten "${data.conflicting_appointment.title}" randevunuz var (${data.conflicting_appointment.time})`;
+                        conflictWarning.classList.remove('d-none');
+                    } else {
+                        conflictWarning.classList.add('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Çakışma kontrolü hatası:', error);
+                });
+        }
+
+        // Tarih, saat veya süre değiştiğinde çakışma kontrolü yap
+        dateInput.addEventListener('change', checkConflict);
+        timeInput.addEventListener('change', checkConflict);
+        durationSelect.addEventListener('change', checkConflict);
+
+        // Form gönderilmeden önce son kontrol
+        form.addEventListener('submit', function(e) {
+            checkConflict();
+
+            // Eğer çakışma varsa formu gönderme
+            if (!conflictWarning.classList.contains('d-none')) {
+                e.preventDefault();
+                alert('Çakışan randevu var! Lütfen farklı bir saat seçin.');
+            }
+        });
+    });
+</script>
+{% endblock %}

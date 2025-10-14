@@ -1,0 +1,94 @@
+{% extends "base.html" %} {% block title %}Randevu Düzenle{% endblock %} {% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit"></i> Randevu Düzenle
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="title">Başlık *</label>
+                                    <input type="text" class="form-control" id="title" name="title" value="{{ appointment.title }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="duration">Süre (dakika)</label>
+                                    <input type="number" class="form-control" id="duration" name="duration" value="{{ appointment.duration }}" min="15" max="480">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="appointment_date">Tarih *</label>
+                                    <input type="date" class="form-control" id="appointment_date" name="appointment_date" value="{{ appointment.appointment_date }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="appointment_time">Saat *</label>
+                                    <input type="time" class="form-control" id="appointment_time" name="appointment_time" value="{{ appointment.appointment_time.strftime('%H:%M') }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="client_id">Müşteri</label>
+                            <select class="form-control" id="client_id" name="client_id">
+                                <option value="">Müşteri Seçin</option>
+                                {% for client in current_user.clients %}
+                                <option value="{{ client.id }}" {% if appointment.client_id == client.id %}selected{% endif %}>
+                                    {{ client.name }} - {{ client.phone }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="location">Konum</label>
+                            <input type="text" class="form-control" id="location" name="location" value="{{ appointment.location or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Açıklama</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ appointment.description or '' }}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes">Notlar</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ appointment.notes or '' }}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="status">Durum</label>
+                            <select class="form-control" id="status" name="status">
+                                <option value="scheduled" {% if appointment.status == 'scheduled' %}selected{% endif %}>Planlandı</option>
+                                <option value="completed" {% if appointment.status == 'completed' %}selected{% endif %}>Tamamlandı</option>
+                                <option value="cancelled" {% if appointment.status == 'cancelled' %}selected{% endif %}>İptal Edildi</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Güncelle
+                            </button>
+                            <a href="{{ url_for('appointments.view', appointment_id=appointment.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

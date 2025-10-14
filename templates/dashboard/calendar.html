@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Takvim{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-calendar"></i> Takvim Görünümü</h2>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('dashboard.appointments') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> Liste Görünümü
+                    </a>
+                    <a href="{{ url_for('appointments.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Yeni Randevu
+                    </a>
+                </div>
+            </div>
+
+            <!-- Takvim -->
+            <div class="card">
+                <div class="card-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Randevu Detay Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="appointmentModalTitle">Randevu Detayı</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="appointmentModalBody">
+                <!-- İçerik JavaScript ile doldurulacak -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+                <a href="#" class="btn btn-primary" id="editAppointmentBtn">Düzenle</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'tr',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: [{
+                %
+                for appointment in appointments %
+            } {
+                id: '{{ appointment.id }}',
+                title: '{{ appointment.title }}',
+                start: '{{ appointment.appointment_date }}T{{ appointment.appointment_time.strftime("%H:%M") }}',
+                end: '{{ appointment.appointment_date }}T{{ (appointment.get_datetime() + timedelta(minutes=appointment.duration)).strftime("%H:%M") }}',
+                backgroundColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
+                borderColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
+                textColor: 'white',
+                extendedProps: {
+                    description: '{{ appointment.description or "" }}',
+                    location: '{{ appointment.location or "" }}',
+                    client: '{% if appointment.client %}{{ appointment.client.name }}{% endif %}',
+                    status: '{{ appointment.status }}',
+                    duration: '{{ appointment.duration }}'
+                }
+            } {
+                %
+                if not loop.last %
+            }, {
+                % endif %
+            } {
+                % endfor %
+            }],
+            eventClick: function(info) {
+                var appointment = info.event;
+                var extendedProps = appointment.extendedProps;
+
+                document.getElementById('appointmentModalTitle').textContent = appointment.title;
+                document.getElementById('editAppointmentBtn').href = '/appointments/edit/' + appointment.id;
+
+                var modalBody = document.getElementById('appointmentModalBody');
+                modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Tarih:</strong><br>
+                        ${appointment.start.toLocaleDateString('tr-TR')}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Saat:</strong><br>
+                        ${appointment.start.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Süre:</strong><br>
+                        ${extendedProps.duration} dakika
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Durum:</strong><br>
+                        <span class="badge ${appointment.backgroundColor === '#007bff' ? 'bg-primary' : appointment.backgroundColor === '#28a745' ? 'bg-success' : 'bg-danger'}">
+                            ${extendedProps.status === 'scheduled' ? 'Planlandı' : extendedProps.status === 'completed' ? 'Tamamlandı' : 'İptal Edildi'}
+                        </span>
+                    </div>
+                </div>
+                ${extendedProps.client ? `
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Müşteri:</strong><br>
+                        ${extendedProps.client}
+                    </div>
+                </div>
+                ` : ''}
+                ${extendedProps.location ? `
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Konum:</strong><br>
+                        ${extendedProps.location}
+                    </div>
+                </div>
+                ` : ''}
+                ${extendedProps.description ? `
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Açıklama:</strong><br>
+                        ${extendedProps.description}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+                $('#appointmentModal').modal('show');
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+{% endblock %}

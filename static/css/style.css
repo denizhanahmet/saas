@@ -1,0 +1,401 @@
+/* Tablo işlemler butonları görünürlük düzeltmesi */
+
+.table .btn-outline-primary,
+.table .btn-outline-secondary {
+    border-width: 1.5px;
+    color: #0d6efd;
+    background: #fff;
+    border-color: #0d6efd;
+}
+
+.table .btn-outline-primary:hover,
+.table .btn-outline-secondary:hover {
+    background: #0d6efd;
+    color: #fff;
+}
+
+
+/* Randevu tablosu işlemler butonları için */
+
+.table .btn-group {
+    flex-wrap: wrap;
+    white-space: nowrap;
+    gap: 0.25rem;
+}
+
+.table .btn {
+    min-width: 32px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+
+/* Custom CSS for Appointment System */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+}
+
+
+/* General Styles */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0b5ed7 100%);
+    border-radius: 15px !important;
+}
+
+
+/* Card Styles */
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    border-bottom: none;
+}
+
+
+/* Button Styles */
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+
+/* Form Styles */
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.input-group-text {
+    border-radius: 8px 0 0 8px;
+    background-color: var(--light-color);
+    border-color: #dee2e6;
+}
+
+.input-group .form-control:not(:first-child) {
+    border-left: 0;
+}
+
+
+/* Badge Styles */
+
+.badge {
+    font-size: 0.75em;
+    padding: 0.5em 0.75em;
+    border-radius: 6px;
+}
+
+
+/* Alert Styles */
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+
+/* Navigation Styles */
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+
+/* Footer Styles */
+
+footer {
+    margin-top: auto;
+    border-top: 1px solid #dee2e6;
+}
+
+
+/* Dashboard Specific Styles */
+
+.dashboard-card {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border-left: 4px solid var(--primary-color);
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+
+/* Calendar Styles */
+
+.calendar-day {
+    min-height: 100px;
+    border: 1px solid #dee2e6;
+    transition: background-color 0.2s ease;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa;
+}
+
+.calendar-day.has-appointments {
+    background-color: #e3f2fd;
+    border-color: var(--primary-color);
+}
+
+.calendar-appointment {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+}
+
+
+/* Appointment List Styles */
+
+.appointment-item {
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.2s ease;
+}
+
+.appointment-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.appointment-item.completed {
+    border-left-color: var(--success-color);
+}
+
+.appointment-item.cancelled {
+    border-left-color: var(--danger-color);
+}
+
+
+/* Status Badge Colors */
+
+.bg-scheduled {
+    background-color: var(--primary-color) !important;
+}
+
+.bg-completed {
+    background-color: var(--success-color) !important;
+}
+
+.bg-cancelled {
+    background-color: var(--danger-color) !important;
+}
+
+
+/* Loading Animation */
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, .3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 2rem 0 !important;
+    }
+    .hero-section h1 {
+        font-size: 2rem !important;
+    }
+    .card {
+        margin-bottom: 1rem;
+    }
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+
+/* Responsive improvements for mobile */
+
+@media (max-width: 576px) {
+    .container,
+    .container-fluid,
+    .main {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    .col,
+    [class^="col-"] {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+    .navbar .navbar-nav {
+        text-align: left;
+    }
+    .navbar .dropdown-menu {
+        width: 100vw;
+        left: -16px;
+        right: -16px;
+    }
+    .form-group,
+    .form-control,
+    .form-select {
+        font-size: 1rem;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+    .card {
+        margin-bottom: 1rem;
+    }
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    .footer {
+        text-align: center;
+    }
+}
+
+@media (max-width: 400px) {
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-size: 1.1rem !important;
+    }
+    .navbar-brand {
+        font-size: 1rem;
+    }
+}
+
+
+/* Custom Scrollbar */
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+
+/* Animation Classes */
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+
+/* Print Styles */
+
+@media print {
+    .navbar,
+    .btn,
+    footer {
+        display: none !important;
+    }
+    .card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+    body {
+        background: white;
+    }
+}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-gear"></i> Admin Dashboard</h2>
+                <div class="text-muted">
+                    <small>Son güncelleme: {{ moment().format('DD.MM.YYYY HH:mm') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ total_users }}</h4>
+                            <p class="card-text">Toplam Kullanıcı</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ active_users }}</h4>
+                            <p class="card-text">Aktif Kullanıcı</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-person-check fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ admin_users }}</h4>
+                            <p class="card-text">Admin Kullanıcı</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-shield-check fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ total_appointments }}</h4>
+                            <p class="card-text">Toplam Randevu</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-calendar-event fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMS İstatistikleri -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-chat-dots"></i> SMS İstatistikleri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-primary">{{ sms_stats.total_sms or 0 }}</h3>
+                            <p class="text-muted">Toplam SMS</p>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-success">₺{{ "%.2f"|format(sms_stats.total_cost or 0) }}</h3>
+                            <p class="text-muted">Toplam Maliyet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up"></i> Hızlı Erişim
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-people"></i> Kullanıcı Yönetimi
+                        </a>
+                        <a href="{{ url_for('admin.sms_usage') }}" class="btn btn-outline-success">
+                            <i class="bi bi-chat-dots"></i> SMS Kullanımı
+                        </a>
+                        <a href="{{ url_for('admin.quota_management') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-pie-chart"></i> Kota Yönetimi
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Kullanıcılar -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-plus"></i> Son Kayıt Olan Kullanıcılar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Kullanıcı Adı</th>
+                                    <th>Ad Soyad</th>
+                                    <th>E-posta</th>
+                                    <th>Rol</th>
+                                    <th>Durum</th>
+                                    <th>Kayıt Tarihi</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.get_full_name() }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                        <span class="badge bg-danger">Admin</span>
+                                        {% else %}
+                                        <span class="badge bg-primary">{{ user.role }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-person-x fs-1"></i>
+                        <p>Henüz kullanıcı bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

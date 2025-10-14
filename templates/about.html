@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Hakkımızda{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Hakkımızda
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <h4>Randevu Yönetim Sistemi</h4>
+                    <p class="lead">
+                        Modern ve kullanıcı dostu randevu yönetim sistemi ile işletmenizi dijitalleştirin.
+                    </p>
+
+                    <h5>Özellikler</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-calendar-check text-primary"></i>
+                            <strong>Randevu Yönetimi:</strong> Kolay randevu oluşturma, düzenleme ve takip
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-sms text-success"></i>
+                            <strong>SMS Hatırlatmaları:</strong> Otomatik SMS hatırlatma sistemi
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-users text-info"></i>
+                            <strong>Müşteri Yönetimi:</strong> Müşteri bilgilerini kaydetme ve takip
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-chart-bar text-warning"></i>
+                            <strong>İstatistikler:</strong> Detaylı raporlama ve analiz
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-ban text-danger"></i>
+                            <strong>Bloklu Günler:</strong> Tatil ve müsait olmayan günleri işaretleme
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-building text-secondary"></i>
+                            <strong>Şirket Profili:</strong> Logo ve şirket bilgileri yönetimi
+                        </li>
+                    </ul>
+
+                    <hr>
+
+                    <h5>Teknik Özellikler</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul>
+                                <li>Flask Web Framework</li>
+                                <li>SQLAlchemy ORM</li>
+                                <li>Bootstrap 5 UI</li>
+                                <li>APScheduler</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul>
+                                <li>Flask-Login Authentication</li>
+                                <li>CSRF Protection</li>
+                                <li>UTF-8 Turkish Support</li>
+                                <li>Responsive Design</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus"></i> Hemen Başla
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Giriş Yap
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

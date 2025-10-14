@@ -1,0 +1,52 @@
+{% extends "base.html" %} {% block title %}Randevu Talep Formu{% endblock %} {% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-calendar-plus"></i> Randevu Talep Formu
+                    </h4>
+                    <div class="mt-2">
+                        <span class="badge bg-info">Eğitmen: {{ user.get_full_name() }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Ad Soyad *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Telefon *</label>
+                            <input type="text" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-posta (isteğe bağlı)</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="appointment_date" class="form-label">Tarih *</label>
+                            <input type="date" class="form-control" id="appointment_date" name="appointment_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="appointment_time" class="form-label">Saat *</label>
+                            <input type="time" class="form-control" id="appointment_time" name="appointment_time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="note" class="form-label">Not (isteğe bağlı)</label>
+                            <textarea class="form-control" id="note" name="note" rows="2"></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Randevu Talebi Gönder
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
