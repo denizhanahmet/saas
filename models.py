@@ -19,10 +19,13 @@ class User(UserMixin, db.Model):
     company_name = db.Column(db.String(100))
     logo_path = db.Column(db.String(200))
     sms_quota = db.Column(db.Integer, default=100)
-    is_admin = db.Column(db.Boolean, default=False)
+    # is_admin kaldırıldı, yetki yönetimi sadece is_superadmin ile yapılacak
+    is_superadmin = db.Column(db.Boolean, default=False)  # Sistemin ana yöneticisi
     unique_link = db.Column(db.String(50), unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    kvkk_accepted_at = db.Column(db.DateTime, nullable=True)  # KVKK onay tarihi
+    session_token = db.Column(db.String(64), nullable=True)  # Tek oturum için
 
     appointments = db.relationship('Appointment', backref='user', lazy=True, cascade='all, delete-orphan')
     blocked_days = db.relationship('BlockedDay', backref='user', lazy=True, cascade='all, delete-orphan')

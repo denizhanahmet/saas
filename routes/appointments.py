@@ -21,7 +21,7 @@ def pending_appointments():
 @login_required
 def approve_appointment(appointment_id):
     appointment = Appointment.query.filter_by(id=appointment_id, user_id=current_user.id).first_or_404()
-    appointment.status = 'approved'
+    appointment.status = 'scheduled'
     db.session.commit()
     flash('Randevu onaylandı.', 'success')
     return redirect(url_for('appointments.pending_appointments'))
@@ -172,7 +172,7 @@ def create():
             flash('Bu saatte zaten bir randevunuz var!', 'error')
             return render_template('appointments/create.html', date=date)
         
-        # Yeni randevu oluştur
+        # Kendi panelinden randevu oluşturan herkes için status 'scheduled' olacak
         appointment = Appointment(
             user_id=current_user.id,
             title=title,
@@ -181,7 +181,8 @@ def create():
             appointment_time=appointment_time,
             duration=duration,
             location=location,
-            notes=notes
+            notes=notes,
+            status='scheduled'
         )
         
         try:

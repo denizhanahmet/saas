@@ -1,13 +1,8 @@
-{% extends "base.html" %}
-
-{% block title %}Ana Sayfa - Randevu Sistemi{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Ana Sayfa - Randevu Sistemi{% endblock %} {% block content %}
 <div class="hero-section bg-primary text-white py-5 rounded">
     <div class="container text-center">
         <h1 class="display-4 fw-bold mb-4">
-            <i class="bi bi-calendar-check"></i>
-            Randevu Sistemi
+            <i class="bi bi-calendar-check"></i> Randevu Sistemi
         </h1>
         <p class="lead mb-4">
             Randevularınızı kolayca yönetin, takviminizi organize edin ve zamanınızı verimli kullanın.
@@ -34,6 +29,44 @@
     </div>
 </div>
 
+<!-- Biz Kimiz Bölümü -->
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="card-title mb-3"><i class="bi bi-people text-primary"></i> Biz Kimiz?</h3>
+                    <p class="card-text">
+                        Biz, dijitalleşen dünyada zaman yönetimini kolaylaştırmak ve randevu süreçlerini daha verimli hale getirmek için bir araya gelmiş bir ekibiz. Amacımız, eğitmenler ve öğrenciler başta olmak üzere herkesin randevu takibini hızlı, güvenli ve pratik şekilde
+                        yapabilmesini sağlamak.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sistem Nasıl Çalışır Bölümü -->
+<div class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title mb-3"><i class="bi bi-info-circle text-success"></i> Sistem Nasıl Çalışır?</h3>
+                    <ol class="card-text ps-3">
+                        <li><strong>Kayıt Olun:</strong> Eğitmen veya öğrenci olarak sisteme kaydolun.</li>
+                        <li><strong>Randevu Linkinizi Paylaşın:</strong> Eğitmenler, kendilerine özel randevu linkini öğrencilerle paylaşır.</li>
+                        <li><strong>Randevu Talebi Oluşturun:</strong> Öğrenciler, eğitmenlerin linkinden randevu talebinde bulunur.</li>
+                        <li><strong>Onay &amp; Yönetim:</strong> Eğitmenler gelen talepleri dashboard üzerinden onaylar veya reddeder.</li>
+                        <li><strong>Takvim &amp; Bildirim:</strong> Tüm randevular takvimde görüntülenir, SMS ile bilgilendirme yapılır.</li>
+                    </ol>
+                    <p class="mt-3">Sistemimiz tamamen güvenli, mobil uyumlu ve kullanıcı dostudur.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-5">
     <div class="col-md-4 mb-4">
         <div class="card h-100 text-center">
@@ -41,8 +74,7 @@
                 <i class="bi bi-calendar-event text-primary fs-1 mb-3"></i>
                 <h5 class="card-title">Kolay Randevu Yönetimi</h5>
                 <p class="card-text">
-                    Randevularınızı kolayca oluşturun, düzenleyin ve takip edin.
-                    Çakışma kontrolü ile hata riskini minimize edin.
+                    Randevularınızı kolayca oluşturun, düzenleyin ve takip edin. Çakışma kontrolü ile hata riskini minimize edin.
                 </p>
             </div>
         </div>
@@ -54,8 +86,7 @@
                 <i class="bi bi-clock text-success fs-1 mb-3"></i>
                 <h5 class="card-title">Zaman Yönetimi</h5>
                 <p class="card-text">
-                    Günlük, haftalık ve aylık görünümlerle randevularınızı
-                    farklı perspektiflerden inceleyin.
+                    Günlük, haftalık ve aylık görünümlerle randevularınızı farklı perspektiflerden inceleyin.
                 </p>
             </div>
         </div>
@@ -67,8 +98,7 @@
                 <i class="bi bi-graph-up text-info fs-1 mb-3"></i>
                 <h5 class="card-title">Detaylı İstatistikler</h5>
                 <p class="card-text">
-                    Randevu istatistiklerinizi görün, en yoğun günlerinizi
-                    analiz edin ve verimliliğinizi artırın.
+                    Randevu istatistiklerinizi görün, en yoğun günlerinizi analiz edin ve verimliliğinizi artırın.
                 </p>
             </div>
         </div>
@@ -80,12 +110,10 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">
-                    <i class="bi bi-shield-check text-success"></i>
-                    Güvenli ve Güvenilir
+                    <i class="bi bi-shield-check text-success"></i> Güvenli ve Güvenilir
                 </h5>
                 <p class="card-text">
-                    Verileriniz güvenli şekilde saklanır ve sadece sizin erişiminize açıktır.
-                    Modern güvenlik standartları ile korunursunuz.
+                    Verileriniz güvenli şekilde saklanır ve sadece sizin erişiminize açıktır. Modern güvenlik standartları ile korunursunuz.
                 </p>
             </div>
         </div>
@@ -95,12 +123,10 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">
-                    <i class="bi bi-phone text-primary"></i>
-                    Mobil Uyumlu
+                    <i class="bi bi-phone text-primary"></i> Mobil Uyumlu
                 </h5>
                 <p class="card-text">
-                    Responsive tasarım ile her cihazdan erişim sağlayın.
-                    Telefon, tablet veya bilgisayar - fark etmez!
+                    Responsive tasarım ile her cihazdan erişim sağlayın. Telefon, tablet veya bilgisayar - fark etmez!
                 </p>
             </div>
         </div>
@@ -123,5 +149,4 @@
         </div>
     </div>
 </div>
-{% endif %}
-{% endblock %}
+{% endif %} {% endblock %}

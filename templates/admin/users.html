@@ -75,6 +75,9 @@
                                     <th>Rol</th>
                                     <th>Durum</th>
                                     <th>Kayıt Tarihi</th>
+                                    {% if current_user.is_admin %}
+                                    <th>Özel Randevu Linki</th>
+                                    {% endif %}
                                     <th>İşlemler</th>
                                 </tr>
                             </thead>
@@ -100,6 +103,14 @@
                                         <span class="badge bg-secondary">Pasif</span> {% endif %}
                                     </td>
                                     <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                                    {% if current_user.is_admin %}
+                                    <td>
+                                        {% if user.unique_link %}
+                                        <span class="text-break small">{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}</span>
+                                        <button class="btn btn-outline-primary btn-sm ms-2" onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}');this.textContent='Kopyalandı!';setTimeout(()=>this.textContent='Kopyala',1500)">Kopyala</button>                                        {% else %}
+                                        <span class="text-muted">-</span> {% endif %}
+                                    </td>
+                                    {% endif %}
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="btn btn-sm btn-outline-primary" title="Detay">

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_wtf.csrf import generate_csrf
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -28,10 +28,14 @@ def login():
             if not user.is_active:
                 flash('Hesabınız deaktif edilmiş!', 'error')
                 return render_template('auth/login.html')
-            
+            # Tek oturum için yeni session_token üret
+            import secrets
+            from models import db
+            user.session_token = secrets.token_hex(32)
+            db.session.commit()
+            session['session_token'] = user.session_token
             login_user(user, remember=remember)
             flash(f'Hoş geldiniz, {user.get_full_name()}!', 'success')
-            
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
         else:
@@ -54,6 +58,7 @@ def register():
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         phone = request.form.get('phone')
+        kvkk_accepted = request.form.get('kvkkCheck')
         
         # Validasyonlar
         errors = []
@@ -80,6 +85,8 @@ def register():
         if User.query.filter_by(email=email).first():
             errors.append('Bu email adresi zaten kullanımda.')
         
+        if not kvkk_accepted:
+            errors.append('Gizlilik ve KVKK hüküm ve koşullarını kabul etmelisiniz.')
         if errors:
             for error in errors:
                 flash(error, 'error')
@@ -104,7 +111,8 @@ def register():
             first_name=first_name,
             last_name=last_name,
             phone=phone,
-            unique_link=unique_link
+            unique_link=unique_link,
+            kvkk_accepted_at=datetime.utcnow() if kvkk_accepted else None
         )
         user.set_password(password)
 
@@ -144,6 +152,37 @@ def edit_profile():
         current_user.email = request.form.get('email', current_user.email)
         current_user.phone = request.form.get('phone', current_user.phone)
         current_user.updated_at = datetime.utcnow()
+        # unique_link alanı asla değişmesin/silinmesin
+        if not current_user.unique_link:
+            import random, string
+            def generate_unique_link(username):
+                base = username.lower().replace(' ', '')
+                suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+                return f"{base}{suffix}"
+            from models import User as UserModel
+            unique_link = generate_unique_link(current_user.username)
+            while UserModel.query.filter_by(unique_link=unique_link).first():
+                unique_link = generate_unique_link(current_user.username)
+            current_user.unique_link = unique_link
+
+        # Şifre değiştirme işlemi
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        if current_password or new_password or confirm_password:
+            if not current_password or not new_password or not confirm_password:
+                flash('Şifre değiştirmek için tüm şifre alanlarını doldurun.', 'error')
+                return render_template('auth/edit_profile.html', user=current_user, csrf_token=generate_csrf)
+            if not current_user.check_password(current_password):
+                flash('Mevcut şifre yanlış.', 'error')
+                return render_template('auth/edit_profile.html', user=current_user, csrf_token=generate_csrf)
+            if new_password != confirm_password:
+                flash('Yeni şifreler eşleşmiyor.', 'error')
+                return render_template('auth/edit_profile.html', user=current_user, csrf_token=generate_csrf)
+            if len(new_password) < 6:
+                flash('Yeni şifre en az 6 karakter olmalı.', 'error')
+                return render_template('auth/edit_profile.html', user=current_user, csrf_token=generate_csrf)
+            current_user.set_password(new_password)
 
         # Logo dosyası yükleme
         logo_file = request.files.get('logo')
@@ -162,7 +201,7 @@ def edit_profile():
         existing_user = User.query.filter_by(email=current_user.email).first()
         if existing_user and existing_user.id != current_user.id:
             flash('Bu email adresi zaten kullanımda.', 'error')
-            return render_template('auth/edit_profile.html', user=current_user, csrf_token=generate_csrf())
+            return render_template('auth/edit_profile.html', user=current_user, csrf_token=generate_csrf)
 
         try:
             db.session.commit()

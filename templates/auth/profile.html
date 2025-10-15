@@ -1,8 +1,4 @@
-{% extends "base.html" %}
-
-{% block title %}Profil{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Profil{% endblock %} {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -13,11 +9,20 @@
                     </h4>
                 </div>
                 <div class="card-body">
+                    <!-- Kullanıcıya özel randevu linki -->
+                    <div class="alert alert-primary d-flex align-items-center justify-content-between" style="font-size:1rem;">
+                        <div>
+                            <i class="bi bi-link-45deg"></i>
+                            <strong>Randevu Linkiniz:</strong>
+                            <span id="uniqueLink">{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}</span>
+                        </div>
+                        <button id="copyProfileBtn" class="btn btn-outline-primary btn-sm ms-2" onclick="navigator.clipboard.writeText(document.getElementById('uniqueLink').textContent); var btn=this; btn.textContent='Kopyalandı!'; setTimeout(function(){btn.textContent='Kopyala';},1500);">Kopyala</button>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-4 text-center">
                             {% if user.logo_path %}
-                            <img src="{{ url_for('static', filename='uploads/' + user.logo_path) }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
-                            {% else %}
+                            <img src="{{ url_for('static', filename='uploads/' + user.logo_path) }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;"> {% else %}
                             <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; margin: 0 auto;">
                                 <i class="fas fa-user fa-3x"></i>
                             </div>
@@ -108,5 +113,10 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Sayfa sonu KVKK ve Gizlilik Koşulları linki -->
+<div class="container mt-5 mb-3 text-center">
+    <a href="/kvkk" target="_blank" class="text-muted small">Gizlilik Koşulları ve KVKK hukuki sorumlulukları</a>
 </div>
 {% endblock %}

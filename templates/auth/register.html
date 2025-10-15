@@ -84,8 +84,16 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="kvkkCheck" name="kvkkCheck">
+                            <label class="form-check-label" for="kvkkCheck">
+                                <a href="/kvkk" target="_blank" style="color:#0d6efd; font-weight:500; text-decoration:underline;">Gizlilik ve KVKK hüküm ve koşullarını kabul ediyorum</a>
+                            </label>
+                        </div>
+                    </div>
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-success" id="registerBtn" disabled>
                             <i class="bi bi-person-plus"></i>
                             Kayıt Ol
                         </button>
@@ -126,6 +134,13 @@
         } else {
             this.setCustomValidity('');
         }
+    });
+
+    // KVKK checkbox kontrolü
+    const kvkkCheck = document.getElementById('kvkkCheck');
+    const registerBtn = document.getElementById('registerBtn');
+    kvkkCheck.addEventListener('change', function() {
+        registerBtn.disabled = !this.checked;
     });
 </script>
 {% endblock %}

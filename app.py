@@ -1,6 +1,6 @@
 # Flask-Migrate entegrasyonu
 from flask_migrate import Migrate
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
@@ -136,9 +136,43 @@ def create_superadmin():
         else:
             print('Zaten admin adlı bir kullanıcı var.')
 
+from flask import session
+
+@app.before_request
+def check_single_session():
+    if current_user.is_authenticated:
+        from models import User
+        user_db = User.query.get(current_user.id)
+        token_in_db = user_db.session_token if user_db else None
+        token_in_session = session.get('session_token')
+        # Her istekte session_token'ı güncelle
+        if token_in_db:
+            session['session_token'] = token_in_db
+        if token_in_session and token_in_db and token_in_session != token_in_db:
+            logout_user()
+            session.pop('session_token', None)
+            flash('Başka bir oturum açıldığı için çıkış yapıldı.', 'warning')
+            return redirect(url_for('auth.login'))
+
 if __name__ == '__main__':
+    def assign_unique_links_once():
+        import random, string
+        from models import User
+        users = User.query.filter((User.unique_link == None) | (User.unique_link == '')).all()
+        count = 0
+        for user in users:
+            link = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            while User.query.filter_by(unique_link=link).first():
+                link = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            user.unique_link = link
+            count += 1
+        db.session.commit()
+        print(f"{count} kullanıcıya unique_link atandı.")
+
     with app.app_context():
         db.create_all()
+        # Bir seferlik unique_link ataması
+        assign_unique_links_once()
         # Superadmin ekle
         create_superadmin()
         # Initialize scheduler
