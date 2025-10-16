@@ -35,7 +35,7 @@
                                 <option value="">Tüm Durumlar</option>
                                 <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktif</option>
                                 <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Pasif</option>
-                                <option value="admin" {% if status_filter == 'admin' %}selected{% endif %}>Admin</option>
+                                <option value="superadmin" {% if status_filter == 'superadmin' %}selected{% endif %}>Superadmin</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -75,7 +75,7 @@
                                     <th>Rol</th>
                                     <th>Durum</th>
                                     <th>Kayıt Tarihi</th>
-                                    {% if current_user.is_admin %}
+                                    {% if current_user.is_superadmin %}
                                     <th>Özel Randevu Linki</th>
                                     {% endif %}
                                     <th>İşlemler</th>
@@ -85,16 +85,16 @@
                                 {% for user in users.items %}
                                 <tr>
                                     <td>
-                                        <strong>{{ user.username }}</strong> {% if user.is_admin %}
-                                        <i class="bi bi-shield-check text-danger" title="Admin"></i> {% endif %}
+                                        <strong>{{ user.username }}</strong> {% if user.is_superadmin %}
+                                        <i class="bi bi-shield-check text-danger" title="Superadmin"></i> {% endif %}
                                     </td>
                                     <td>{{ user.get_full_name() }}</td>
                                     <td>{{ user.email }}</td>
                                     <td>{{ user.phone or '-' }}</td>
                                     <td>{{ user.company_name or '-' }}</td>
                                     <td>
-                                        {% if user.is_admin %}
-                                        <span class="badge bg-danger">Admin</span> {% else %}
+                                        {% if user.is_superadmin %}
+                                        <span class="badge bg-danger">Superadmin</span> {% else %}
                                         <span class="badge bg-primary">{{ user.role }}</span> {% endif %}
                                     </td>
                                     <td>
@@ -103,7 +103,7 @@
                                         <span class="badge bg-secondary">Pasif</span> {% endif %}
                                     </td>
                                     <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
-                                    {% if current_user.is_admin %}
+                                    {% if current_user.is_superadmin %}
                                     <td>
                                         {% if user.unique_link %}
                                         <span class="text-break small">{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}</span>

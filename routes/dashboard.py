@@ -60,7 +60,7 @@ def dashboard():
                          upcoming_count=upcoming_count,
                          monthly_appointments=monthly_appointments,
                          status_counts=status_counts,
-                         date=date)
+                         date_util=date)
 
 @dashboard_bp.route('/appointments')
 @login_required
@@ -110,7 +110,7 @@ def appointments():
                          status_filter=status_filter,
                          date_filter=date_filter,
                          search=search,
-                         date=date)
+                         date_util=date)
 
 @dashboard_bp.route('/calendar')
 @login_required
@@ -144,7 +144,7 @@ def calendar():
     return render_template('dashboard/calendar.html',
                          appointments_by_date=appointments_by_date,
                          current_month=start_of_month,
-                         date=date)
+                         date_util=date)
 
 @dashboard_bp.route('/stats')
 @login_required
@@ -223,7 +223,7 @@ def stats():
                          monthly_labels=monthly_labels,
                          monthly_data=monthly_data,
                          current_year=current_year,
-                         date=date)
+                         date_util=date)
 
 @dashboard_bp.route('/blocked-days')
 @login_required
@@ -244,7 +244,7 @@ def blocked_days():
                          past_blocked=past_blocked,
                          today_blocked=today_blocked,
                          future_blocked=future_blocked,
-                         date=date,
+                         date_util=date,
                          csrf_token=generate_csrf())
 
 @dashboard_bp.route('/blocked-days/add', methods=['POST'])

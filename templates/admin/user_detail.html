@@ -53,8 +53,8 @@
                                 <tr>
                                     <td><strong>Rol:</strong></td>
                                     <td>
-                                        {% if user.is_admin %}
-                                        <span class="badge bg-danger">Admin</span> {% else %}
+                                        {% if user.is_superadmin %}
+                                        <span class="badge bg-danger">Superadmin</span> {% else %}
                                         <span class="badge bg-primary">{{ user.role }}</span> {% endif %}
                                     </td>
                                 </tr>

@@ -151,6 +151,7 @@ def edit_profile():
         current_user.last_name = request.form.get('last_name', current_user.last_name)
         current_user.email = request.form.get('email', current_user.email)
         current_user.phone = request.form.get('phone', current_user.phone)
+        current_user.company_name = request.form.get('company_name', current_user.company_name)
         current_user.updated_at = datetime.utcnow()
         # unique_link alanı asla değişmesin/silinmesin
         if not current_user.unique_link:

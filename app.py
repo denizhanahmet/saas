@@ -155,24 +155,8 @@ def check_single_session():
             return redirect(url_for('auth.login'))
 
 if __name__ == '__main__':
-    def assign_unique_links_once():
-        import random, string
-        from models import User
-        users = User.query.filter((User.unique_link == None) | (User.unique_link == '')).all()
-        count = 0
-        for user in users:
-            link = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-            while User.query.filter_by(unique_link=link).first():
-                link = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-            user.unique_link = link
-            count += 1
-        db.session.commit()
-        print(f"{count} kullanıcıya unique_link atandı.")
-
     with app.app_context():
         db.create_all()
-        # Bir seferlik unique_link ataması
-        assign_unique_links_once()
         # Superadmin ekle
         create_superadmin()
         # Initialize scheduler

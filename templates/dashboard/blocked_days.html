@@ -57,7 +57,7 @@
                                     </td>
                                     <td>
                                         <form method="POST" action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}" style="display: inline;" onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                                 <i class="bi bi-trash"></i> Kaldır
                                             </button>
@@ -92,7 +92,7 @@
                             <br><small class="text-muted">{{ blocked_day.reason }}</small> {% endif %}
                         </div>
                         <form method="POST" action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}" style="display: inline;" onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i> Kaldır
                             </button>
@@ -139,7 +139,7 @@
                                     </td>
                                     <td>
                                         <form method="POST" action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}" style="display: inline;" onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                                 <i class="bi bi-trash"></i> Kaldır
                                             </button>
@@ -184,11 +184,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('dashboard.add_blocked_day') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="blocked_date" class="form-label">Tarih <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="blocked_date" name="blocked_date" min="{{ date.today().strftime('%Y-%m-%d') }}" required>
+                        <input type="date" class="form-control" id="blocked_date" name="blocked_date" min="{{ date_util.today().strftime('%Y-%m-%d') }}" required>
                         <div class="form-text">Sadece bugün ve gelecek tarihleri seçebilirsiniz.</div>
                     </div>
                     <div class="mb-3">
