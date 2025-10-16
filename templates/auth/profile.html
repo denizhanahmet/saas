@@ -10,8 +10,8 @@
                 </div>
                 <div class="card-body">
                     <!-- Kullanıcıya özel randevu linki -->
-                    <div class="alert alert-primary d-flex align-items-center justify-content-between" style="font-size:1rem;">
-                        <div>
+                    <div class="alert alert-primary d-flex align-items-center justify-content-between unique-link-box">
+                        <div style="min-width:0;">
                             <i class="bi bi-link-45deg"></i>
                             <strong>Randevu Linkiniz:</strong>
                             <span id="uniqueLink">{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}</span>

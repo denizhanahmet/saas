@@ -66,13 +66,19 @@ def public_appointment_request(unique_link):
                 flash(error, 'error')
             return render_template('public_appointment_form.html', user=user, csrf_token=generate_csrf())
 
+        # Bloklanmış gün kontrolü
+        appt_date_obj = datetime.strptime(appointment_date, '%Y-%m-%d').date()
+        if BlockedDay.is_date_blocked(user.id, appt_date_obj):
+            flash('Seçilen tarih bloklanmış! Bu tarihte randevu alınamaz.', 'error')
+            return render_template('public_appointment_form.html', user=user, csrf_token=generate_csrf())
+
         # Appointment kaydı
         try:
             appointment = Appointment(
                 user_id=user.id,
                 title=f"{name} - Online Randevu",
                 description=note,
-                appointment_date=datetime.strptime(appointment_date, '%Y-%m-%d').date(),
+                appointment_date=appt_date_obj,
                 appointment_time=datetime.strptime(appointment_time, '%H:%M').time(),
                 duration=60,
                 status='pending',

@@ -116,25 +116,6 @@ def shutdown_scheduler():
             app.logger.error(f"Failed to stop scheduler: {str(e)}")
 
 
-# --- SUPERADMIN EKLEME ---
-def create_superadmin():
-    with app.app_context():
-        from models import User
-        if not User.query.filter_by(username='admin').first():
-            user = User(
-                username='admin',
-                email='admin@example.com',
-                first_name='Super',
-                last_name='Admin',
-                is_admin=True,
-                is_active=True
-            )
-            user.set_password('123456')
-            db.session.add(user)
-            db.session.commit()
-            print('Superadmin oluşturuldu: admin / 123456')
-        else:
-            print('Zaten admin adlı bir kullanıcı var.')
 
 from flask import session
 
@@ -157,8 +138,6 @@ def check_single_session():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # Superadmin ekle
-        create_superadmin()
         # Initialize scheduler
         init_scheduler()
     try:

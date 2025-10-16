@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block title %}Dashboard - Randevu Sistemi{% endblock %} {% block content %}
 <!-- Kullanıcıya özel randevu linki -->
-<div class="alert alert-primary d-flex align-items-center justify-content-between mb-4" style="font-size:1rem;">
-    <div>
+<div class="alert alert-primary d-flex align-items-center justify-content-between mb-4 unique-link-box">
+    <div style="min-width:0;">
         <i class="bi bi-link-45deg"></i>
         <strong>Randevu Linkiniz:</strong>
         <span id="uniqueLinkDashboard">{{ request.host_url.rstrip('/') }}/appointments/r/{{ current_user.unique_link }}</span>
