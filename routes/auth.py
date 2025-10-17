@@ -1,3 +1,6 @@
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
+from flask import current_app
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_wtf.csrf import generate_csrf
 from flask_login import login_user, logout_user, login_required, current_user
@@ -42,7 +45,56 @@ def login():
             flash('Geçersiz kullanıcı adı veya şifre!', 'error')
     
     return render_template('auth/login.html')
+# Şifremi Unuttum: Mail ile sıfırlama bağlantısı gönder
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    from models import User
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            flash('Bu mail sistemde kayıtlı değil.', 'error')
+            return render_template('auth/forgot_password.html')
+        # Token üret
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        token = s.dumps(email, salt='password-reset-salt')
+        reset_url = url_for('auth.reset_password', token=token, _external=True)
+        # Mail gönder
+        msg = Message('Şifre Yenileme Talebi', sender=current_app.config['MAIL_DEFAULT_SENDER'], recipients=[email])
+        msg.body = f"Merhaba {user.get_full_name()},\n\nŞifrenizi yenilemek için aşağıdaki bağlantıya tıklayın:\n{reset_url}\n\nEğer bu isteği siz yapmadıysanız, bu maili dikkate almayın."
+        current_app.extensions['mail'].send(msg)
+        flash('Şifre yenileme bağlantısı e-posta adresinize gönderildi.', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/forgot_password.html')
 
+# Şifre sıfırlama sayfası
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    from models import User, db
+    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=3600)
+    except Exception:
+        flash('Geçersiz veya süresi dolmuş bağlantı.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash('Kullanıcı bulunamadı.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        if not new_password or len(new_password) < 6:
+            flash('Şifre en az 6 karakter olmalı.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        if new_password != confirm_password:
+            flash('Şifreler eşleşmiyor.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        user.set_password(new_password)
+        db.session.commit()
+        flash('Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz.', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_password.html', token=token)
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     from models import User, db
