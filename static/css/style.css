@@ -1,3 +1,101 @@
+/* Sadece randevu talep formu butonu için sade ve etkili stil */
+button.btn-primary,
+.btn-primary {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+    border: 2px solid #0d6efd !important;
+    min-height: 44px;
+    font-weight: 700;
+    border-radius: 8px;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
+    outline: none !important;
+    display: block;
+    transition: background 0.2s, color 0.2s;
+}
+
+button.btn-primary:disabled,
+.btn-primary:disabled {
+    background-color: #b6d4fe !important;
+    color: #fff !important;
+    opacity: 0.7;
+}
+
+button.btn-primary:hover,
+
+
+.form-control,
+input,
+textarea,
+select {
+    background-color: #fff;
+    color: #212529;
+}
+
+.form-control:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    background-color: #fff;
+    color: #212529;
+}
+
+/* Randevu talep formu buton görünürlüğü ve ayrımı için ek düzeltme */
+.btn,
+button.btn {
+    min-height: 44px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
+    outline: none;
+}
+
+.btn-primary,
+button.btn-primary {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-primary:disabled,
+button.btn-primary:disabled {
+    background-color: #b6d4fe !important;
+    color: #fff !important;
+    opacity: 0.7;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover {
+    background-color: #0b5ed7 !important;
+    color: #fff !important;
+}
+
+/* Randevu talep formu buton görünürlüğü düzeltmesi */
+.btn-primary,
+button.btn-primary {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+    border: none;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-primary:disabled,
+button.btn-primary:disabled {
+    background-color: #b6d4fe !important;
+    color: #fff !important;
+    opacity: 0.7;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover {
+    background-color: #0b5ed7 !important;
+    color: #fff !important;
+}
+
 /* Uniq link kutusu mobil uyum ve taşma düzeltmesi */
 
 .unique-link-box,
@@ -9,16 +107,19 @@
 }
 
 @media (max-width: 576px) {
+
     .unique-link-box,
     #uniqueLink,
     #uniqueLinkDashboard {
         font-size: 0.92rem;
         padding: 0.5rem 0.5rem;
     }
+
     .alert.alert-primary {
         padding: 0.5rem 0.5rem;
         font-size: 0.92rem;
     }
+
     #copyProfileBtn,
     #copyDashboardBtn {
         font-size: 0.92rem;
@@ -288,12 +389,15 @@ footer {
     .hero-section {
         padding: 2rem 0 !important;
     }
+
     .hero-section h1 {
         font-size: 2rem !important;
     }
+
     .card {
         margin-bottom: 1rem;
     }
+
     .btn {
         width: 100%;
         margin-bottom: 0.5rem;
@@ -304,56 +408,68 @@ footer {
 /* Responsive improvements for mobile */
 
 @media (max-width: 576px) {
+
     .container,
     .container-fluid,
     .main {
         padding-left: 8px !important;
         padding-right: 8px !important;
     }
+
     .row {
         margin-left: 0 !important;
         margin-right: 0 !important;
     }
+
     .col,
     [class^="col-"] {
         padding-left: 4px !important;
         padding-right: 4px !important;
     }
+
     .navbar .navbar-nav {
         text-align: left;
     }
+
     .navbar .dropdown-menu {
         width: 100vw;
         left: -16px;
         right: -16px;
     }
+
     .form-group,
     .form-control,
     .form-select {
         font-size: 1rem;
     }
+
     .table-responsive {
         overflow-x: auto;
     }
+
     .card {
         margin-bottom: 1rem;
     }
+
     .btn {
         width: 100%;
         margin-bottom: 0.5rem;
     }
+
     .footer {
         text-align: center;
     }
 }
 
 @media (max-width: 400px) {
+
     h1,
     h2,
     h3,
     h4 {
         font-size: 1.1rem !important;
     }
+
     .navbar-brand {
         font-size: 1rem;
     }
@@ -392,6 +508,7 @@ footer {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -406,6 +523,7 @@ footer {
     from {
         transform: translateX(-100%);
     }
+
     to {
         transform: translateX(0);
     }
@@ -415,15 +533,18 @@ footer {
 /* Print Styles */
 
 @media print {
+
     .navbar,
     .btn,
     footer {
         display: none !important;
     }
+
     .card {
         box-shadow: none;
         border: 1px solid #dee2e6;
     }
+
     body {
         background: white;
     }

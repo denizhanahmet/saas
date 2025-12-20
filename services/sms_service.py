@@ -1,11 +1,12 @@
 """
 SMS Service for sending appointment reminders
 """
-import os
-import requests
-from datetime import datetime
-from typing import Optional, Dict, Any
 import logging
+import os
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+import requests
 
 logger = logging.getLogger(__name__)
 

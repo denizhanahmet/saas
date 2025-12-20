@@ -1,9 +1,24 @@
-{% extends "base.html" %} {% block title %}{{ user.username }} - Kullanıcı Detayı{% endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}{{ user.username if user else 'Kullanıcı' }} - Kullanıcı Detayı{% endblock %}
+{% block content %}
 <div class="container-fluid">
+    {% if not user %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> Kullanıcı bulunamadı!
+    </div>
+    {% else %}
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-person"></i> {{ user.get_full_name() }}</h2>
+                <h2><i class="bi bi-person"></i>
+                    {% if user.first_name or user.last_name %}
+                    {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                    {% elif user.username %}
+                    {{ user.username }}
+                    {% else %}
+                    Kullanıcı
+                    {% endif %}
+                </h2>
                 <div>
                     <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Geri Dön
@@ -32,7 +47,15 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Ad Soyad:</strong></td>
-                                    <td>{{ user.get_full_name() }}</td>
+                                    <td>
+                                        {% if user.first_name or user.last_name %}
+                                        {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                                        {% elif user.username %}
+                                        {{ user.username }}
+                                        {% else %}
+                                        Kullanıcı
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><strong>E-posta:</strong></td>
@@ -54,21 +77,27 @@
                                     <td><strong>Rol:</strong></td>
                                     <td>
                                         {% if user.is_superadmin %}
-                                        <span class="badge bg-danger">Superadmin</span> {% else %}
-                                        <span class="badge bg-primary">{{ user.role }}</span> {% endif %}
+                                        <span class="badge bg-danger">Superadmin</span>
+                                        {% else %}
+                                        <span class="badge bg-primary">{{ user.role }}</span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Durum:</strong></td>
                                     <td>
                                         {% if user.is_active %}
-                                        <span class="badge bg-success">Aktif</span> {% else %}
-                                        <span class="badge bg-secondary">Pasif</span> {% endif %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Kayıt Tarihi:</strong></td>
-                                    <td>{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>{% if user.created_at and user.created_at.strftime is defined %}{{
+                                        user.created_at.strftime('%d.%m.%Y %H:%M') }}{% elif user.created_at %}{{
+                                        user.created_at }}{% endif %}</td>
                                 </tr>
                             </table>
                         </div>
@@ -86,20 +115,25 @@
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-3">
-                        <h3 class="text-primary">{{ user.sms_quota }}</h3>
+                        <h3 class="text-primary">{{ user.sms_quota or 0 }}</h3>
                         <p class="text-muted mb-0">Aylık Kota</p>
                     </div>
                     <div class="mb-3">
-                        <h3 class="text-success">{{ sms_stats.successful }}</h3>
+                        <h3 class="text-success">{{ sms_stats.successful if sms_stats else 0 }}</h3>
                         <p class="text-muted mb-0">Başarılı SMS</p>
                     </div>
                     <div class="mb-3">
-                        <h3 class="text-warning">{{ sms_stats.failed }}</h3>
+                        <h3 class="text-warning">{{ sms_stats.failed if sms_stats else 0 }}</h3>
                         <p class="text-muted mb-0">Başarısız SMS</p>
                     </div>
                     <div class="progress mb-2">
-                        {% set quota_usage = (sms_stats.successful / user.sms_quota * 100) if user.sms_quota > 0 else 0 %}
-                        <div class="progress-bar" role="progressbar" style="width: {{ '%.1f'|format(quota_usage) }}%"></div>
+                        {% if user.sms_quota and user.sms_quota > 0 and sms_stats %}
+                        {% set quota_usage = (sms_stats.successful / user.sms_quota * 100) %}
+                        {% else %}
+                        {% set quota_usage = 0 %}
+                        {% endif %}
+                        <div class="progress-bar" role="progressbar" style="width: {{ '%.1f'|format(quota_usage) }}%">
+                        </div>
                     </div>
                     <small class="text-muted">{{ "%.1f"|format(quota_usage) }}% kullanıldı</small>
                 </div>
@@ -108,7 +142,7 @@
     </div>
 
     <!-- İşlemler -->
-    {% if user.id != current_user.id %}
+    {% if current_user and user.id != current_user.id %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -119,9 +153,12 @@
                 </div>
                 <div class="card-body">
                     <div class="btn-group" role="group">
-                        <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
+                        <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
+                            style="display: inline;"
+                            onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-{% if user.is_active %}warning{% else %}success{% endif %}">
+                            <button type="submit"
+                                class="btn btn-{% if user.is_active %}warning{% else %}success{% endif %}">
                                 <i class="bi bi-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
                                 {% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
                             </button>
@@ -163,12 +200,18 @@
                                 {% for appointment in appointments %}
                                 <tr>
                                     <td>{{ appointment.title }}</td>
-                                    <td>{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</td>
-                                    <td>{{ appointment.appointment_time.strftime('%H:%M') }}</td>
+                                    <td>{% if appointment.appointment_date and appointment.appointment_date.strftime is
+                                        defined %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}{% elif
+                                        appointment.appointment_date %}{{ appointment.appointment_date }}{% endif %}
+                                    </td>
+                                    <td>{% if appointment.appointment_time and appointment.appointment_time.strftime is
+                                        defined %}{{ appointment.appointment_time.strftime('%H:%M') }}{% elif
+                                        appointment.appointment_time %}{{ appointment.appointment_time }}{% endif %}
+                                    </td>
                                     <td>{{ appointment.duration }} dk</td>
                                     <td>
-                                        <span class="badge {{ appointment.get_status_badge_class() }}">
-                                            {{ appointment.get_status_text() }}
+                                        <span class="badge {{ get_status_badge_class(appointment.status) }}">
+                                            {{ get_status_text(appointment.status) }}
                                         </span>
                                     </td>
                                     <td>{{ appointment.location or '-' }}</td>
@@ -212,15 +255,17 @@
                             <tbody>
                                 {% for sms in sms_logs %}
                                 <tr>
-                                    <td>{{ sms.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>{% if sms.timestamp and sms.timestamp.strftime is defined %}{{
+                                        sms.timestamp.strftime('%d.%m.%Y %H:%M') }}{% elif sms.timestamp %}{{
+                                        sms.timestamp }}{% endif %}</td>
                                     <td>
                                         <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
                                             {{ sms.message }}
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge {{ sms.get_status_badge_class() }}">
-                                            {{ sms.get_status_text() }}
+                                        <span class="badge {{ get_status_badge_class(sms.status) }}">
+                                            {{ get_status_text(sms.status) }}
                                         </span>
                                     </td>
                                     <td>₺{{ "%.2f"|format(sms.cost or 0) }}</td>
@@ -239,5 +284,6 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

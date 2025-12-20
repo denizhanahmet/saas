@@ -1,122 +1,141 @@
-{% extends "base.html" %} {% block title %}Profil{% endblock %} {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">
-                        <i class="fas fa-user"></i> Profil Bilgileri
-                    </h4>
+{% extends "base.html" %}
+{% block title %}Profil{% endblock %}
+{% block content %}
+<div class="w-full max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 border border-gray-200 mt-8">
+    <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Profil Bilgileri</h2>
+    <div class="flex flex-col md:flex-row gap-8">
+        <div class="flex flex-col items-center md:w-1/3 w-full">
+            {% if user.logo_path %}
+            <img src="{{ url_for('static', filename='uploads/' + user.logo_path) }}"
+                class="rounded-full mb-3 border border-gray-300"
+                style="width: 150px; height: 150px; object-fit: cover;">
+            {% else %}
+            <div class="bg-blue-600 text-white rounded-full flex items-center justify-center mb-3"
+                style="width: 150px; height: 150px;">
+                <span class="material-icons text-6xl">person</span>
+            </div>
+            {% endif %}
+            <h5 class="text-lg font-semibold">
+                {% if user.first_name or user.last_name %}
+                {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                {% elif user.username %}
+                {{ user.username }}
+                {% else %}
+                Kullanıcı
+                {% endif %}
+            </h5>
+            <p class="text-gray-500">
+                {% if user.company_name %}
+                {{ user.company_name }}
+                {% elif user.company or user.company_display_name %}
+                {{ user.company or user.company_display_name }}
+                {% else %}
+                Şirket Bilgisi Yok
+                {% endif %}
+            </p>
+            <button id="copyProfileBtn"
+                class="mt-2 px-4 py-1 rounded bg-blue-50 text-blue-700 border border-blue-600 hover:bg-blue-100 transition text-sm"
+                onclick="navigator.clipboard.writeText(document.getElementById('uniqueLink').textContent); var btn=this; btn.textContent='Kopyalandı!'; setTimeout(function(){btn.textContent='Kopyala';},1500);">Kopyala</button>
+            <div class="mt-2 text-xs text-gray-400 break-all text-center">
+                <span class="font-semibold">Randevu Linkiniz:</span>
+                <span id="uniqueLink">{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}</span>
+            </div>
+        </div>
+        <div class="md:w-2/3 w-full">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <div class="font-semibold text-gray-700">Kullanıcı Adı</div>
+                    <div class="text-gray-600">{{ user.username }}</div>
                 </div>
-                <div class="card-body">
-                    <!-- Kullanıcıya özel randevu linki -->
-                    <div class="alert alert-primary d-flex align-items-center justify-content-between unique-link-box">
-                        <div style="min-width:0;">
-                            <i class="bi bi-link-45deg"></i>
-                            <strong>Randevu Linkiniz:</strong>
-                            <span id="uniqueLink">{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}</span>
-                        </div>
-                        <button id="copyProfileBtn" class="btn btn-outline-primary btn-sm ms-2" onclick="navigator.clipboard.writeText(document.getElementById('uniqueLink').textContent); var btn=this; btn.textContent='Kopyalandı!'; setTimeout(function(){btn.textContent='Kopyala';},1500);">Kopyala</button>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4 text-center">
-                            {% if user.logo_path %}
-                            <img src="{{ url_for('static', filename='uploads/' + user.logo_path) }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;"> {% else %}
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; margin: 0 auto;">
-                                <i class="fas fa-user fa-3x"></i>
-                            </div>
-                            {% endif %}
-                            <h5>{{ user.get_full_name() }}</h5>
-                            <p class="text-muted">{{ user.get_company_display_name() }}</p>
-                        </div>
-
-                        <div class="col-md-8">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6><i class="fas fa-user"></i> Kullanıcı Adı</h6>
-                                    <p>{{ user.username }}</p>
-
-                                    <h6><i class="fas fa-envelope"></i> E-posta</h6>
-                                    <p>{{ user.email }}</p>
-
-                                    <h6><i class="fas fa-phone"></i> Telefon</h6>
-                                    <p>{{ user.phone or 'Belirtilmemiş' }}</p>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <h6><i class="fas fa-building"></i> Şirket Adı</h6>
-                                    <p>{{ user.company_name or 'Belirtilmemiş' }}</p>
-
-                                    <h6><i class="fas fa-calendar"></i> Üyelik Tarihi</h6>
-                                    <p>{{ user.created_at.strftime('%d.%m.%Y') }}</p>
-
-                                    <h6><i class="fas fa-sms"></i> SMS Kotası</h6>
-                                    <p>{{ user.get_remaining_sms_quota() }} / {{ user.sms_quota }}</p>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6><i class="fas fa-calendar-check"></i> Toplam Randevu</h6>
-                                    <p>{{ user.get_appointments_count() }}</p>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <h6><i class="fas fa-calendar-alt"></i> Yaklaşan Randevular</h6>
-                                    <p>{{ user.get_upcoming_appointments()|length }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-right mt-4">
-                        <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">
-                            <i class="fas fa-edit"></i> Profili Düzenle
-                        </a>
-                    </div>
+                <div>
+                    <div class="font-semibold text-gray-700">E-posta</div>
+                    <div class="text-gray-600">{{ user.email }}</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-gray-700">Telefon</div>
+                    <div class="text-gray-600">{{ user.phone or 'Belirtilmemiş' }}</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-gray-700">Şirket Adı</div>
+                    <div class="text-gray-600">{{ user.company_name or 'Belirtilmemiş' }}</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-gray-700">Üyelik Tarihi</div>
+                    <div class="text-gray-600">{% if user.created_at and user.created_at.strftime is defined %}{{
+                        user.created_at.strftime('%d.%m.%Y') }}{% elif user.created_at %}{{ user.created_at }}{% endif
+                        %}</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-gray-700">SMS Kotası</div>
+                    <div class="text-gray-600">{% if user.remaining_sms_quota is defined %}{{ user.remaining_sms_quota
+                        }}{% else %}?{% endif %} / {{ user.sms_quota }}</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-gray-700">Toplam Randevu</div>
+                    <div class="text-gray-600">{% if user.appointments_count is defined %}{{ user.appointments_count
+                        }}{% else %}?{% endif %}</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-gray-700">Yaklaşan Randevular</div>
+                    <div class="text-gray-600">{% if user.upcoming_appointments is defined %}{{
+                        user.upcoming_appointments|length }}{% else %}?{% endif %}</div>
                 </div>
             </div>
-
-            <!-- Son Aktiviteler -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history"></i> Son Aktiviteler
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if user.get_upcoming_appointments() %}
-                    <h6>Yaklaşan Randevular</h6>
-                    <div class="list-group">
-                        {% for appointment in user.get_upcoming_appointments() %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ appointment.title }}</h6>
-                                <small>{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</small>
-                            </div>
-                            <p class="mb-1">{{ appointment.appointment_time.strftime('%H:%M') }}</p>
-                            <small>
-                                <span class="badge {{ appointment.get_status_badge_class() }}">
-                                    {{ appointment.get_status_text() }}
-                                </span>
-                            </small>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted">Henüz yaklaşan randevu bulunmuyor.</p>
-                    {% endif %}
-                </div>
+            <div class="flex justify-end mt-6">
+                <a href="{{ url_for('auth.edit_profile') }}"
+                    class="px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition flex items-center gap-2">
+                    <span class="material-icons align-middle">edit</span>Profili Düzenle
+                </a>
             </div>
         </div>
     </div>
+    <div class="mt-8">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Yaklaşan Randevular</h3>
+        {% if user.upcoming_appointments is defined and user.upcoming_appointments %}
+        <div class="divide-y divide-gray-200 rounded border border-gray-100 bg-gray-50">
+            {% for appointment in user.upcoming_appointments %}
+            <div class="flex flex-col md:flex-row md:items-center justify-between px-4 py-3">
+                <div>
+                    <div class="font-semibold">{{ appointment.title }}</div>
+                    <div class="text-xs text-gray-500">
+                        Tarih: {% if appointment.appointment_date and appointment.appointment_date.strftime is defined
+                        %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}{% elif appointment.appointment_date
+                        %}{{ appointment.appointment_date }}{% endif %} -
+                        Saat: {% if appointment.appointment_time and appointment.appointment_time.strftime is defined
+                        %}{{ appointment.appointment_time.strftime('%H:%M') }}{% elif appointment.appointment_time %}{{
+                        appointment.appointment_time }}{% endif %}
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-0">
+                    {% set status = appointment.status %}
+                    {% set badge_class = {
+                    'scheduled': 'bg-primary',
+                    'completed': 'bg-success',
+                    'cancelled': 'bg-danger',
+                    'pending': 'bg-warning',
+                    'approved': 'bg-info',
+                    }[status] if status in ['scheduled', 'completed', 'cancelled', 'pending', 'approved'] else
+                    'bg-secondary' %}
+                    {% set status_text = {
+                    'scheduled': 'Planlandı',
+                    'completed': 'Tamamlandı',
+                    'cancelled': 'İptal',
+                    'pending': 'Bekliyor',
+                    'approved': 'Onaylandı',
+                    }[status] if status in ['scheduled', 'completed', 'cancelled', 'pending', 'approved'] else
+                    status|capitalize %}
+                    <span class="px-3 py-1 rounded text-xs font-semibold {{ badge_class }}">{{ status_text }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400">Henüz yaklaşan randevu bulunmuyor.</p>
+        {% endif %}
+    </div>
 </div>
-
-<!-- Sayfa sonu KVKK ve Gizlilik Koşulları linki -->
-<div class="container mt-5 mb-3 text-center">
-    <a href="/kvkk" target="_blank" class="text-muted small">Gizlilik Koşulları ve KVKK hukuki sorumlulukları</a>
+<div class="w-full text-center mt-8 mb-3">
+    <a href="/kvkk" target="_blank" class="text-gray-400 text-xs underline">Gizlilik Koşulları ve KVKK hukuki
+        sorumlulukları</a>
 </div>
 {% endblock %}

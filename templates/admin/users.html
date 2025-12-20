@@ -19,23 +19,29 @@
                     <form method="GET" class="row g-3">
                         <div class="col-md-4">
                             <label for="search" class="form-label">Arama</label>
-                            <input type="text" class="form-control" id="search" name="search" value="{{ search }}" placeholder="Kullanıcı adı, e-posta veya ad soyad...">
+                            <input type="text" class="form-control" id="search" name="search" value="{{ search }}"
+                                placeholder="Kullanıcı adı, e-posta veya ad soyad...">
                         </div>
                         <div class="col-md-3">
                             <label for="role" class="form-label">Rol</label>
                             <select class="form-select" id="role" name="role">
                                 <option value="">Tüm Roller</option>
-                                <option value="customer" {% if role_filter == 'customer' %}selected{% endif %}>Müşteri</option>
-                                <option value="provider" {% if role_filter == 'provider' %}selected{% endif %}>Sağlayıcı</option>
+                                <option value="customer" {% if role_filter=='customer' %}selected{% endif %}>Müşteri
+                                </option>
+                                <option value="provider" {% if role_filter=='provider' %}selected{% endif %}>Sağlayıcı
+                                </option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label for="status" class="form-label">Durum</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">Tüm Durumlar</option>
-                                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktif</option>
-                                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Pasif</option>
-                                <option value="superadmin" {% if status_filter == 'superadmin' %}selected{% endif %}>Superadmin</option>
+                                <option value="active" {% if status_filter=='active' %}selected{% endif %}>Aktif
+                                </option>
+                                <option value="inactive" {% if status_filter=='inactive' %}selected{% endif %}>Pasif
+                                </option>
+                                <option value="superadmin" {% if status_filter=='superadmin' %}selected{% endif %}>
+                                    Superadmin</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -88,7 +94,15 @@
                                         <strong>{{ user.username }}</strong> {% if user.is_superadmin %}
                                         <i class="bi bi-shield-check text-danger" title="Superadmin"></i> {% endif %}
                                     </td>
-                                    <td>{{ user.get_full_name() }}</td>
+                                    <td>
+                                        {% if user.first_name or user.last_name %}
+                                        {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                                        {% elif user.username %}
+                                        {{ user.username }}
+                                        {% else %}
+                                        Kullanıcı
+                                        {% endif %}
+                                    </td>
                                     <td>{{ user.email }}</td>
                                     <td>{{ user.phone or '-' }}</td>
                                     <td>{{ user.company_name or '-' }}</td>
@@ -102,25 +116,37 @@
                                         <span class="badge bg-success">Aktif</span> {% else %}
                                         <span class="badge bg-secondary">Pasif</span> {% endif %}
                                     </td>
-                                    <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                                    <td>{% if user.created_at and user.created_at.strftime is defined %}{{
+                                        user.created_at.strftime('%d.%m.%Y') }}{% elif user.created_at %}{{
+                                        user.created_at }}{% endif %}</td>
                                     {% if current_user.is_superadmin %}
                                     <td>
                                         {% if user.unique_link %}
-                                        <span class="text-break small">{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}</span>
-                                        <button class="btn btn-outline-primary btn-sm ms-2" onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}');this.textContent='Kopyalandı!';setTimeout(()=>this.textContent='Kopyala',1500)">Kopyala</button>                                        {% else %}
+                                        <span class="text-break small">{{ request.host_url.rstrip('/')
+                                            }}/appointments/r/{{ user.unique_link }}</span>
+                                        <button class="btn btn-outline-primary btn-sm ms-2"
+                                            onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}');this.textContent='Kopyalandı!';setTimeout(()=>this.textContent='Kopyala',1500)">Kopyala</button>
+                                        {% else %}
                                         <span class="text-muted">-</span> {% endif %}
                                     </td>
                                     {% endif %}
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="btn btn-sm btn-outline-primary" title="Detay">
+                                            <a href="{{ url_for('admin.user_detail', user_id=user.id) }}"
+                                                class="btn btn-sm btn-outline-primary" title="Detay">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             {% if user.id != current_user.id %}
-                                            <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
+                                            <form method="POST"
+                                                action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
+                                                style="display: inline;"
+                                                onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %}" title="{% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}">
-                                                    <i class="bi bi-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
+                                                <button type="submit"
+                                                    class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %}"
+                                                    title="{% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}">
+                                                    <i
+                                                        class="bi bi-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
                                                 </button>
                                             </form>
                                             {% endif %}
@@ -138,11 +164,15 @@
                         <ul class="pagination justify-content-center">
                             {% if users.has_prev %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.users_list', page=users.prev_num, search=search, role=role_filter, status=status_filter) }}">Önceki</a>
+                                <a class="page-link"
+                                    href="{{ url_for('admin.users_list', page=users.prev_num, search=search, role=role_filter, status=status_filter) }}">Önceki</a>
                             </li>
-                            {% endif %} {% for page_num in users.iter_pages() %} {% if page_num %} {% if page_num != users.page %}
+                            {% endif %} {% for page_num in users.iter_pages() %} {% if page_num %} {% if page_num !=
+                            users.page %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.users_list', page=page_num, search=search, role=role_filter, status=status_filter) }}">{{ page_num }}</a>
+                                <a class="page-link"
+                                    href="{{ url_for('admin.users_list', page=page_num, search=search, role=role_filter, status=status_filter) }}">{{
+                                    page_num }}</a>
                             </li>
                             {% else %}
                             <li class="page-item active">
@@ -154,7 +184,8 @@
                             </li>
                             {% endif %} {% endfor %} {% if users.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.users_list', page=users.next_num, search=search, role=role_filter, status=status_filter) }}">Sonraki</a>
+                                <a class="page-link"
+                                    href="{{ url_for('admin.users_list', page=users.next_num, search=search, role=role_filter, status=status_filter) }}">Sonraki</a>
                             </li>
                             {% endif %}
                         </ul>

@@ -1,0 +1,1 @@
+Bu klasör, eski SQL tabanlı migration dosyalarını arşivlemek için oluşturulmuştur. Artık sadece Firebase kullanılmaktadır. Migration dosyaları sistem tarafından otomatik taşınmıştır. Güvenle silebilirsiniz.

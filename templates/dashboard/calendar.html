@@ -1,33 +1,23 @@
 {% extends "base.html" %}
-
 {% block title %}Takvim{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-calendar"></i> Takvim Görünümü</h2>
-                <div class="btn-group" role="group">
-                    <a href="{{ url_for('dashboard.appointments') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-list"></i> Liste Görünümü
-                    </a>
-                    <a href="{{ url_for('appointments.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Yeni Randevu
-                    </a>
-                </div>
-            </div>
-
-            <!-- Takvim -->
-            <div class="card">
-                <div class="card-body">
-                    <div id="calendar"></div>
-                </div>
-            </div>
+<div class="w-full max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-8 border border-gray-200 mt-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <h2 class="text-2xl font-bold text-blue-700 flex items-center gap-2"><span
+                class="material-icons align-middle">calendar_today</span>Takvim Görünümü</h2>
+        <div class="flex gap-2">
+            <a href="{{ url_for('dashboard.appointments') }}"
+                class="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition flex items-center gap-2"><span
+                    class="material-icons align-middle">list</span>Liste Görünümü</a>
+            <a href="{{ url_for('appointments.create') }}"
+                class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center gap-2"><span
+                    class="material-icons align-middle">add</span>Yeni Randevu</a>
         </div>
     </div>
+    <div class="bg-white rounded-lg border border-gray-100 p-4">
+        <div id="calendar"></div>
+    </div>
 </div>
-
 <!-- Randevu Detay Modal -->
 <div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
@@ -49,11 +39,10 @@
     </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -67,21 +56,21 @@
                 %
                 for appointment in appointments %
             } {
-                id: '{{ appointment.id }}',
-                title: '{{ appointment.title }}',
-                start: '{{ appointment.appointment_date }}T{{ appointment.appointment_time.strftime("%H:%M") }}',
-                end: '{{ appointment.appointment_date }}T{{ (appointment.get_datetime() + timedelta(minutes=appointment.duration)).strftime("%H:%M") }}',
-                backgroundColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
-                borderColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
-                textColor: 'white',
-                extendedProps: {
-                    description: '{{ appointment.description or "" }}',
-                    location: '{{ appointment.location or "" }}',
-                    client: '{% if appointment.client %}{{ appointment.client.name }}{% endif %}',
-                    status: '{{ appointment.status }}',
-                    duration: '{{ appointment.duration }}'
-                }
-            } {
+            id: '{{ appointment.id }}',
+            title: '{{ appointment.title }}',
+            start: '{{ appointment.appointment_date }}T{% if appointment.appointment_time and appointment.appointment_time.strftime is defined %}{{ appointment.appointment_time.strftime("%H:%M") }}{% elif appointment.appointment_time %}{{ appointment.appointment_time }}{% endif %}',
+            end: '{{ appointment.appointment_date }}T{{ (appointment.get_datetime() + timedelta(minutes=appointment.duration)).strftime("%H:%M") }}',
+            backgroundColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
+            borderColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
+            textColor: 'white',
+            extendedProps: {
+                description: '{{ appointment.description or "" }}',
+                location: '{{ appointment.location or "" }}',
+                client: '{% if appointment.client %}{{ appointment.client.name }}{% endif %}',
+                status: '{{ appointment.status }}',
+                duration: '{{ appointment.duration }}'
+            }
+        } {
                 %
                 if not loop.last %
             }, {
@@ -89,15 +78,15 @@
             } {
                 % endfor %
             }],
-            eventClick: function(info) {
-                var appointment = info.event;
-                var extendedProps = appointment.extendedProps;
+        eventClick: function (info) {
+            var appointment = info.event;
+            var extendedProps = appointment.extendedProps;
 
-                document.getElementById('appointmentModalTitle').textContent = appointment.title;
-                document.getElementById('editAppointmentBtn').href = '/appointments/edit/' + appointment.id;
+            document.getElementById('appointmentModalTitle').textContent = appointment.title;
+            document.getElementById('editAppointmentBtn').href = '/dashboard/appointment/' + appointment.id + '/edit';
 
-                var modalBody = document.getElementById('appointmentModalBody');
-                modalBody.innerHTML = `
+            var modalBody = document.getElementById('appointmentModalBody');
+            modalBody.innerHTML = `
                 <div class="row">
                     <div class="col-md-6">
                         <strong>Tarih:</strong><br>
@@ -105,7 +94,7 @@
                     </div>
                     <div class="col-md-6">
                         <strong>Saat:</strong><br>
-                        ${appointment.start.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}
+                        ${appointment.start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
                 <hr>
@@ -150,11 +139,11 @@
                 ` : ''}
             `;
 
-                $('#appointmentModal').modal('show');
-            }
+            $('#appointmentModal').modal('show');
+        }
         });
 
-        calendar.render();
+    calendar.render();
     });
 </script>
 {% endblock %}

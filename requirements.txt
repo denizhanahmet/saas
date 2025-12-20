@@ -13,3 +13,4 @@ Flask-Migrate==4.0.4
 Flask-Moment==1.0.1
 Flask-Mail==0.9.1
 setuptools
+firebase-admin

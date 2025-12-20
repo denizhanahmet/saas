@@ -9,8 +9,10 @@ from datetime import datetime, timedelta
 # Add the project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app import app, db, get_scheduler_service
 from model_definitions import create_models
+
+from app import app, db, get_scheduler_service
+
 
 def list_scheduled_jobs():
     """List all scheduled jobs"""

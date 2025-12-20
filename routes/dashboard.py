@@ -1,56 +1,111 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
-from datetime import datetime, date, timedelta
-from models import User, Appointment, SmsLog, BlockedDay, db, Client
-from sqlalchemy import func, or_, and_
+def get_status_badge_class(status):
+    return {
+        'scheduled': 'bg-primary',
+        'completed': 'bg-success',
+        'cancelled': 'bg-danger'
+    }.get(status, 'bg-secondary')
+
+def get_status_text(status):
+    return {
+        'scheduled': 'Planlandı',
+        'completed': 'Tamamlandı',
+        'cancelled': 'İptal Edildi'
+    }.get(status, status)
+from datetime import date, datetime, timedelta
+from collections import defaultdict
+
+from flask import (Blueprint, flash, jsonify, redirect, render_template,
+                   request, session, url_for)
+
+from firebase_realtime import get_data, set_data, update_data, delete_data
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
+# Helper function to parse date strings from Firebase
+def parse_date(date_str):
+    """Convert date string (YYYY-MM-DD) to date object"""
+    if isinstance(date_str, str):
+        try:
+            return datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return None
+    return date_str
+
+# Helper function to format date to string
+def format_date(date_obj):
+    """Convert date object to YYYY-MM-DD string"""
+    if isinstance(date_obj, date):
+        return date_obj.strftime('%Y-%m-%d')
+    return date_obj
+
+# Helper function to parse time strings from Firebase
+def parse_time(time_str):
+    """Convert time string (HH:MM) to time object"""
+    if isinstance(time_str, str):
+        try:
+            return datetime.strptime(time_str, '%H:%M').time()
+        except ValueError:
+            return None
+    return time_str
+
 @dashboard_bp.route('/')
-@login_required
 def dashboard():
     """Ana dashboard sayfası"""
-    from models import User, Appointment, SmsLog, BlockedDay, db, Client
-    from sqlalchemy import func
-    from datetime import date
-    from datetime import date
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
     
-    user = current_user
+    user_id = str(session.get('user_id'))
     
-    # Bugünkü randevular
-    today_appointments = Appointment.get_today_appointments(user.id)
+    # Get all appointments for this user
+    all_appointments_data = get_data('appointments') or {}
+    user_appointments = [
+        apt for apt in all_appointments_data.values()
+        if str(apt.get('user_id')) == str(user_id)
+    ]
     
-    # Yaklaşan randevular
-    upcoming_appointments = Appointment.get_upcoming_appointments(user.id, limit=5)
+    today = date.today()
+    today_appointments = []
+    upcoming_appointments = []
+    total_appointments = len(user_appointments)
     
-    # İstatistikler
-    total_appointments = user.get_appointments_count()
+    # Process appointments
+    for apt in user_appointments:
+        try:
+            apt_date = parse_date(apt.get('appointment_date'))
+            apt_time = parse_time(apt.get('appointment_time'))
+            
+            if apt_date is None:
+                continue
+            
+            # Create appointment object for template
+            apt_obj = {
+                'id': apt.get('id'),
+                'title': apt.get('title', 'Untitled'),
+                'description': apt.get('description', ''),
+                'appointment_date': apt_date,
+                'appointment_time': apt_time,
+                'duration': apt.get('duration', 60),
+                'status': apt.get('status', 'scheduled'),
+                'location': apt.get('location', ''),
+                'notes': apt.get('notes', ''),
+            }
+            
+            if apt_date == today:
+                today_appointments.append(apt_obj)
+            elif apt_date > today:
+                upcoming_appointments.append(apt_obj)
+        except Exception as e:
+            continue
+    
+    # Sort appointments
+    today_appointments.sort(key=lambda x: x.get('appointment_time') or datetime.min.time())
+    upcoming_appointments.sort(key=lambda x: (x.get('appointment_date'), x.get('appointment_time') or datetime.min.time()))
+    upcoming_appointments = upcoming_appointments[:10]  # Limit to 10
+    
     today_count = len(today_appointments)
-    upcoming_count = len(Appointment.query.filter(
-        Appointment.user_id == user.id,
-        Appointment.appointment_date >= date.today(),
-        Appointment.status == 'scheduled'
-    ).all())
-    
-    # Bu ayın randevuları
-    start_of_month = date.today().replace(day=1)
-    end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-    
-    monthly_appointments = Appointment.query.filter(
-        Appointment.user_id == user.id,
-        Appointment.appointment_date >= start_of_month,
-        Appointment.appointment_date <= end_of_month
-    ).all()
-    
-    # Durum istatistikleri
-    status_stats = db.session.query(
-        Appointment.status,
-        func.count(Appointment.id)
-    ).filter(
-        Appointment.user_id == user.id
-    ).group_by(Appointment.status).all()
-    
-    status_counts = {status: count for status, count in status_stats}
+    upcoming_count = len(upcoming_appointments)
+    monthly_appointments = upcoming_appointments  # For template compatibility
+    status_counts = {}
     
     return render_template('dashboard/index.html',
                          today_appointments=today_appointments,
@@ -63,152 +118,265 @@ def dashboard():
                          date_util=date)
 
 @dashboard_bp.route('/appointments')
-@login_required
 def appointments():
     """Randevular sayfası - kullanıcıya özel filtreleme"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    
+    user_id = str(session.get('user_id'))
     page = request.args.get('page', 1, type=int)
     per_page = 10
     
     # Filtreleme parametreleri
-    status_filter = request.args.get('status')
-    date_filter = request.args.get('date')
-    search = request.args.get('search')
+    status_filter = request.args.get('status_filter')
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
     
-    # Temel sorgu - sadece kullanıcının randevuları
-    query = Appointment.query.filter(Appointment.user_id == current_user.id)
+    # Get all appointments
+    all_appointments_data = get_data('appointments') or {}
+    user_appointments = [
+        apt for apt in all_appointments_data.values()
+        if str(apt.get('user_id')) == str(user_id)
+    ]
     
-    # Durum filtresi
-    if status_filter:
-        query = query.filter(Appointment.status == status_filter)
+    # Apply filters
+    filtered_appointments = []
+    for apt in user_appointments:
+        try:
+            apt_date = parse_date(apt.get('appointment_date'))
+            apt_time = parse_time(apt.get('appointment_time'))
+            
+            if apt_date is None:
+                continue
+            
+            # Status filter
+            if status_filter and apt.get('status') != status_filter:
+                continue
+            
+            # Date range filter
+            if date_from:
+                try:
+                    date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+                    if apt_date < date_from_obj:
+                        continue
+                except ValueError:
+                    pass
+            
+            if date_to:
+                try:
+                    date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+                    if apt_date > date_to_obj:
+                        continue
+                except ValueError:
+                    pass
+            
+            # Create appointment object
+            apt_obj = {
+                'id': apt.get('id'),
+                'title': apt.get('title', 'Untitled'),
+                'description': apt.get('description', ''),
+                'appointment_date': apt_date,
+                'appointment_time': apt_time,
+                'duration': apt.get('duration', 60),
+                'status': apt.get('status', 'scheduled'),
+                'location': apt.get('location', ''),
+                'notes': apt.get('notes', ''),
+            }
+            
+            filtered_appointments.append(apt_obj)
+        except Exception as e:
+            continue
     
-    # Tarih filtresi
-    if date_filter:
-        if date_filter == 'today':
-            query = query.filter(Appointment.appointment_date == date.today())
-        elif date_filter == 'upcoming':
-            query = query.filter(Appointment.appointment_date >= date.today())
-        elif date_filter == 'past':
-            query = query.filter(Appointment.appointment_date < date.today())
-    
-    # Arama filtresi
-    if search:
-        query = query.filter(
-            Appointment.title.contains(search) |
-            Appointment.description.contains(search)
-        )
-    
-    # Sıralama ve sayfalama
-    appointments = query.order_by(
-        Appointment.appointment_date.desc(),
-        Appointment.appointment_time.desc()
-    ).paginate(
-        page=page, per_page=per_page, error_out=False
+    # Sort by date and time (descending)
+    filtered_appointments.sort(
+        key=lambda x: (x.get('appointment_date'), x.get('appointment_time') or datetime.min.time()),
+        reverse=True
     )
     
+    # Paginate
+    total_count = len(filtered_appointments)
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_appointments = filtered_appointments[start_idx:end_idx]
+    
+    # Create pagination object
+    class PaginationObj:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page
+            self.has_prev = page > 1
+            self.has_next = page < self.pages
+            self.prev_num = page - 1 if self.has_prev else None
+            self.next_num = page + 1 if self.has_next else None
+
+        def iter_pages(self, left_edge=2, left_current=2, right_current=2, right_edge=2):
+            last = 0
+            for num in range(1, self.pages + 1):
+                if (
+                    num <= left_edge
+                    or (self.page - left_current <= num <= self.page + right_current)
+                    or num > self.pages - right_edge
+                ):
+                    if last + 1 != num:
+                        yield None
+                    yield num
+                    last = num
+    
+    appointments_obj = PaginationObj(paginated_appointments, page, per_page, total_count)
+    
     return render_template('dashboard/appointments.html',
-                         appointments=appointments,
+                         appointments=appointments_obj.items,
+                         pagination=appointments_obj,
                          status_filter=status_filter,
-                         date_filter=date_filter,
-                         search=search,
+                         date_from=date_from,
+                         date_to=date_to,
                          date_util=date)
 
 @dashboard_bp.route('/calendar')
-@login_required
 def calendar():
     """Takvim görünümü"""
-    # Bu ayın randevuları
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    
+    user_id = str(session.get('user_id'))
+    
+    # Get current month boundaries
     today = date.today()
     start_of_month = today.replace(day=1)
     
-    # Bir sonraki ayın başlangıcı
+    # Calculate next month
     if start_of_month.month == 12:
         next_month = start_of_month.replace(year=start_of_month.year + 1, month=1)
     else:
         next_month = start_of_month.replace(month=start_of_month.month + 1)
     
-    # Bu ayın randevuları
-    monthly_appointments = Appointment.query.filter(
-        Appointment.user_id == current_user.id,
-        Appointment.appointment_date >= start_of_month,
-        Appointment.appointment_date < next_month
-    ).order_by(Appointment.appointment_date.asc()).all()
+    # Get all appointments
+    all_appointments_data = get_data('appointments') or {}
+    user_appointments = [
+        apt for apt in all_appointments_data.values()
+        if str(apt.get('user_id')) == str(user_id)
+    ]
     
-    # Tarihe göre grupla
-    appointments_by_date = {}
-    for appointment in monthly_appointments:
-        date_str = appointment.appointment_date.strftime('%Y-%m-%d')
-        if date_str not in appointments_by_date:
-            appointments_by_date[date_str] = []
-        appointments_by_date[date_str].append(appointment)
+    # Group appointments by date
+    appointments_by_date = defaultdict(list)
+    
+    for apt in user_appointments:
+        try:
+            apt_date = parse_date(apt.get('appointment_date'))
+            apt_time = parse_time(apt.get('appointment_time'))
+            
+            if apt_date is None or apt_date < start_of_month or apt_date >= next_month:
+                continue
+            
+            # Create appointment object
+            apt_obj = {
+                'id': apt.get('id'),
+                'title': apt.get('title', 'Untitled'),
+                'description': apt.get('description', ''),
+                'appointment_date': apt_date,
+                'appointment_time': apt_time,
+                'duration': apt.get('duration', 60),
+                'status': apt.get('status', 'scheduled'),
+                'location': apt.get('location', ''),
+                'notes': apt.get('notes', ''),
+            }
+            
+            date_str = apt_date.strftime('%Y-%m-%d')
+            appointments_by_date[date_str].append(apt_obj)
+        except Exception as e:
+            continue
+    
+    # Sort appointments for each date
+    for date_key in appointments_by_date:
+        appointments_by_date[date_key].sort(
+            key=lambda x: x.get('appointment_time') or datetime.min.time()
+        )
     
     return render_template('dashboard/calendar.html',
-                         appointments_by_date=appointments_by_date,
+                         appointments_by_date=dict(appointments_by_date),
                          current_month=start_of_month,
                          date_util=date)
 
 @dashboard_bp.route('/stats')
-@login_required
 def stats():
     """İstatistikler sayfası"""
-    user = current_user
-
-    # Genel istatistikler
-    total_appointments = Appointment.query.filter_by(user_id=user.id).count()
-    completed_appointments = Appointment.query.filter_by(user_id=user.id, status='completed').count()
-    scheduled_appointments = Appointment.query.filter_by(user_id=user.id, status='scheduled').count()
-    cancelled_appointments = Appointment.query.filter_by(user_id=user.id, status='cancelled').count()
-
-    # Bu yılın istatistikleri
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    
+    user_id = str(session.get('user_id'))
+    
+    # Get all appointments
+    all_appointments_data = get_data('appointments') or {}
+    user_appointments = [
+        apt for apt in all_appointments_data.values()
+        if str(apt.get('user_id')) == str(user_id)
+    ]
+    
+    # Process appointments
+    processed_appointments = []
+    for apt in user_appointments:
+        try:
+            apt_date = parse_date(apt.get('appointment_date'))
+            apt_time = parse_time(apt.get('appointment_time'))
+            
+            if apt_date is None:
+                continue
+            
+            processed_appointments.append({
+                'date': apt_date,
+                'time': apt_time,
+                'status': apt.get('status', 'scheduled'),
+            })
+        except Exception as e:
+            continue
+    
+    # General statistics
+    total_appointments = len(processed_appointments)
+    completed_appointments = sum(1 for apt in processed_appointments if apt['status'] == 'completed')
+    scheduled_appointments = sum(1 for apt in processed_appointments if apt['status'] == 'scheduled')
+    cancelled_appointments = sum(1 for apt in processed_appointments if apt['status'] == 'cancelled')
+    
+    # Current year statistics
     current_year = datetime.now().year
-    yearly_appointments = Appointment.query.filter(
-        Appointment.user_id == user.id,
-        func.extract('year', Appointment.appointment_date) == current_year
-    ).all()
-
-    # Aylık dağılım
-    monthly_stats = {}
-    for appointment in yearly_appointments:
-        month = appointment.appointment_date.month
-        if month not in monthly_stats:
-            monthly_stats[month] = 0
-        monthly_stats[month] += 1
-
-    # Chart için labels ve data
+    yearly_appointments = [
+        apt for apt in processed_appointments
+        if apt['date'].year == current_year
+    ]
+    
+    # Monthly distribution
+    monthly_stats = defaultdict(int)
+    for apt in yearly_appointments:
+        monthly_stats[apt['date'].month] += 1
+    
+    # Chart data
     monthly_labels = [f'{month}.Ay' for month in sorted(monthly_stats.keys())]
     monthly_data = [monthly_stats[month] for month in sorted(monthly_stats.keys())]
-
-    # Durum istatistikleri
-    status_stats = db.session.query(
-        Appointment.status,
-        func.count(Appointment.id)
-    ).filter(
-        Appointment.user_id == user.id
-    ).group_by(Appointment.status).all()
-
-    # En çok randevu olan günler
+    
+    # Busiest days
     busiest_days = []
-    busy_days = db.session.query(
-        Appointment.appointment_date,
-        func.count(Appointment.id).label('count')
-    ).filter(
-        Appointment.user_id == user.id
-    ).group_by(Appointment.appointment_date).order_by(
-        func.count(Appointment.id).desc()
-    ).limit(10).all()
-    for day, count in busy_days:
+    day_counts = defaultdict(int)
+    for apt in processed_appointments:
+        day_counts[apt['date']] += 1
+    
+    sorted_days = sorted(day_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    for day, count in sorted_days:
         busiest_days.append((day.strftime('%d.%m.%Y'), count))
-
-    # En aktif saatler
+    
+    # Busiest hours
     busiest_hours = []
-    hour_stats = db.session.query(
-        func.strftime('%H', Appointment.appointment_time),
-        func.count(Appointment.id)
-    ).filter(
-        Appointment.user_id == user.id
-    ).group_by(func.strftime('%H', Appointment.appointment_time)).order_by(func.count(Appointment.id).desc()).limit(10).all()
-    for hour, count in hour_stats:
-        busiest_hours.append((hour, count))
-
+    hour_counts = defaultdict(int)
+    for apt in processed_appointments:
+        if apt['time']:
+            hour = apt['time'].hour
+            hour_counts[hour] += 1
+    
+    sorted_hours = sorted(hour_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    for hour, count in sorted_hours:
+        busiest_hours.append((f'{hour:02d}', count))
+    
     stats = {
         'total_appointments': total_appointments,
         'completed_appointments': completed_appointments,
@@ -217,7 +385,7 @@ def stats():
         'busiest_days': busiest_days,
         'busiest_hours': busiest_hours
     }
-
+    
     return render_template('dashboard/stats.html',
                          stats=stats,
                          monthly_labels=monthly_labels,
@@ -226,18 +394,53 @@ def stats():
                          date_util=date)
 
 @dashboard_bp.route('/blocked-days')
-@login_required
 def blocked_days():
     """Bloklanmış günler sayfası"""
-    from models import BlockedDay, db
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
     
-    # Mevcut bloklanmış günler
-    blocked_days = BlockedDay.get_blocked_days_for_user(current_user.id)
+    user_id = str(session.get('user_id'))
     
-    # Geçmiş, bugün ve gelecek bloklanmış günleri ayır
-    past_blocked = [bd for bd in blocked_days if bd.is_past()]
-    today_blocked = [bd for bd in blocked_days if bd.is_today()]
-    future_blocked = [bd for bd in blocked_days if bd.is_future()]
+    # Get all blocked days
+    all_blocked_data = get_data('blocked_days') or {}
+    user_blocked_days = [
+        bd for bd in all_blocked_data.values()
+        if str(bd.get('user_id')) == str(user_id)
+    ]
+    
+    # Process and categorize blocked days
+    past_blocked = []
+    today_blocked = []
+    future_blocked = []
+    today = date.today()
+    
+    for bd in user_blocked_days:
+        try:
+            bd_date = parse_date(bd.get('date'))
+            if bd_date is None:
+                continue
+            
+            # Create blocked day object
+            bd_obj = {
+                'id': bd.get('id'),
+                'date': bd_date,
+                'reason': bd.get('reason', ''),
+                'created_at': bd.get('created_at'),
+            }
+            
+            if bd_date < today:
+                past_blocked.append(bd_obj)
+            elif bd_date == today:
+                today_blocked.append(bd_obj)
+            else:
+                future_blocked.append(bd_obj)
+        except Exception as e:
+            continue
+    
+    # Sort by date
+    past_blocked.sort(key=lambda x: x['date'], reverse=True)
+    today_blocked.sort(key=lambda x: x['date'])
+    future_blocked.sort(key=lambda x: x['date'])
     
     from flask_wtf.csrf import generate_csrf
     return render_template('dashboard/blocked_days.html',
@@ -248,11 +451,12 @@ def blocked_days():
                          csrf_token=generate_csrf())
 
 @dashboard_bp.route('/blocked-days/add', methods=['POST'])
-@login_required
 def add_blocked_day():
     """Bloklanmış gün ekle"""
-    from app import BlockedDay, db
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
     
+    user_id = str(session.get('user_id'))
     blocked_date = request.form.get('blocked_date')
     reason = request.form.get('reason', '').strip()
     
@@ -261,78 +465,257 @@ def add_blocked_day():
         return redirect(url_for('dashboard.blocked_days'))
     
     try:
-        # Tarih formatını kontrol et
+        # Parse and validate date
         blocked_date_obj = datetime.strptime(blocked_date, '%Y-%m-%d').date()
         
-        # Geçmiş tarih kontrolü
+        # Check for past date
         if blocked_date_obj < date.today():
             flash('Geçmiş tarihleri bloklayamazsınız!', 'error')
             return redirect(url_for('dashboard.blocked_days'))
         
-        # Zaten bloklanmış mı kontrol et
-        existing_block = BlockedDay.query.filter(
-            BlockedDay.user_id == current_user.id,
-            BlockedDay.date == blocked_date_obj
-        ).first()
+        # Check if already blocked
+        all_blocked_data = get_data('blocked_days') or {}
+        date_str = blocked_date_obj.strftime('%Y-%m-%d')
         
-        if existing_block:
-            flash('Bu tarih zaten bloklanmış!', 'error')
-            return redirect(url_for('dashboard.blocked_days'))
+        for bd in all_blocked_data.values():
+            if bd.get('date') == date_str and str(bd.get('user_id')) == str(user_id):
+                flash('Bu tarih zaten bloklanmış!', 'error')
+                return redirect(url_for('dashboard.blocked_days'))
         
-        # Yeni bloklanmış gün oluştur
-        blocked_day = BlockedDay(
-            user_id=current_user.id,
-            date=blocked_date_obj,
-            reason=reason if reason else None
-        )
+        # Create new blocked day
+        new_id = max([int(k) for k in all_blocked_data.keys() if str(k).isdigit()], default=0) + 1
         
-        db.session.add(blocked_day)
-        db.session.commit()
+        new_blocked_day = {
+            'id': new_id,
+            'user_id': str(user_id),
+            'date': date_str,
+            'reason': reason if reason else None,
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat(),
+        }
+        
+        # Save to Firebase
+        set_data(f'blocked_days/{new_id}', new_blocked_day)
         
         flash(f'{blocked_date_obj.strftime("%d.%m.%Y")} tarihi başarıyla bloklandı!', 'success')
         
-    except ValueError:
+    except ValueError as e:
         flash('Geçersiz tarih formatı!', 'error')
     except Exception as e:
-        db.session.rollback()
         flash(f'Hata oluştu: {str(e)}', 'error')
     
     return redirect(url_for('dashboard.blocked_days'))
 
 @dashboard_bp.route('/blocked-days/remove/<int:blocked_day_id>', methods=['POST'])
-@login_required
 def remove_blocked_day(blocked_day_id):
     """Bloklanmış günü kaldır"""
-    from app import BlockedDay, db
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
     
-    blocked_day = BlockedDay.query.filter_by(
-        id=blocked_day_id,
-        user_id=current_user.id
-    ).first()
+    user_id = str(session.get('user_id'))
     
-    if not blocked_day:
+    # Get blocked day
+    all_blocked_data = get_data('blocked_days') or {}
+    blocked_day = all_blocked_data.get(str(blocked_day_id))
+    
+    if not blocked_day or (str(blocked_day.get('user_id')) != str(user_id)):
         flash('Bloklanmış gün bulunamadı!', 'error')
         return redirect(url_for('dashboard.blocked_days'))
     
     try:
-        blocked_date = blocked_day.date
-        db.session.delete(blocked_day)
-        db.session.commit()
+        blocked_date_str = blocked_day.get('date')
         
-        flash(f'{blocked_date.strftime("%d.%m.%Y")} tarihi bloklaması kaldırıldı!', 'success')
+        # Delete from Firebase
+        delete_data(f'blocked_days/{blocked_day_id}')
+        
+        # Parse and format date for message
+        try:
+            blocked_date_obj = datetime.strptime(blocked_date_str, '%Y-%m-%d').date()
+            date_str = blocked_date_obj.strftime('%d.%m.%Y')
+        except:
+            date_str = blocked_date_str
+        
+        flash(f'{date_str} tarihi bloklaması kaldırıldı!', 'success')
         
     except Exception as e:
-        db.session.rollback()
         flash(f'Hata oluştu: {str(e)}', 'error')
     
     return redirect(url_for('dashboard.blocked_days'))
 
+@dashboard_bp.route('/appointment/<int:appointment_id>')
+def view(appointment_id):
+    """Randevuyu görüntüle"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    
+    user_id = str(session.get('user_id'))
+    
+    # Get appointment from Firebase
+    all_appointments_data = get_data('appointments') or {}
+    appointment = all_appointments_data.get(str(appointment_id))
+    
+    if not appointment or (str(appointment.get('user_id')) != str(user_id)):
+        flash('Randevu bulunamadı!', 'error')
+        return redirect(url_for('dashboard.appointments'))
+    
+    try:
+        apt_date = parse_date(appointment.get('appointment_date'))
+        apt_time = parse_time(appointment.get('appointment_time'))
+        
+        appointment_obj = {
+            'id': appointment.get('id'),
+            'title': appointment.get('title', 'Untitled'),
+            'description': appointment.get('description', ''),
+            'appointment_date': apt_date,
+            'appointment_time': apt_time,
+            'duration': appointment.get('duration', 60),
+            'status': appointment.get('status', 'scheduled'),
+            'location': appointment.get('location', ''),
+            'notes': appointment.get('notes', ''),
+            'created_at': appointment.get('created_at'),
+            'updated_at': appointment.get('updated_at'),
+        }
+        
+        from flask_wtf.csrf import generate_csrf
+        return render_template('appointments/view.html',
+                             appointment=appointment_obj,
+                             date_util=date,
+                             csrf_token=generate_csrf(),
+                             get_status_badge_class=get_status_badge_class,
+                             get_status_text=get_status_text)
+    except Exception as e:
+        flash(f'Hata oluştu: {str(e)}', 'error')
+        return redirect(url_for('dashboard.appointments'))
+
+@dashboard_bp.route('/appointment/<int:appointment_id>/edit', methods=['GET', 'POST'])
+def edit(appointment_id):
+    """Randevuyu düzenle"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    
+    user_id = str(session.get('user_id'))
+    
+    # Get appointment from Firebase
+    all_appointments_data = get_data('appointments') or {}
+    appointment = all_appointments_data.get(str(appointment_id))
+    
+    if not appointment or (str(appointment.get('user_id')) != str(user_id)):
+        flash('Randevu bulunamadı!', 'error')
+        return redirect(url_for('dashboard.appointments'))
+    
+    if request.method == 'POST':
+        try:
+            # Get form data
+            title = request.form.get('title', '').strip()
+            description = request.form.get('description', '').strip()
+            appointment_date = request.form.get('appointment_date')
+            appointment_time = request.form.get('appointment_time')
+            duration = request.form.get('duration', '60')
+            location = request.form.get('location', '').strip()
+            notes = request.form.get('notes', '').strip()
+            status = request.form.get('status', '').strip()
+            
+            # Validate
+            if not title or not appointment_date or not appointment_time:
+                flash('Lütfen tüm zorunlu alanları doldurun!', 'error')
+            else:
+                # Parse and validate date/time
+                apt_date = datetime.strptime(appointment_date, '%Y-%m-%d').date()
+                apt_time = datetime.strptime(appointment_time, '%H:%M').time()
+                
+                if apt_date < date.today():
+                    flash('Geçmiş tarihleri seçemezsiniz!', 'error')
+                else:
+                    # Check if date is blocked
+                    all_blocked_data = get_data('blocked_days') or {}
+                    date_str = apt_date.strftime('%Y-%m-%d')
+                    
+                    is_blocked = False
+                    for bd in all_blocked_data.values():
+                        if bd.get('date') == date_str and str(bd.get('user_id')) == str(user_id):
+                            is_blocked = True
+                            break
+                    
+                    if is_blocked:
+                        flash('Bu tarih bloklanmış!', 'error')
+                    else:
+                        # Update appointment
+                        updated_appointment = {
+                            'id': appointment.get('id'),
+                            'user_id': str(user_id),
+                            'title': title,
+                            'description': description,
+                            'appointment_date': apt_date.strftime('%Y-%m-%d'),
+                            'appointment_time': apt_time.strftime('%H:%M'),
+                            'duration': int(duration) if str(duration).isdigit() else 60,
+                            'location': location if location else None,
+                            'notes': notes if notes else None,
+                            'status': status if status else appointment.get('status', 'scheduled'),
+                            'created_at': appointment.get('created_at'),
+                            'updated_at': datetime.now().isoformat(),
+                        }
+                        
+                        # Save to Firebase
+                        set_data(f'appointments/{appointment_id}', updated_appointment)
+                        
+                        flash('Randevu başarıyla güncellendi!', 'success')
+                        return redirect(url_for('dashboard.view', appointment_id=appointment_id))
+        
+        except ValueError as e:
+            flash('Geçersiz tarih veya saat formatı!', 'error')
+        except Exception as e:
+            flash(f'Hata oluştu: {str(e)}', 'error')
+    
+    try:
+        # Prepare appointment data for display
+        apt_date = parse_date(appointment.get('appointment_date'))
+        apt_time = parse_time(appointment.get('appointment_time'))
+        
+        # Güvenli strftime: apt_date ve apt_time nesne mi kontrolü
+        if isinstance(apt_date, str):
+            apt_date_str = apt_date
+        elif apt_date:
+            apt_date_str = apt_date.strftime('%Y-%m-%d')
+        else:
+            apt_date_str = ''
+
+        if isinstance(apt_time, str):
+            apt_time_str = apt_time
+        elif apt_time:
+            apt_time_str = apt_time.strftime('%H:%M')
+        else:
+            apt_time_str = ''
+
+        appointment_obj = {
+            'id': appointment.get('id'),
+            'title': appointment.get('title', ''),
+            'description': appointment.get('description', ''),
+            'appointment_date': apt_date,
+            'appointment_date_str': apt_date_str,
+            'appointment_time': apt_time,
+            'appointment_time_str': apt_time_str,
+            'duration': appointment.get('duration', 60),
+            'location': appointment.get('location', ''),
+            'notes': appointment.get('notes', ''),
+            'status': appointment.get('status', 'scheduled'),
+        }
+        
+        from flask_wtf.csrf import generate_csrf
+        return render_template('appointments/edit.html',
+                             appointment=appointment_obj,
+                             date_util=date,
+                             csrf_token=generate_csrf())
+    except Exception as e:
+        flash(f'Hata oluştu: {str(e)}', 'error')
+        return redirect(url_for('dashboard.appointments'))
+
 @dashboard_bp.route('/blocked-days/check')
-@login_required
 def check_blocked_date():
     """Tarih bloklanmış mı kontrol et (AJAX)"""
-    from models import BlockedDay
+    if not session.get('user_id'):
+        return jsonify({'blocked': False})
     
+    user_id = str(session.get('user_id'))
     check_date = request.args.get('date')
     
     if not check_date:
@@ -340,8 +723,45 @@ def check_blocked_date():
     
     try:
         check_date_obj = datetime.strptime(check_date, '%Y-%m-%d').date()
-        is_blocked = BlockedDay.is_date_blocked(current_user.id, check_date_obj)
+        date_str = check_date_obj.strftime('%Y-%m-%d')
         
-        return jsonify({'blocked': is_blocked})
+        # Get blocked days
+        all_blocked_data = get_data('blocked_days') or {}
+        
+        for bd in all_blocked_data.values():
+            if bd.get('date') == date_str and str(bd.get('user_id')) == str(user_id):
+                return jsonify({'blocked': True})
+        
+        return jsonify({'blocked': False})
     except ValueError:
         return jsonify({'blocked': False})
+
+@dashboard_bp.route('/appointments/<appointment_id>/approve', methods=['POST'])
+def approve_appointment(appointment_id):
+    """Randevuyu onayla"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    appointments = get_data('appointments') or {}
+    appointment = appointments.get(appointment_id)
+    if appointment:
+        appointment['status'] = 'approved'
+        set_data(f'appointments/{appointment_id}', appointment)
+        flash('Randevu onaylandı.', 'success')
+    else:
+        flash('Randevu bulunamadı.', 'danger')
+    return redirect(url_for('dashboard.dashboard'))
+
+@dashboard_bp.route('/appointments/<appointment_id>/reject', methods=['POST'])
+def reject_appointment(appointment_id):
+    """Randevuyu reddet"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    appointments = get_data('appointments') or {}
+    appointment = appointments.get(appointment_id)
+    if appointment:
+        appointment['status'] = 'rejected'
+        set_data(f'appointments/{appointment_id}', appointment)
+        flash('Randevu reddedildi.', 'warning')
+    else:
+        flash('Randevu bulunamadı.', 'danger')
+    return redirect(url_for('dashboard.dashboard'))

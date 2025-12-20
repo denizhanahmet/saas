@@ -1,152 +1,99 @@
-{% extends "base.html" %} {% block title %}Ana Sayfa - Randevu Sistemi{% endblock %} {% block content %}
-<div class="hero-section bg-primary text-white py-5 rounded">
-    <div class="container text-center">
-        <h1 class="display-4 fw-bold mb-4">
-            <i class="bi bi-calendar-check"></i> Randevu Sistemi
-        </h1>
-        <p class="lead mb-4">
-            Randevularınızı kolayca yönetin, takviminizi organize edin ve zamanınızı verimli kullanın.
-        </p>
-        {% if not current_user.is_authenticated %}
-        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-            <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg me-md-2">
-                <i class="bi bi-person-plus"></i> Hemen Başla
-            </a>
-            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">
-                <i class="bi bi-box-arrow-in-right"></i> Giriş Yap
-            </a>
+{% extends "base.html" %}
+{% block title %}Ana Sayfa - Randevu Sistemi{% endblock %}
+{% block content %}
+<div class="w-full max-w-2xl mx-auto text-center mb-10">
+    <div class="bg-white rounded-xl shadow-lg px-8 py-8 border border-gray-200">
+        <h1 class="text-3xl md:text-4xl font-bold text-blue-700 mb-4">Randevu Sistemi</h1>
+        <p class="text-gray-600 mb-6 text-lg">Zamanınızı güvenle yönetin. Tüm randevularınız tek yerde, kolayca ve
+            güvenle!</p>
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
+            <a href="{{ url_for('auth.register') }}"
+                class="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Hemen
+                Başla</a>
+            <a href="{{ url_for('auth.login') }}"
+                class="px-6 py-3 rounded-lg border border-blue-600 text-blue-700 font-semibold hover:bg-blue-50 transition">Giriş
+                Yap</a>
         </div>
-        {% else %}
-        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-light btn-lg me-md-2">
-                <i class="bi bi-speedometer2"></i> Dashboard'a Git
-            </a>
-            <a href="{{ url_for('appointments.create') }}" class="btn btn-outline-light btn-lg">
-                <i class="bi bi-plus-circle"></i> Yeni Randevu
-            </a>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-blue-800 text-sm">
+            <strong>Bilgilendirme:</strong> Tüm verileriniz modern güvenlik standartları ile korunur. Kişisel
+            bilgileriniz asla üçüncü kişilerle paylaşılmaz.
         </div>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Biz Kimiz Bölümü -->
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h3 class="card-title mb-3"><i class="bi bi-people text-primary"></i> Biz Kimiz?</h3>
-                    <p class="card-text">
-                        Biz, dijitalleşen dünyada zaman yönetimini kolaylaştırmak ve randevu süreçlerini daha verimli hale getirmek için bir araya gelmiş bir ekibiz. Amacımız, eğitmenler ve öğrenciler başta olmak üzere herkesin randevu takibini hızlı, güvenli ve pratik şekilde
-                        yapabilmesini sağlamak.
-                    </p>
-                </div>
+        <div class="flex flex-col md:flex-row items-center justify-center gap-6 mt-6">
+            <div
+                class="w-full md:w-1/2 bg-white border border-gray-200 rounded-lg p-6 flex flex-col items-center shadow">
+                <div class="text-2xl font-bold text-blue-700 mb-2">Aylık</div>
+                <div class="text-3xl font-extrabold text-gray-900 mb-2">2.700 TL</div>
+                <div class="text-gray-500 mb-4">Her ay yenilenen tam erişim</div>
+                <a href="#"
+                    class="w-full py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Aylık
+                    Satın Al</a>
+            </div>
+            <div
+                class="w-full md:w-1/2 bg-white border-2 border-blue-600 rounded-lg p-6 flex flex-col items-center shadow-lg scale-105">
+                <div class="text-2xl font-bold text-blue-700 mb-2 flex items-center gap-2">Yıllık <span
+                        class="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">En Çok Tercih
+                        Edilen</span></div>
+                <div class="text-3xl font-extrabold text-gray-900 mb-2">25.000 TL</div>
+                <div class="text-gray-500 mb-4">12 ay boyunca avantajlı fiyat</div>
+                <a href="#"
+                    class="w-full py-2 rounded bg-blue-700 text-white font-semibold hover:bg-blue-800 transition">Yıllık
+                    Satın Al</a>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Sistem Nasıl Çalışır Bölümü -->
-<div class="container mb-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title mb-3"><i class="bi bi-info-circle text-success"></i> Sistem Nasıl Çalışır?</h3>
-                    <ol class="card-text ps-3">
-                        <li><strong>Kayıt Olun:</strong> Eğitmen veya öğrenci olarak sisteme kaydolun.</li>
-                        <li><strong>Randevu Linkinizi Paylaşın:</strong> Eğitmenler, kendilerine özel randevu linkini öğrencilerle paylaşır.</li>
-                        <li><strong>Randevu Talebi Oluşturun:</strong> Öğrenciler, eğitmenlerin linkinden randevu talebinde bulunur.</li>
-                        <li><strong>Onay &amp; Yönetim:</strong> Eğitmenler gelen talepleri dashboard üzerinden onaylar veya reddeder.</li>
-                        <li><strong>Takvim &amp; Bildirim:</strong> Tüm randevular takvimde görüntülenir, SMS ile bilgilendirme yapılır.</li>
-                    </ol>
-                    <p class="mt-3">Sistemimiz tamamen güvenli, mobil uyumlu ve kullanıcı dostudur.</p>
-                </div>
-            </div>
-        </div>
+<div class="w-full max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-600 mb-2" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <div class="font-semibold text-lg mb-1">Kolay Randevu Yönetimi</div>
+        <div class="text-gray-500 text-sm">Randevularınızı kolayca oluşturun, düzenleyin ve takip edin. Çakışma kontrolü
+            ile hata riskini minimize edin.</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600 mb-2" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="font-semibold text-lg mb-1">Zaman Yönetimi</div>
+        <div class="text-gray-500 text-sm">Günlük, haftalık ve aylık görünümlerle randevularınızı farklı
+            perspektiflerden inceleyin.</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-600 mb-2" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 17a4 4 0 004-4V5a4 4 0 00-8 0v8a4 4 0 004 4zm0 0v2a2 2 0 002 2h-4a2 2 0 002-2v-2z" />
+        </svg>
+        <div class="font-semibold text-lg mb-1">Detaylı İstatistikler</div>
+        <div class="text-gray-500 text-sm">Randevu istatistiklerinizi görün, en yoğun günlerinizi analiz edin ve
+            verimliliğinizi artırın.</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-600 mb-2" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 11c0-1.104.896-2 2-2s2 .896 2 2-.896 2-2 2-2-.896-2-2zm0 0V9a4 4 0 00-8 0v2a4 4 0 008 0z" />
+        </svg>
+        <div class="font-semibold text-lg mb-1">Güvenli ve Güvenilir</div>
+        <div class="text-gray-500 text-sm">Verileriniz güvenli şekilde saklanır ve sadece sizin erişiminize açıktır.
+            Modern güvenlik standartları ile korunursunuz.</div>
     </div>
 </div>
-
-<div class="row mt-5">
-    <div class="col-md-4 mb-4">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="bi bi-calendar-event text-primary fs-1 mb-3"></i>
-                <h5 class="card-title">Kolay Randevu Yönetimi</h5>
-                <p class="card-text">
-                    Randevularınızı kolayca oluşturun, düzenleyin ve takip edin. Çakışma kontrolü ile hata riskini minimize edin.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-4">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="bi bi-clock text-success fs-1 mb-3"></i>
-                <h5 class="card-title">Zaman Yönetimi</h5>
-                <p class="card-text">
-                    Günlük, haftalık ve aylık görünümlerle randevularınızı farklı perspektiflerden inceleyin.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-4">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="bi bi-graph-up text-info fs-1 mb-3"></i>
-                <h5 class="card-title">Detaylı İstatistikler</h5>
-                <p class="card-text">
-                    Randevu istatistiklerinizi görün, en yoğun günlerinizi analiz edin ve verimliliğinizi artırın.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-5">
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-shield-check text-success"></i> Güvenli ve Güvenilir
-                </h5>
-                <p class="card-text">
-                    Verileriniz güvenli şekilde saklanır ve sadece sizin erişiminize açıktır. Modern güvenlik standartları ile korunursunuz.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-phone text-primary"></i> Mobil Uyumlu
-                </h5>
-                <p class="card-text">
-                    Responsive tasarım ile her cihazdan erişim sağlayın. Telefon, tablet veya bilgisayar - fark etmez!
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% if current_user.is_authenticated %}
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <h5 class="card-title">Hoş Geldiniz, {{ current_user.get_full_name() }}!</h5>
-                <p class="card-text">
-                    Son aktivitelerinizi görmek için dashboard'ınızı ziyaret edin.
-                </p>
-                <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-primary">
-                    <i class="bi bi-speedometer2"></i> Dashboard'a Git
-                </a>
-            </div>
-        </div>
+<div class="w-full max-w-2xl mx-auto mt-10">
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+        <h2 class="text-xl font-semibold text-blue-700 mb-2">Hoş Geldiniz, {{ current_user.first_name or
+            current_user.username or 'Kullanıcı' }}!</h2>
+        <p class="text-gray-600 mb-4">Son aktivitelerinizi görmek için dashboard'ınızı ziyaret edin.</p>
+        <a href="{{ url_for('dashboard.dashboard') }}"
+            class="inline-block px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Dashboard'a
+            Git</a>
     </div>
 </div>
-{% endif %} {% endblock %}
+{% endif %}
+{% endblock %}

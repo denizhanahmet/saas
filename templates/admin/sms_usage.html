@@ -9,7 +9,19 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-chat-dots"></i> SMS Kullanım İstatistikleri</h2>
                 <div class="text-muted">
-                    <small>{{ start_date.strftime('%d.%m.%Y') }} - {{ end_date.strftime('%d.%m.%Y') }}</small>
+                    <small>
+                        {% if start_date and start_date.strftime is defined %}
+                        {{ start_date.strftime('%d.%m.%Y') }}
+                        {% elif start_date %}
+                        {{ start_date }}
+                        {% endif %}
+                        -
+                        {% if end_date and end_date.strftime is defined %}
+                        {{ end_date.strftime('%d.%m.%Y') }}
+                        {% elif end_date %}
+                        {{ end_date }}
+                        {% endif %}
+                    </small>
                 </div>
             </div>
         </div>
@@ -23,11 +35,13 @@
                     <form method="GET" class="row g-3">
                         <div class="col-md-4">
                             <label for="start_date" class="form-label">Başlangıç Tarihi</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') }}">
+                            <input type="date" class="form-control" id="start_date" name="start_date"
+                                value="{% if start_date and start_date.strftime is defined %}{{ start_date.strftime('%Y-%m-%d') }}{% elif start_date %}{{ start_date }}{% endif %}">
                         </div>
                         <div class="col-md-4">
                             <label for="end_date" class="form-label">Bitiş Tarihi</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') }}">
+                            <input type="date" class="form-control" id="end_date" name="end_date"
+                                value="{% if end_date and end_date.strftime is defined %}{{ end_date.strftime('%Y-%m-%d') }}{% elif end_date %}{{ end_date }}{% endif %}">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">&nbsp;</label>
@@ -48,7 +62,13 @@
         <div class="col-md-4 mb-3">
             <div class="card bg-primary text-white">
                 <div class="card-body text-center">
-                    <h3>{{ sms_usage_by_user|sum(attribute='sms_count') or 0 }}</h3>
+                    {% set total_sms = 0 %}
+                    {% if sms_usage_by_user %}
+                    {% for usage in sms_usage_by_user %}
+                    {% set total_sms = total_sms + (usage.sms_count or 0) %}
+                    {% endfor %}
+                    {% endif %}
+                    <h3>{{ total_sms }}</h3>
                     <p class="mb-0">Toplam SMS</p>
                 </div>
             </div>
@@ -56,7 +76,13 @@
         <div class="col-md-4 mb-3">
             <div class="card bg-success text-white">
                 <div class="card-body text-center">
-                    <h3>{{ sms_usage_by_user|sum(attribute='total_cost') or 0 }}</h3>
+                    {% set total_cost = 0 %}
+                    {% if sms_usage_by_user %}
+                    {% for usage in sms_usage_by_user %}
+                    {% set total_cost = total_cost + (usage.total_cost or 0) %}
+                    {% endfor %}
+                    {% endif %}
+                    <h3>{{ "%.2f"|format(total_cost) }}</h3>
                     <p class="mb-0">Toplam Maliyet (₺)</p>
                 </div>
             </div>
@@ -64,7 +90,7 @@
         <div class="col-md-4 mb-3">
             <div class="card bg-info text-white">
                 <div class="card-body text-center">
-                    <h3>{{ sms_usage_by_user|length }}</h3>
+                    <h3>{% if sms_usage_by_user %}{{ sms_usage_by_user|length }}{% else %}0{% endif %}</h3>
                     <p class="mb-0">Aktif Kullanıcı</p>
                 </div>
             </div>
@@ -106,7 +132,7 @@
                                         <span class="badge bg-primary">{{ usage.sms_count }}</span>
                                     </td>
                                     <td>
-                                        {% set remaining = usage.sms_quota - usage.sms_count %}
+                                        {% set remaining = (usage.sms_quota or 0) - (usage.sms_count or 0) %}
                                         {% if remaining >= 0 %}
                                         <span class="badge bg-success">{{ remaining }}</span>
                                         {% else %}
@@ -114,16 +140,23 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% set usage_percentage = (usage.sms_count / usage.sms_quota * 100) if usage.sms_quota > 0 else 0 %}
+                                        {% if usage.sms_quota and usage.sms_quota > 0 %}
+                                        {% set usage_percentage = (usage.sms_count or 0) / usage.sms_quota * 100 %}
+                                        {% else %}
+                                        {% set usage_percentage = 0 %}
+                                        {% endif %}
                                         <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar {% if usage_percentage > 90 %}bg-danger{% elif usage_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ usage_percentage }}%">
+                                            <div class="progress-bar {% if usage_percentage > 90 %}bg-danger{% elif usage_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}"
+                                                role="progressbar" style="width: {{ usage_percentage }}%">
                                                 {{ "%.1f"|format(usage_percentage) }}%
                                             </div>
                                         </div>
                                     </td>
-                                    <td>₺{{ "%.2f"|format(usage.total_cost or 0) }}</td>
+                                    <td>₺{{ "%.2f"|format(usage.total_cost if usage.total_cost is not none else 0) }}
+                                    </td>
                                     <td>
-                                        <a href="{{ url_for('admin.user_detail', user_id=usage.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{{ url_for('admin.user_detail', user_id=usage.id) }}"
+                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
@@ -164,18 +197,34 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {% set max_count = 0 %}
+                                {% for daily in daily_sms %}
+                                {% if daily.count > max_count %}
+                                {% set max_count = daily.count %}
+                                {% endif %}
+                                {% endfor %}
+
                                 {% for daily in daily_sms %}
                                 <tr>
-                                    <td>{{ daily.date.strftime('%d.%m.%Y') }}</td>
+                                    <td>
+                                        {% if daily.date and daily.date.strftime is defined %}
+                                        {{ daily.date.strftime('%d.%m.%Y') }}
+                                        {% elif daily.date %}
+                                        {{ daily.date }}
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <span class="badge bg-primary">{{ daily.count }}</span>
                                     </td>
                                     <td>
                                         <div class="progress" style="height: 15px;">
-                                            {% set max_count = daily_sms|map(attribute='count')|max %}
-                                            {% set bar_width = (daily.count / max_count * 100) if max_count > 0 else 0 %}
-                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ bar_width }}%">
-                                            </div>
+                                            {% if max_count > 0 %}
+                                            {% set bar_width = (daily.count / max_count * 100) %}
+                                            {% else %}
+                                            {% set bar_width = 0 %}
+                                            {% endif %}
+                                            <div class="progress-bar bg-info" role="progressbar"
+                                                style="width: {{ bar_width }}%"></div>
                                         </div>
                                     </td>
                                 </tr>

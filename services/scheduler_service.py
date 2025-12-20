@@ -1,15 +1,16 @@
 """
 Scheduler Service for managing appointment reminders
 """
-import os
 import logging
+import os
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from typing import Any, Dict, Optional
+
+from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
+
 from apscheduler.schedulers import SchedulerAlreadyRunningError
+from apscheduler.schedulers.background import BackgroundScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -26,29 +27,17 @@ class SchedulerService:
         """Setup APScheduler with SQLAlchemy job store"""
         try:
             # Get Flask app instance path
-            db_path = os.path.join(self.app.instance_path, 'appointments.db')
-            db_url = f'sqlite:///{db_path}'
-            
-            # Configure job store
-            jobstores = {
-                'default': SQLAlchemyJobStore(url=db_url)
-            }
-            
-            # Configure executors
+
+            # SQLAlchemyJobStore ve SQLite kaldırıldı. Sadece memory job store ile başlatılıyor.
             executors = {
                 'default': ThreadPoolExecutor(max_workers=10)
             }
-            
-            # Configure job defaults
             job_defaults = {
                 'coalesce': True,
                 'max_instances': 1,
                 'misfire_grace_time': 300  # 5 minutes
             }
-            
-            # Create scheduler
             self.scheduler = BackgroundScheduler(
-                jobstores=jobstores,
                 executors=executors,
                 job_defaults=job_defaults,
                 timezone='Europe/Istanbul'
@@ -162,8 +151,8 @@ class SchedulerService:
             appointment_id: ID of the appointment
         """
         try:
+            from app import Appointment, BlockedDay, Client, SmsLog, User
             from services.sms_service import get_sms_service
-            from app import User, Appointment, BlockedDay, Client, SmsLog
             
             with self.app.app_context():
                 # Get appointment with user and client
@@ -211,7 +200,7 @@ class SchedulerService:
             logger.error(f"Failed to send reminder SMS for appointment {appointment_id}: {str(e)}")
             # Try to log the error in database
             try:
-                from app import User, Appointment, BlockedDay, Client, SmsLog
+                from app import Appointment, BlockedDay, Client, SmsLog, User
                 
                 with self.app.app_context():
                     appointment = Appointment.query.get(appointment_id)
@@ -260,7 +249,7 @@ class SchedulerService:
         This should be called on application startup
         """
         try:
-            from app import User, Appointment, BlockedDay, Client, SmsLog
+            from app import Appointment, BlockedDay, Client, SmsLog, User
             
             with self.app.app_context():
                 # Get all scheduled appointments that are in the future

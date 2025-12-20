@@ -1,9 +1,10 @@
+from flask import current_app, url_for
 from flask_mail import Message
-from flask import url_for, current_app
 from itsdangerous import URLSafeTimedSerializer
 
 from app import app, mail
 from models import User, db
+
 
 def generate_reset_token(email, expires_sec=3600):
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])

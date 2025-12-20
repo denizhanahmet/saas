@@ -1,145 +1,95 @@
-{% extends "base.html" %} {% block title %}Kayıt Ol - Randevu Sistemi{% endblock %} {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white text-center">
-                <h4 class="mb-0">
-                    <i class="bi bi-person-plus"></i> Kayıt Ol
-                </h4>
+{% extends "base.html" %}
+{% block title %}Kayıt Ol - Randevu Sistemi{% endblock %}
+{% block content %}
+<div class="w-full max-w-lg mx-auto bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+    <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Kayıt Ol</h2>
+    <form method="POST" action="{{ url_for('auth.register') }}" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="flex gap-4">
+            <div class="w-1/2">
+                <label for="first_name" class="block text-gray-700 font-medium mb-1">Ad</label>
+                <input type="text" id="first_name" name="first_name" required
+                    value="{{ request.form.first_name if request.form.first_name }}"
+                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
-            <div class="card-body p-4">
-                <form method="POST" action="{{ url_for('auth.register') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="first_name" class="form-label">Ad</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bi bi-person"></i>
-                                </span>
-                                <input type="text" class="form-control" id="first_name" name="first_name" required value="{{ request.form.first_name if request.form.first_name }}">
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="last_name" class="form-label">Soyad</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bi bi-person"></i>
-                                </span>
-                                <input type="text" class="form-control" id="last_name" name="last_name" required value="{{ request.form.last_name if request.form.last_name }}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Kullanıcı Adı</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bi bi-at"></i>
-                            </span>
-                            <input type="text" class="form-control" id="username" name="username" required value="{{ request.form.username if request.form.username }}">
-                        </div>
-                        <div class="form-text">En az 3 karakter olmalıdır.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bi bi-envelope"></i>
-                            </span>
-                            <input type="email" class="form-control" id="email" name="email" required value="{{ request.form.email if request.form.email }}">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Telefon (Opsiyonel)</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bi bi-telephone"></i>
-                            </span>
-                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ request.form.phone if request.form.phone }}">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Şifre</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bi bi-lock"></i>
-                            </span>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-                        <div class="form-text">En az 6 karakter olmalıdır.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Şifre Tekrar</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bi bi-lock-fill"></i>
-                            </span>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="kvkkCheck" name="kvkkCheck">
-                            <label class="form-check-label" for="kvkkCheck">
-                                <a href="/kvkk" target="_blank" style="color:#0d6efd; font-weight:500; text-decoration:underline;">Gizlilik ve KVKK hüküm ve koşullarını kabul ediyorum</a>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success" id="registerBtn" disabled>
-                            <i class="bi bi-person-plus"></i>
-                            Kayıt Ol
-                        </button>
-                    </div>
-                </form>
-
-                <hr class="my-4">
-
-                <div class="text-center">
-                    <p class="mb-0">Zaten hesabınız var mı?</p>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-box-arrow-in-right"></i> Giriş Yap
-                    </a>
-                </div>
+            <div class="w-1/2">
+                <label for="last_name" class="block text-gray-700 font-medium mb-1">Soyad</label>
+                <input type="text" id="last_name" name="last_name" required
+                    value="{{ request.form.last_name if request.form.last_name }}"
+                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
         </div>
+        <div>
+            <label for="username" class="block text-gray-700 font-medium mb-1">Kullanıcı Adı</label>
+            <input type="text" id="username" name="username" required
+                value="{{ request.form.username if request.form.username }}"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <div class="text-xs text-gray-400 mt-1">En az 3 karakter olmalıdır.</div>
+        </div>
+        <div>
+            <label for="email" class="block text-gray-700 font-medium mb-1">Email</label>
+            <input type="email" id="email" name="email" required value="{{ request.form.email if request.form.email }}"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+        <div>
+            <label for="phone" class="block text-gray-700 font-medium mb-1">Telefon (Opsiyonel)</label>
+            <input type="tel" id="phone" name="phone" value="{{ request.form.phone if request.form.phone }}"
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+        <div>
+            <label for="password" class="block text-gray-700 font-medium mb-1">Şifre</label>
+            <input type="password" id="password" name="password" required
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <div class="text-xs text-gray-400 mt-1">En az 6 karakter olmalıdır.</div>
+        </div>
+        <div>
+            <label for="confirm_password" class="block text-gray-700 font-medium mb-1">Şifre Tekrar</label>
+            <input type="password" id="confirm_password" name="confirm_password" required
+                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+        <div class="flex items-center gap-2">
+            <input type="checkbox" id="kvkkCheck" name="kvkkCheck" class="mr-2">
+            <label for="kvkkCheck" class="text-gray-600 text-sm"> <a href="/kvkk" target="_blank"
+                    class="text-blue-600 underline font-medium">Gizlilik ve KVKK hüküm ve koşullarını kabul
+                    ediyorum</a></label>
+        </div>
+        <button type="submit"
+            class="w-full py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition"
+            id="registerBtn" disabled>Kayıt Ol</button>
+    </form>
+    <div class="my-6 border-t"></div>
+    <div class="text-center">
+        <p class="mb-2 text-gray-600">Zaten hesabınız var mı?</p>
+        <a href="{{ url_for('auth.login') }}"
+            class="inline-block px-6 py-2 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-600 hover:bg-blue-100 transition">Giriş
+            Yap</a>
     </div>
 </div>
-{% endblock %} {% block extra_scripts %}
+{% endblock %}
+{% block extra_scripts %}
 <script>
-    document.getElementById('password').addEventListener('input', function() {
+    document.getElementById('password').addEventListener('input', function () {
         const password = this.value;
         const confirmPassword = document.getElementById('confirm_password');
-
         if (password.length > 0) {
             confirmPassword.required = true;
         } else {
             confirmPassword.required = false;
         }
     });
-
-    document.getElementById('confirm_password').addEventListener('input', function() {
+    document.getElementById('confirm_password').addEventListener('input', function () {
         const password = document.getElementById('password').value;
         const confirmPassword = this.value;
-
         if (confirmPassword !== password) {
             this.setCustomValidity('Şifreler eşleşmiyor');
         } else {
             this.setCustomValidity('');
         }
     });
-
     // KVKK checkbox kontrolü
     const kvkkCheck = document.getElementById('kvkkCheck');
     const registerBtn = document.getElementById('registerBtn');
-    kvkkCheck.addEventListener('change', function() {
+    kvkkCheck.addEventListener('change', function () {
         registerBtn.disabled = !this.checked;
     });
 </script>
