@@ -1,0 +1,1 @@
+Tüm eski Alembic migration dosyaları _archive_migrations klasörüne taşınmıştır. Artık sadece Firebase kullanılmaktadır.

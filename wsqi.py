@@ -164,10 +164,10 @@ class AppFactory:
         pass
     def shutdown_scheduler(self):
         pass
-
+factory = AppFactory()
+app = factory.create_app()
+factory.add_routes()
 
 if __name__ == '__main__':
-    factory = AppFactory()
-    app = factory.create_app()
-    factory.add_routes()
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
