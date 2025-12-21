@@ -158,7 +158,8 @@
                             onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit"
-                                class="btn btn-{% if user.is_active %}warning{% else %}success{% endif %}">
+                                class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %}"
+                                style="min-width:36px; font-size:1.1rem; display:inline-flex; align-items:center; justify-content:center;">
                                 <i class="bi bi-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
                                 {% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
                             </button>

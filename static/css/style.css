@@ -22,7 +22,10 @@ button.btn-primary:disabled,
 }
 
 button.btn-primary:hover,
-
+.btn-primary:hover {
+    background-color: #0b5ed7 !important;
+    color: #fff !important;
+}
 
 .form-control,
 input,
@@ -147,16 +150,32 @@ button.btn-primary:hover {
 
 /* Randevu tablosu işlemler butonları için */
 
+
 .table .btn-group {
+    display: flex;
     flex-wrap: wrap;
     white-space: nowrap;
     gap: 0.25rem;
+    overflow: visible;
+    min-width: 90px;
+    align-items: center;
 }
 
 .table .btn {
+    min-width: 36px;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+    margin-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table .btn-sm {
     min-width: 32px;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+    font-size: 1rem;
 }
 
 

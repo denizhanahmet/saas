@@ -1,6 +1,4 @@
-
-
-from datetime import date, datetime, timedelta
+from datetime import date, datetime as dt, timedelta
 from flask import (Blueprint, flash, jsonify, redirect, render_template,
                    request, session, url_for)
 from firebase_realtime import get_data, set_data, update_data, delete_data
@@ -38,7 +36,6 @@ def admin_dashboard():
     total_sms = len(sms_logs)
     total_cost = sum(float(s.get('cost', 0)) for s in sms_logs.values())
     sms_stats = {'total_sms': total_sms, 'total_cost': total_cost}
-    recent_users = sorted(users.values(), key=lambda u: u.get('created_at', ''), reverse=True)[:10]
     from collections import Counter
     import datetime
     def get_month(dtstr):
@@ -48,6 +45,12 @@ def admin_dashboard():
             return ''
     months = [get_month(u.get('created_at', '')) for u in users.values() if u.get('created_at')]
     monthly_users = Counter(months)
+    def parse_created_at(u):
+        try:
+            return dt.fromisoformat(u.get('created_at', '1970-01-01T00:00:00'))
+        except Exception:
+            return dt(1970, 1, 1)
+    recent_users = sorted(users.values(), key=parse_created_at, reverse=True)[:10]
     return render_template('admin/dashboard.html',
                          total_users=total_users,
                          active_users=active_users,
@@ -91,7 +94,7 @@ def users_list():
                          role_filter=role_filter,
                          status_filter=status_filter)
 
-@admin_bp.route('/users/<int:user_id>')
+@admin_bp.route('/users/<user_id>')
 @admin_required
 def user_detail(user_id):
     """Kullanıcı detayları"""
@@ -113,25 +116,24 @@ def user_detail(user_id):
                          sms_logs=user_sms_logs,
                          sms_stats=sms_stats)
 
-@admin_bp.route('/users/<int:user_id>/toggle-status', methods=['POST'])
+@admin_bp.route('/users/<user_id>/toggle-status', methods=['POST'])
 @admin_required
 def toggle_user_status(user_id):
-    """Kullanıcı aktif/pasif durumunu değiştir"""
     users = get_data('users') or {}
     user = users.get(str(user_id))
     if not user:
-        flash('Kullanıcı bulunamadı!', 'error')
+        flash('Kullanıcı bulunamadı.', 'error')
         return redirect(url_for('admin.users_list'))
-    user['is_active'] = not user.get('is_active', True)
+    new_status = not user.get('is_active', False)
     from firebase_realtime_transaction import atomic_update
-    atomic_update(f"users/{user_id}", lambda current: user)
-    # Kendi hesabınızı deaktif edemezsiniz kontrolü
-    if str(user.get('id')) == str(session.get('user_id')):
-        flash('Kendi hesabınızı deaktif edemezsiniz!', 'error')
-        return redirect(url_for('admin.user_detail', user_id=user_id))
-    status = 'aktif' if user['is_active'] else 'deaktif'
-    flash(f'Kullanıcı {status} edildi.', 'success')
-    return redirect(url_for('admin.user_detail', user_id=user_id))
+    def update_status(current):
+        if not current:
+            return user  # fallback
+        current['is_active'] = new_status
+        return current
+    atomic_update(f"users/{user_id}", update_status)
+    flash('Kullanıcı durumu güncellendi.', 'success')
+    return redirect(request.referrer or url_for('admin.users_list'))
 
 @admin_bp.route('/sms-usage')
 @admin_required

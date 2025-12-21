@@ -235,6 +235,7 @@ def register():
             'phone': phone,
             'unique_link': unique_link,
             'kvkk_accepted_at': str(datetime.utcnow()) if kvkk_accepted else None,
+            'created_at': datetime.utcnow().isoformat(),
             'password_hash': pw['hash'],
             'password_salt': pw['salt'],
             'password_iterations': pw['iterations']
