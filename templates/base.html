@@ -65,12 +65,13 @@
                 {% endif %}
             </div>
         </div>
-        <!-- Off-canvas hamburger menu for mobile -->
+        <!-- Off-canvas hamburger menu for mobile (production, clean, overlay and menu separated) -->
         <div id="mobile-overlay"
-            class="fixed inset-0 bg-black bg-opacity-40 z-40 hidden transition-opacity duration-300"></div>
+            class="fixed inset-0 bg-gray-900 bg-opacity-30 z-40 hidden transition-opacity duration-300 md:hidden"></div>
         <aside id="mobile-menu"
-            class="fixed top-0 right-0 h-full w-72 max-w-full bg-white shadow-lg z-50 transform translate-x-full transition-transform duration-300 flex flex-col justify-between md:hidden">
-            <div class="flex flex-col gap-2 p-6 pt-8">
+            class="fixed top-0 right-0 h-full w-[300px] max-w-full bg-white shadow-lg z-50 md:hidden flex flex-col justify-between transition-all duration-300"
+            style="right:-300px;">
+            <div class="flex flex-col gap-2 p-6 pt-8 overflow-y-auto flex-1">
                 <div class="flex justify-between items-center mb-6">
                     <span class="text-xl font-bold text-blue-700">Menü</span>
                     <button id="menu-close" class="text-gray-700 focus:outline-none" aria-label="Menüyü Kapat">
@@ -119,22 +120,25 @@
             const mobileMenu = document.getElementById('mobile-menu');
             const mobileOverlay = document.getElementById('mobile-overlay');
             const menuClose = document.getElementById('menu-close');
+            let menuOpen = false;
             function openMenu() {
-                mobileMenu.classList.remove('translate-x-full');
+                mobileMenu.style.right = '0px';
                 mobileOverlay.classList.remove('hidden');
                 document.body.classList.add('overflow-hidden');
+                menuOpen = true;
             }
             function closeMenu() {
-                mobileMenu.classList.add('translate-x-full');
+                mobileMenu.style.right = '-300px';
                 mobileOverlay.classList.add('hidden');
                 document.body.classList.remove('overflow-hidden');
+                menuOpen = false;
             }
             menuToggle.addEventListener('click', openMenu);
             menuClose.addEventListener('click', closeMenu);
             mobileOverlay.addEventListener('click', closeMenu);
             // ESC ile kapama
             document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') closeMenu();
+                if (e.key === 'Escape' && menuOpen) closeMenu();
             });
         </script>
     </nav>
