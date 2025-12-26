@@ -156,6 +156,9 @@ class AppFactory:
         @app.route('/about')
         def about():
             return render_template('about.html')
+        @app.route('/kvkk')
+        def kvkk():
+            return render_template('kvkk.html')
 
     # Scheduler ve diğer servisler için placeholder metotlar
     def get_scheduler_service(self):

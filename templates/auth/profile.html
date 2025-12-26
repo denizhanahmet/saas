@@ -18,8 +18,7 @@
             <h5 class="text-lg font-semibold">
                 {% if user.first_name or user.last_name %}
                 {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
-                {% elif user.username %}
-                {{ user.username }}
+                <!-- Kullanıcı adı gösterimi kaldırıldı -->
                 {% else %}
                 Kullanıcı
                 {% endif %}
@@ -43,10 +42,7 @@
         </div>
         <div class="md:w-2/3 w-full">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <div class="font-semibold text-gray-700">Kullanıcı Adı</div>
-                    <div class="text-gray-600">{{ user.username }}</div>
-                </div>
+                <!-- Kullanıcı adı gösterimi kaldırıldı -->
                 <div>
                     <div class="font-semibold text-gray-700">E-posta</div>
                     <div class="text-gray-600">{{ user.email }}</div>

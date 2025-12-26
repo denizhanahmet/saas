@@ -198,6 +198,12 @@ button.btn-primary:hover {
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
+    color: #212529;
+}
+
+html.dark body {
+    background-color: #212529;
+    color: #f8f9fa;
 }
 
 .hero-section {

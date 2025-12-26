@@ -112,7 +112,7 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Kullanıcı Adı</th>
+                                    <!-- Kullanıcı adı başlığı kaldırıldı -->
                                     <th>E-posta</th>
                                     <th>Aylık Kota</th>
                                     <th>Kullanılan SMS</th>
@@ -125,7 +125,7 @@
                             <tbody>
                                 {% for usage in sms_usage_by_user %}
                                 <tr>
-                                    <td><strong>{{ usage.username }}</strong></td>
+                                    <!-- Kullanıcı adı gösterimi kaldırıldı -->
                                     <td>{{ usage.email }}</td>
                                     <td>{{ usage.sms_quota }}</td>
                                     <td>

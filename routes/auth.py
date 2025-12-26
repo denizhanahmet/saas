@@ -25,41 +25,35 @@ def login():
         return redirect(url_for('dashboard.dashboard'))
     
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
-        remember = bool(request.form.get('remember'))
-        
-        if not username or not password:
-            flash('Kullanıcı adı ve şifre gerekli!', 'error')
-            return render_template('auth/login.html')
-        
+        if not email or not password:
+            flash('Email ve şifre gerekli!', 'error')
+            return render_template('auth/login.html', csrf_token=generate_csrf)
         from firebase_realtime import get_data
         users = get_data('users') or {}
-        user = next((u for u in users.values() if u.get('username') == username), None)
-        from services.password_utils import verify_password_pbkdf2
-        # PBKDF2 ile hashlenmiş kullanıcılar
+        user = next((u for u in users.values() if u.get('email') == email), None)
         if user and user.get('password_hash') and user.get('password_salt') and user.get('password_iterations'):
+            from services.password_utils import verify_password_pbkdf2
             if verify_password_pbkdf2(password, user['password_hash'], user['password_salt'], int(user['password_iterations'])):
                 if not user.get('is_active', True):
                     flash('Hesabınız deaktif edilmiş!', 'error')
-                    return render_template('auth/login.html')
+                    return render_template('auth/login.html', csrf_token=generate_csrf)
                 import secrets
-                from firebase_realtime import set_data
+                from firebase_realtime_transaction import atomic_update
                 user['session_token'] = secrets.token_hex(32)
                 user_id = user.get('id')
                 if not user_id:
                     flash('Kullanıcı kaydında eksik id. Lütfen tekrar kayıt olun.', 'error')
-                    return render_template('auth/login.html')
-                from firebase_realtime_transaction import atomic_update
+                    return render_template('auth/login.html', csrf_token=generate_csrf)
                 atomic_update(f"users/{user_id}", lambda current: user)
                 session['session_token'] = user['session_token']
                 session['user_id'] = user_id
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
-            flash('Geçersiz kullanıcı adı veya şifre!', 'error')
-            return render_template('auth/login.html')
-        # SHA256 ile hashlenmiş eski kullanıcılar
+            flash('Geçersiz email veya şifre!', 'error')
+            return render_template('auth/login.html', csrf_token=generate_csrf)
         elif user and user.get('password_hash'):
             import hashlib
             password_hash = hashlib.sha256(password.encode()).hexdigest()
@@ -67,26 +61,25 @@ def login():
                 user_id = user.get('id')
                 if not user_id:
                     flash('Kullanıcı kaydında eksik id. Lütfen tekrar kayıt olun.', 'error')
-                    return render_template('auth/login.html')
+                    return render_template('auth/login.html', csrf_token=generate_csrf)
                 flash('Parola güvenliği için lütfen şifrenizi değiştirin.', 'warning')
                 if not user.get('is_active', True):
                     flash('Hesabınız deaktif edilmiş!', 'error')
-                    return render_template('auth/login.html')
+                    return render_template('auth/login.html', csrf_token=generate_csrf)
                 import secrets
-                from firebase_realtime import set_data
-                user['session_token'] = secrets.token_hex(32)
                 from firebase_realtime_transaction import atomic_update
+                user['session_token'] = secrets.token_hex(32)
                 atomic_update(f"users/{user_id}", lambda current: user)
                 session['session_token'] = user['session_token']
                 session['user_id'] = user_id
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
-            flash('Geçersiz kullanıcı adı veya şifre!', 'error')
-            return render_template('auth/login.html')
+            flash('Geçersiz email veya şifre!', 'error')
+            return render_template('auth/login.html', csrf_token=generate_csrf)
         else:
-            flash('Geçersiz kullanıcı adı veya şifre!', 'error')
-            return render_template('auth/login.html')
+            flash('Geçersiz email veya şifre!', 'error')
+            return render_template('auth/login.html', csrf_token=generate_csrf)
     
     return render_template('auth/login.html', csrf_token=generate_csrf)
 # Şifremi Unuttum: Mail ile sıfırlama bağlantısı gönder
@@ -162,7 +155,7 @@ def register():
         return redirect(url_for('dashboard.dashboard'))
     
     if request.method == 'POST':
-        username = request.form.get('username')
+        # Formdan verileri al
         email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
@@ -170,13 +163,7 @@ def register():
         last_name = request.form.get('last_name')
         phone = request.form.get('phone')
         kvkk_accepted = request.form.get('kvkkCheck')
-        
-        # Validasyonlar
         errors = []
-        
-        if not username or len(username) < 3:
-            errors.append('Kullanıcı adı en az 3 karakter olmalıdır.')
-        
         import re
         email_regex = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
         phone_regex = r"^(\+90|0)?5\d{9}$"
@@ -184,51 +171,39 @@ def register():
             errors.append('Geçerli bir email adresi giriniz.')
         if phone and not re.match(phone_regex, phone):
             errors.append('Geçerli bir Türk GSM numarası giriniz. (05XXXXXXXXX veya +905XXXXXXXXX)')
-        
         if not password or len(password) < 6:
             errors.append('Şifre en az 6 karakter olmalıdır.')
-        
         if password != confirm_password:
             errors.append('Şifreler eşleşmiyor.')
-        
         if not first_name or not last_name:
             errors.append('Ad ve soyad gerekli.')
-        
-        # Kullanıcı adı ve email kontrolü (Firebase'de benzersizliği kontrol et)
+        from firebase_realtime import get_data
         users = get_data('users') or {}
-        if any(u.get('username') == username for u in users.values()):
-            errors.append('Bu kullanıcı adı zaten kullanımda.')
         if any(u.get('email') == email for u in users.values()):
             errors.append('Bu email adresi zaten kullanımda.')
-        
         if not kvkk_accepted:
             errors.append('Gizlilik ve KVKK hüküm ve koşullarını kabul etmelisiniz.')
         if errors:
             for error in errors:
                 flash(error, 'error')
             return render_template('auth/register.html')
-        
         # Benzersiz unique_link üret
         import random
         import string
-        from services.password_utils import hash_password_pbkdf2
-        def generate_unique_link(username):
-            base = username.lower().replace(' ', '')
+        def generate_unique_link():
+            base = (first_name + last_name).lower().replace(' ', '')
             suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
             return f"{base}{suffix}"
-
-        unique_link = generate_unique_link(username)
-        # Çakışma kontrolü (Firebase üzerinde)
+        unique_link = generate_unique_link()
         while any(u.get('unique_link') == unique_link for u in users.values()):
-            unique_link = generate_unique_link(username)
-
+            unique_link = generate_unique_link()
         # PBKDF2 ile parola hashle
+        from services.password_utils import hash_password_pbkdf2
         pw = hash_password_pbkdf2(password)
         import uuid
         user_id = str(uuid.uuid4())
         user_data = {
             'id': user_id,
-            'username': username,
             'email': email,
             'first_name': first_name,
             'last_name': last_name,
@@ -238,7 +213,8 @@ def register():
             'created_at': datetime.utcnow().isoformat(),
             'password_hash': pw['hash'],
             'password_salt': pw['salt'],
-            'password_iterations': pw['iterations']
+            'password_iterations': pw['iterations'],
+            'is_active': False
         }
         try:
             from firebase_realtime_transaction import atomic_update
@@ -248,7 +224,6 @@ def register():
         except Exception as e:
             print(f"Kayıt hatası: {e}")  # Debug için
             flash(f'Kayıt sırasında bir hata oluştu: {str(e)}', 'error')
-    
     return render_template('auth/register.html')
 
 @auth_bp.route('/logout')
@@ -366,3 +341,8 @@ def edit_profile():
             flash('Profil güncellenirken bir hata oluştu.', 'error')
     
     return render_template('auth/edit_profile.html', user=user, csrf_token=generate_csrf)
+
+@auth_bp.route('/firebase-login')
+def firebase_login():
+    """Renders the new Firebase-based login test page."""
+    return render_template('auth/firebase_login.html')

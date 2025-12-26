@@ -2,7 +2,7 @@ from flask import current_app, url_for
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
 
-from app import app, mail
+from wsqi import app, mail
 from models import User, db
 
 

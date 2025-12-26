@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ user.username if user else 'Kullanıcı' }} - Kullanıcı Detayı{% endblock %}
+{% block title %}{{ user.email if user else 'Kullanıcı' }} - Kullanıcı Detayı{% endblock %}
 {% block content %}
 <div class="container-fluid">
     {% if not user %}
@@ -13,8 +13,7 @@
                 <h2><i class="bi bi-person"></i>
                     {% if user.first_name or user.last_name %}
                     {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
-                    {% elif user.username %}
-                    {{ user.username }}
+                    <!-- Kullanıcı adı gösterimi kaldırıldı -->
                     {% else %}
                     Kullanıcı
                     {% endif %}
@@ -42,16 +41,14 @@
                         <div class="col-md-6">
                             <table class="table table-borderless">
                                 <tr>
-                                    <td><strong>Kullanıcı Adı:</strong></td>
-                                    <td>{{ user.username }}</td>
+                                    <!-- Kullanıcı adı satırı kaldırıldı -->
                                 </tr>
                                 <tr>
                                     <td><strong>Ad Soyad:</strong></td>
                                     <td>
                                         {% if user.first_name or user.last_name %}
                                         {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
-                                        {% elif user.username %}
-                                        {{ user.username }}
+                                        <!-- Kullanıcı adı gösterimi kaldırıldı -->
                                         {% else %}
                                         Kullanıcı
                                         {% endif %}

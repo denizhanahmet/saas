@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Login Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">Firebase Login</h2>
+        
+        <!-- Login Form -->
+        <div id="login-form">
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700">Email</label>
+                <input type="email" id="email" class="w-full px-3 py-2 border rounded-lg" placeholder="your-email@example.com">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700">Password</label>
+                <input type="password" id="password" class="w-full px-3 py-2 border rounded-lg" placeholder="********">
+            </div>
+            <button id="login-button" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Login</button>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="status" class="mt-4 text-center"></div>
+
+        <!-- Logged In Info -->
+        <div id="user-info" class="hidden mt-6 text-center">
+            <p class="text-green-600">Successfully logged in!</p>
+            <p><strong>Email:</strong> <span id="user-email"></span></p>
+            <p><strong>UID:</strong> <span id="user-uid"></span></p>
+            <button id="test-api-button" class="mt-4 w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Test Protected API</button>
+            <button id="logout-button" class="mt-2 w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600">Logout</button>
+        </div>
+        <div id="api-response" class="mt-4 text-left p-4 bg-gray-200 rounded hidden"></div>
+    </div>
+
+    <!-- Firebase SDK - Provided by user -->
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+    <!-- END OF FIREBASE SDK SCRIPTS -->
+
+    <script>
+        // Firebase Config - Provided by user
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHfnF82m6wQ6juX5VrGxo8uADF8-ARfX4",
+            authDomain: "saas-app-1dd97.firebaseapp.com",
+            databaseURL: "https://saas-app-1dd97-default-rtdb.firebaseio.com",
+            projectId: "saas-app-1dd97",
+            storageBucket: "saas-app-1dd97.firebasestorage.app",
+            messagingSenderId: "758407414334",
+            appId: "1:758407414334:web:4fb96f271c6a439574476f",
+            measurementId: "G-P6Y8VR2025"
+        };
+        // ================================================================
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // DOM Elements
+        const loginForm = document.getElementById('login-form');
+        const statusDiv = document.getElementById('status');
+        const userInfoDiv = document.getElementById('user-info');
+        const apiResponseDiv = document.getElementById('api-response');
+
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-button');
+        const testApiButton = document.getElementById('test-api-button');
+
+        // Update UI based on auth state
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is signed in
+                loginForm.style.display = 'none';
+                userInfoDiv.classList.remove('hidden');
+                document.getElementById('user-email').textContent = user.email;
+                document.getElementById('user-uid').textContent = user.uid;
+            } else {
+                // User is signed out
+                loginForm.style.display = 'block';
+                userInfoDiv.classList.add('hidden');
+                apiResponseDiv.classList.add('hidden');
+            }
+            statusDiv.textContent = '';
+        });
+
+        // Login button event
+        loginButton.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            statusDiv.textContent = 'Logging in...';
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => {
+                    console.error("Login Error:", error);
+                    statusDiv.textContent = `Error: ${error.message}`;
+                });
+        });
+
+        // Logout button event
+        logoutButton.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // Test API button event
+        testApiButton.addEventListener('click', async () => {
+            statusDiv.textContent = 'Testing API...';
+            apiResponseDiv.classList.add('hidden');
+            apiResponseDiv.textContent = '';
+
+            const user = auth.currentUser;
+            if (!user) {
+                statusDiv.textContent = 'You must be logged in to test the API.';
+                return;
+            }
+
+            try {
+                const idToken = await user.getIdToken();
+                
+                const response = await fetch('/dashboard/api/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'API request failed');
+                }
+                
+                statusDiv.textContent = 'API Test Successful!';
+                apiResponseDiv.classList.remove('hidden');
+                apiResponseDiv.textContent = JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                console.error('API Test Error:', error);
+                statusDiv.textContent = `API Error: ${error.message}`;
+                apiResponseDiv.classList.remove('hidden');
+                apiResponseDiv.textContent = `{"error": "${error.message}"}`;
+            }
+        });
+    </script>
+
+</body>
+</html>

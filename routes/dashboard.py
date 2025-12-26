@@ -765,3 +765,26 @@ def reject_appointment(appointment_id):
     else:
         flash('Randevu bulunamadı.', 'danger')
     return redirect(url_for('dashboard.dashboard'))
+
+from flask import g
+from services.auth_service import token_required
+
+@dashboard_bp.route('/api/me')
+@token_required
+def get_me():
+    """
+    A protected test endpoint to get the current user's info from the token.
+    """
+    # The g.current_user is set by the @token_required decorator
+    user_info = g.current_user
+    
+    # You can enrich this with data from your own database if needed
+    # For example: user_profile = get_data(f"users/{user_info['uid']}")
+    
+    return jsonify({
+        "uid": user_info.get('uid'),
+        "email": user_info.get('email'),
+        "name": user_info.get('name'),
+        "picture": user_info.get('picture'),
+        "email_verified": user_info.get('email_verified')
+    })

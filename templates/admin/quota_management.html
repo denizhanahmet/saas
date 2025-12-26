@@ -32,7 +32,8 @@
         <div class="col-md-3 mb-3">
             <div class="card bg-info text-white">
                 <div class="card-body text-center">
-                    {% set total_quota = users_with_quotas|sum(attribute='sms_quota') or 0 %} {% set total_used = users_with_quotas|sum(attribute='used_sms') or 0 %} {% set remaining = total_quota - total_used %}
+                    {% set total_quota = users_with_quotas|sum(attribute='sms_quota') or 0 %} {% set total_used =
+                    users_with_quotas|sum(attribute='used_sms') or 0 %} {% set remaining = total_quota - total_used %}
                     <h3>{{ remaining }}</h3>
                     <p class="mb-0">Kalan Kota</p>
                 </div>
@@ -64,7 +65,7 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Kullanıcı Adı</th>
+                                    <!-- Kullanıcı adı başlığı kaldırıldı -->
                                     <th>E-posta</th>
                                     <th>Aylık Kota</th>
                                     <th>Kullanılan SMS</th>
@@ -77,7 +78,7 @@
                             <tbody>
                                 {% for user_quota in users_with_quotas %}
                                 <tr>
-                                    <td><strong>{{ user_quota.username }}</strong></td>
+                                    <!-- Kullanıcı adı gösterimi kaldırıldı -->
                                     <td>{{ user_quota.email }}</td>
                                     <td>
                                         <span class="badge bg-primary">{{ user_quota.sms_quota }}</span>
@@ -86,14 +87,18 @@
                                         <span class="badge bg-info">{{ user_quota.used_sms }}</span>
                                     </td>
                                     <td>
-                                        {% set remaining = user_quota.sms_quota - user_quota.used_sms %} {% if remaining >= 0 %}
+                                        {% set remaining = user_quota.sms_quota - user_quota.used_sms %} {% if remaining
+                                        >= 0 %}
                                         <span class="badge bg-success">{{ remaining }}</span> {% else %}
                                         <span class="badge bg-danger">{{ remaining }}</span> {% endif %}
                                     </td>
                                     <td>
-                                        {% set usage_percentage = (user_quota.used_sms / user_quota.sms_quota * 100) if user_quota.sms_quota > 0 else 0 %}
+                                        {% set usage_percentage = (user_quota.used_sms / user_quota.sms_quota * 100) if
+                                        user_quota.sms_quota > 0 else 0 %}
                                         <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar {% if usage_percentage > 90 %}bg-danger{% elif usage_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ '%.1f'|format(usage_percentage) }}%">
+                                            <div class="progress-bar {% if usage_percentage > 90 %}bg-danger{% elif usage_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}"
+                                                role="progressbar"
+                                                style="width: {{ '%.1f'|format(usage_percentage) }}%">
                                                 {{ "%.1f"|format(usage_percentage) }}%
                                             </div>
                                         </div>
@@ -106,10 +111,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editQuotaModal{{ user_quota.id }}">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editQuotaModal{{ user_quota.id }}">
                                                 <i class="bi bi-pencil"></i> Düzenle
                                             </button>
-                                            <a href="{{ url_for('admin.user_detail', user_id=user_quota.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <a href="{{ url_for('admin.user_detail', user_id=user_quota.id) }}"
+                                                class="btn btn-sm btn-outline-secondary">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </div>
@@ -145,11 +153,12 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Kullanıcı</label>
-                        <input type="text" class="form-control" value="{{ user_quota.username }}" readonly>
+                        <!-- Kullanıcı adı inputu kaldırıldı -->
                     </div>
                     <div class="mb-3">
                         <label for="sms_quota{{ user_quota.id }}" class="form-label">Aylık SMS Kotası</label>
-                        <input type="number" class="form-control" id="sms_quota{{ user_quota.id }}" name="sms_quota" value="{{ user_quota.sms_quota }}" min="0" required>
+                        <input type="number" class="form-control" id="sms_quota{{ user_quota.id }}" name="sms_quota"
+                            value="{{ user_quota.sms_quota }}" min="0" required>
                         <div class="form-text">Bu ay için kullanıcının SMS kotası.</div>
                     </div>
                     <div class="alert alert-info">
