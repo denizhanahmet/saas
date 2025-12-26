@@ -2,9 +2,11 @@
 {% block title %}Ana Sayfa - Randevu Sistemi{% endblock %}
 {% block content %}
 <div class="w-full max-w-2xl mx-auto text-center mb-10">
-    <div class="bg-white rounded-xl shadow-lg px-8 py-8 border border-gray-200">
-        <h1 class="text-3xl md:text-4xl font-bold text-blue-700 mb-4">Randevu Sistemi</h1>
-        <p class="text-gray-600 mb-6 text-lg">Zamanınızı güvenle yönetin. Tüm randevularınız tek yerde, kolayca ve
+    <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg px-8 py-8 border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+        <h1 class="text-3xl md:text-4xl font-bold text-blue-700 dark:text-blue-400 mb-4">Randevu Sistemi</h1>
+        <p class="text-gray-600 dark:text-gray-300 mb-6 text-lg">Zamanınızı güvenle yönetin. Tüm randevularınız tek
+            yerde, kolayca ve
             güvenle!</p>
         <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
             <a href="{{ url_for('auth.register') }}"
@@ -14,27 +16,28 @@
                 class="px-6 py-3 rounded-lg border border-blue-600 text-blue-700 font-semibold hover:bg-blue-50 transition">Giriş
                 Yap</a>
         </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-blue-800 text-sm">
+        <div
+            class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4 text-blue-800 dark:text-blue-200 text-sm">
             <strong>Bilgilendirme:</strong> Tüm verileriniz modern güvenlik standartları ile korunur. Kişisel
             bilgileriniz asla üçüncü kişilerle paylaşılmaz.
         </div>
         <div class="flex flex-col md:flex-row items-center justify-center gap-6 mt-6">
             <div
-                class="w-full md:w-1/2 bg-white border border-gray-200 rounded-lg p-6 flex flex-col items-center shadow">
-                <div class="text-2xl font-bold text-blue-700 mb-2">Aylık</div>
-                <div class="text-3xl font-extrabold text-gray-900 mb-2">2.700 TL</div>
-                <div class="text-gray-500 mb-4">Her ay yenilenen tam erişim</div>
+                class="w-full md:w-1/2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-6 flex flex-col items-center shadow">
+                <div class="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-2">Aylık</div>
+                <div class="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">2.700 TL</div>
+                <div class="text-gray-500 dark:text-gray-300 mb-4">Her ay yenilenen tam erişim</div>
                 <a href="#"
                     class="w-full py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Aylık
                     Satın Al</a>
             </div>
             <div
-                class="w-full md:w-1/2 bg-white border-2 border-blue-600 rounded-lg p-6 flex flex-col items-center shadow-lg scale-105">
-                <div class="text-2xl font-bold text-blue-700 mb-2 flex items-center gap-2">Yıllık <span
-                        class="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">En Çok Tercih
+                class="w-full md:w-1/2 bg-white dark:bg-gray-700 border-2 border-blue-600 dark:border-blue-500 rounded-lg p-6 flex flex-col items-center shadow-lg scale-105">
+                <div class="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">Yıllık
+                    <span class="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">En Çok Tercih
                         Edilen</span></div>
-                <div class="text-3xl font-extrabold text-gray-900 mb-2">25.000 TL</div>
-                <div class="text-gray-500 mb-4">12 ay boyunca avantajlı fiyat</div>
+                <div class="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">25.000 TL</div>
+                <div class="text-gray-500 dark:text-gray-300 mb-4">12 ay boyunca avantajlı fiyat</div>
                 <a href="#"
                     class="w-full py-2 rounded bg-blue-700 text-white font-semibold hover:bg-blue-800 transition">Yıllık
                     Satın Al</a>
@@ -43,53 +46,62 @@
     </div>
 </div>
 <div class="w-full max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col items-center transition-colors duration-200">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-600 mb-2" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        <div class="font-semibold text-lg mb-1">Kolay Randevu Yönetimi</div>
-        <div class="text-gray-500 text-sm">Randevularınızı kolayca oluşturun, düzenleyin ve takip edin. Çakışma kontrolü
+        <div class="font-semibold text-lg mb-1 text-gray-900 dark:text-white">Kolay Randevu Yönetimi</div>
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Randevularınızı kolayca oluşturun, düzenleyin ve takip
+            edin. Çakışma kontrolü
             ile hata riskini minimize edin.</div>
     </div>
-    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col items-center transition-colors duration-200">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600 mb-2" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <div class="font-semibold text-lg mb-1">Zaman Yönetimi</div>
-        <div class="text-gray-500 text-sm">Günlük, haftalık ve aylık görünümlerle randevularınızı farklı
+        <div class="font-semibold text-lg mb-1 text-gray-900 dark:text-white">Zaman Yönetimi</div>
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Günlük, haftalık ve aylık görünümlerle randevularınızı
+            farklı
             perspektiflerden inceleyin.</div>
     </div>
-    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col items-center transition-colors duration-200">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-600 mb-2" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M11 17a4 4 0 004-4V5a4 4 0 00-8 0v8a4 4 0 004 4zm0 0v2a2 2 0 002 2h-4a2 2 0 002-2v-2z" />
         </svg>
-        <div class="font-semibold text-lg mb-1">Detaylı İstatistikler</div>
-        <div class="text-gray-500 text-sm">Randevu istatistiklerinizi görün, en yoğun günlerinizi analiz edin ve
+        <div class="font-semibold text-lg mb-1 text-gray-900 dark:text-white">Detaylı İstatistikler</div>
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Randevu istatistiklerinizi görün, en yoğun günlerinizi
+            analiz edin ve
             verimliliğinizi artırın.</div>
     </div>
-    <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col items-center transition-colors duration-200">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-600 mb-2" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 11c0-1.104.896-2 2-2s2 .896 2 2-.896 2-2 2-2-.896-2-2zm0 0V9a4 4 0 00-8 0v2a4 4 0 008 0z" />
         </svg>
-        <div class="font-semibold text-lg mb-1">Güvenli ve Güvenilir</div>
-        <div class="text-gray-500 text-sm">Verileriniz güvenli şekilde saklanır ve sadece sizin erişiminize açıktır.
+        <div class="font-semibold text-lg mb-1 text-gray-900 dark:text-white">Güvenli ve Güvenilir</div>
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Verileriniz güvenli şekilde saklanır ve sadece sizin
+            erişiminize açıktır.
             Modern güvenlik standartları ile korunursunuz.</div>
     </div>
 </div>
 {% if current_user.is_authenticated %}
 <div class="w-full max-w-2xl mx-auto mt-10">
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+    <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
         <h2 class="text-xl font-semibold text-blue-700 mb-2">Hoş Geldiniz, {{ current_user.first_name or
             current_user.username or 'Kullanıcı' }}!</h2>
-        <p class="text-gray-600 mb-4">Son aktivitelerinizi görmek için dashboard'ınızı ziyaret edin.</p>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">Son aktivitelerinizi görmek için dashboard'ınızı ziyaret edin.
+        </p>
         <a href="{{ url_for('dashboard.dashboard') }}"
             class="inline-block px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Dashboard'a
             Git</a>

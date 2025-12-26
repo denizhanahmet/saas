@@ -1,15 +1,25 @@
 
 from datetime import date, datetime, time, timedelta
+import threading
 import uuid
 
-from flask import (Blueprint, abort, flash, jsonify, redirect, render_template,
+from flask import (Blueprint, abort, current_app, flash, jsonify, redirect, render_template,
                    request, session, url_for)
+from flask_mail import Message
 from flask_wtf.csrf import generate_csrf
 
 # Firebase Realtime Database integration
 from firebase_realtime import get_data, set_data, delete_data, update_data
+from services.sms_service import get_sms_service
 
 appointments_bp = Blueprint('appointments', __name__)
+
+def send_async_email(app, msg):
+    with app.app_context():
+        try:
+            app.extensions['mail'].send(msg)
+        except Exception as e:
+            print(f"Mail sending error: {e}")
 
 # Randevu durumunu güncelle (tamamlandı/iptal)
 @appointments_bp.route('/update-status/<int:appointment_id>', methods=['POST'])
@@ -166,11 +176,47 @@ def approve_appointment(appointment_id):
         appointment['updated_at'] = datetime.now().isoformat()
         set_data(f'appointments/{appointment_id}', appointment)
         
+        # Müşteriye onay SMS'i gönder
+        client_phone = appointment.get('client_phone')
+        # Eski kayıtlar için notlardan telefon bulmaya çalış
+        if not client_phone and appointment.get('notes'):
+            import re
+            match = re.search(r'Telefon: ([\d\+\s]+)', appointment['notes'])
+            if match:
+                client_phone = match.group(1).strip()
+                
+        if client_phone:
+            sms_service = get_sms_service()
+            appt_date = appointment.get('appointment_date')
+            appt_time = appointment.get('appointment_time')
+            msg = f"Sayın {appointment.get('client_name', 'Müşteri')}, {appt_date} saat {appt_time} randevunuz onaylanmıştır."
+            sms_service.send_sms(client_phone, msg, user_id)
+            
+        # Müşteriye onay E-postası gönder
+        client_email = appointment.get('client_email')
+        if client_email:
+            try:
+                users = get_data('users') or {}
+                instructor = users.get(user_id, {})
+                company_name = instructor.get('company_name') or f"{instructor.get('first_name', '')} {instructor.get('last_name', '')}".strip() or "Randevu Sistemi"
+                
+                subject = f"Randevunuz Onaylandı - {company_name}"
+                body = f"""Sayın {appointment.get('client_name', 'Müşteri')},
+
+{appointment.get('appointment_date')} tarihinde saat {appointment.get('appointment_time')} için oluşturduğunuz randevu talebiniz onaylanmıştır.
+
+Teşekkürler,
+{company_name}"""
+                msg = Message(subject, recipients=[client_email], body=body)
+                threading.Thread(target=send_async_email, args=(current_app._get_current_object(), msg)).start()
+            except Exception as e:
+                print(f"Email error: {e}")
+        
         flash('Randevu onaylandı.', 'success')
     except Exception as e:
         flash(f'Hata oluştu: {str(e)}', 'error')
     
-    return redirect(url_for('appointments.pending_appointments'))
+    return redirect(request.referrer or url_for('dashboard.appointments'))
 
 @appointments_bp.route('/reject/<int:appointment_id>', methods=['POST'])
 def reject_appointment(appointment_id):
@@ -193,11 +239,46 @@ def reject_appointment(appointment_id):
         appointment['updated_at'] = datetime.now().isoformat()
         set_data(f'appointments/{appointment_id}', appointment)
         
+        # Müşteriye ret SMS'i gönder
+        client_phone = appointment.get('client_phone')
+        if not client_phone and appointment.get('notes'):
+            import re
+            match = re.search(r'Telefon: ([\d\+\s]+)', appointment['notes'])
+            if match:
+                client_phone = match.group(1).strip()
+                
+        if client_phone:
+            sms_service = get_sms_service()
+            msg = f"Sayın {appointment.get('client_name', 'Müşteri')}, randevu talebiniz maalesef onaylanamamıştır."
+            sms_service.send_sms(client_phone, msg, user_id)
+            
+        # Müşteriye ret E-postası gönder
+        client_email = appointment.get('client_email')
+        if client_email:
+            try:
+                users = get_data('users') or {}
+                instructor = users.get(user_id, {})
+                company_name = instructor.get('company_name') or f"{instructor.get('first_name', '')} {instructor.get('last_name', '')}".strip() or "Randevu Sistemi"
+                
+                subject = f"Randevu Talebiniz Hakkında - {company_name}"
+                body = f"""Sayın {appointment.get('client_name', 'Müşteri')},
+
+{appointment.get('appointment_date')} tarihinde saat {appointment.get('appointment_time')} için oluşturduğunuz randevu talebiniz maalesef onaylanamamıştır.
+
+Anlayışınız için teşekkür ederiz.
+
+Saygılarımızla,
+{company_name}"""
+                msg = Message(subject, recipients=[client_email], body=body)
+                threading.Thread(target=send_async_email, args=(current_app._get_current_object(), msg)).start()
+            except Exception as e:
+                print(f"Email error: {e}")
+        
         flash('Randevu reddedildi.', 'info')
     except Exception as e:
         flash(f'Hata oluştu: {str(e)}', 'error')
     
-    return redirect(url_for('appointments.pending_appointments'))
+    return redirect(request.referrer or url_for('dashboard.appointments'))
 
 # --- Öğrenci randevu talep formu (kayıtsız) ---
 @appointments_bp.route('/r/<unique_link>', methods=['GET', 'POST'])
@@ -282,6 +363,9 @@ def public_appointment_request(unique_link):
                 'appointment_time': appt_time_obj.strftime('%H:%M'),
                 'duration': 60,
                 'status': 'pending',
+                'client_name': name,
+                'client_phone': phone,
+                'client_email': email,
                 'location': '',
                 'notes': f'Telefon: {phone}\nEmail: {email}',
                 'created_at': datetime.now().isoformat(),
@@ -430,4 +514,3 @@ def check_conflict():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-

@@ -2,8 +2,8 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white text-center">
+            <div class="card shadow" style="background-color: var(--bg-primary); color: var(--text-primary);">
+                <div class="card-header bg-primary text-white text-center dark:bg-blue-900">
                     <h4 class="mb-0">
                         <i class="bi bi-calendar-plus"></i> Randevu Talep Formu
                     </h4>
@@ -17,32 +17,36 @@
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <div class="mb-3">
-                            <label for="name" class="form-label">Ad Soyad *</label>
+                            <label for="name" class="form-label dark:text-gray-200">Ad Soyad *</label>
                             <input type="text" class="form-control" id="name" name="name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="phone" class="form-label">Telefon *</label>
+                            <label for="phone" class="form-label dark:text-gray-200">Telefon *</label>
                             <input type="text" class="form-control" id="phone" name="phone" required>
                         </div>
                         <div class="mb-3">
-                            <label for="email" class="form-label">E-posta</label>
+                            <label for="email" class="form-label dark:text-gray-200">E-posta</label>
                             <input type="email" class="form-control" id="email" name="email">
                         </div>
                         <div class="mb-3">
-                            <label for="appointment_date" class="form-label">Tarih *</label>
-                            <input type="date" class="form-control" id="appointment_date" name="appointment_date"
+                            <label for="appointment_date" class="form-label dark:text-gray-200">Tarih *</label>
+                            <input type="date"
+                                class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                id="appointment_date" name="appointment_date"
                                 value="{{ appointment.appointment_date if appointment and appointment.appointment_date else '' }}"
                                 required>
                         </div>
                         <div class="mb-3">
-                            <label for="appointment_time" class="form-label">Saat *</label>
+                            <label for="appointment_time" class="form-label dark:text-gray-200">Saat *</label>
                             <input type="time" class="form-control" id="appointment_time" name="appointment_time"
                                 value="{% if appointment and appointment.appointment_time %}{% if appointment.appointment_time.strftime is defined %}{{ appointment.appointment_time.strftime('%H:%M') }}{% else %}{{ appointment.appointment_time }}{% endif %}{% else %}{% endif %}"
                                 required>
                         </div>
                         <div class="mb-3">
-                            <label for="note" class="form-label">Not (isteğe bağlı)</label>
-                            <textarea class="form-control" id="note" name="note" rows="2"></textarea>
+                            <label for="note" class="form-label dark:text-gray-200">Not (isteğe bağlı)</label>
+                            <textarea class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                id="note" name="note" rows="2"
+                                style="background-color: var(--bg-primary); color: var(--text-primary);"></textarea>
                         </div>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary"

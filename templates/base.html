@@ -11,6 +11,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
@@ -19,14 +24,30 @@
     <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='img/favicon-32x32.png') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-switch.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        // Sayfa yüklendiğinde temayı kontrol et
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+        }
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col transition-colors duration-200">
     <!-- Navbar -->
-    <nav class="bg-white border-b border-gray-200 shadow-sm">
+    <nav
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
         <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="{{ url_for('index') }}" class="flex items-center gap-2 text-xl font-bold text-blue-700">
+            <a href="{{ url_for('index') }}"
+                class="flex items-center gap-2 text-xl font-bold text-blue-700 dark:text-blue-400">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="w-7 h-7">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -36,9 +57,14 @@
             </a>
             <!-- Dark/Light Mode Toggle Switch -->
             <div class="flex items-center gap-4">
-                <!-- Dark/Light Mode Toggle Switch kaldırıldı -->
+                <button onclick="toggleTheme()"
+                    class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none"
+                    aria-label="Temayı Değiştir">
+                    <span class="material-icons text-gray-600 dark:text-gray-300 block dark:hidden">dark_mode</span>
+                    <span class="material-icons text-yellow-500 hidden dark:block">light_mode</span>
+                </button>
             </div>
-            <button id="menu-toggle" class="md:hidden block text-gray-700 focus:outline-none"
+            <button id="menu-toggle" class="md:hidden block text-gray-700 dark:text-gray-200 focus:outline-none"
                 aria-label="Menüyü Aç/Kapat">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -48,12 +74,14 @@
             <div class="hidden md:flex gap-4 items-center">
                 {% if current_user %}
                 <a href="{{ url_for('dashboard.dashboard') }}"
-                    class="text-gray-700 hover:text-blue-700 font-medium">Panel</a>
+                    class="text-gray-700 dark:text-gray-200 hover:text-blue-700 dark:hover:text-blue-400 font-medium">Panel</a>
                 <a href="{{ url_for('dashboard.appointments') }}"
-                    class="text-gray-700 hover:text-blue-700 font-medium">Randevularım</a>
+                    class="text-gray-700 dark:text-gray-200 hover:text-blue-700 dark:hover:text-blue-400 font-medium">Randevularım</a>
                 <a href="{{ url_for('appointments.create') }}"
-                    class="text-gray-700 hover:text-blue-700 font-medium">Yeni Randevu</a>
-                <a href="{{ url_for('auth.profile') }}" class="text-gray-700 hover:text-blue-700 font-medium">Profil</a>
+                    class="text-gray-700 dark:text-gray-200 hover:text-blue-700 dark:hover:text-blue-400 font-medium">Yeni
+                    Randevu</a>
+                <a href="{{ url_for('auth.profile') }}"
+                    class="text-gray-700 dark:text-gray-200 hover:text-blue-700 dark:hover:text-blue-400 font-medium">Profil</a>
                 {% if current_user.is_superadmin %}
                 <a href="{{ url_for('admin.admin_dashboard') }}"
                     class="text-white bg-red-600 hover:bg-red-700 font-medium px-3 py-1 rounded transition shadow-sm flex items-center"><i
@@ -63,7 +91,8 @@
                     class="ml-2 px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm flex items-center"><i
                         class="bi bi-box-arrow-right mr-1"></i> Çıkış</a>
                 {% else %}
-                <a href="{{ url_for('auth.login') }}" class="text-gray-700 hover:text-blue-700 font-medium">Giriş</a>
+                <a href="{{ url_for('auth.login') }}"
+                    class="text-gray-700 dark:text-gray-200 hover:text-blue-700 dark:hover:text-blue-400 font-medium">Giriş</a>
                 <a href="{{ url_for('auth.register') }}"
                     class="ml-2 px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">Kayıt
                     Ol</a>
@@ -75,12 +104,13 @@
             class="fixed inset-0 bg-gray-900 bg-opacity-30 z-40 hidden transition-opacity duration-300 md:hidden">
         </div>
         <aside id="mobile-menu"
-            class="fixed top-0 right-0 h-full w-[300px] max-w-full bg-white shadow-lg z-50 md:hidden flex flex-col justify-between transition-all duration-300"
+            class="fixed top-0 right-0 h-full w-[300px] max-w-full bg-white dark:bg-gray-800 shadow-lg z-50 md:hidden flex flex-col justify-between transition-all duration-300"
             style="right:-300px;">
             <div class="flex flex-col gap-2 p-6 pt-8 overflow-y-auto flex-1">
                 <div class="flex justify-between items-center mb-6">
-                    <span class="text-xl font-bold text-blue-700">Menü</span>
-                    <button id="menu-close" class="text-gray-700 focus:outline-none" aria-label="Menüyü Kapat">
+                    <span class="text-xl font-bold text-blue-700 dark:text-blue-400">Menü</span>
+                    <button id="menu-close" class="text-gray-700 dark:text-gray-200 focus:outline-none"
+                        aria-label="Menüyü Kapat">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -90,19 +120,19 @@
                 </div>
                 {% if current_user %}
                 <a href="{{ url_for('dashboard.dashboard') }}"
-                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 active:bg-blue-100 font-medium transition">Panel</a>
+                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600 font-medium transition">Panel</a>
                 <a href="{{ url_for('dashboard.appointments') }}"
-                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 active:bg-blue-100 font-medium transition">Randevularım</a>
+                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600 font-medium transition">Randevularım</a>
                 <a href="{{ url_for('appointments.create') }}"
-                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 active:bg-blue-100 font-medium transition">Yeni
+                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600 font-medium transition">Yeni
                     Randevu</a>
                 <a href="{{ url_for('auth.profile') }}"
-                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 active:bg-blue-100 font-medium transition">Profil</a>
+                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600 font-medium transition">Profil</a>
                 {% else %}
                 <a href="{{ url_for('auth.login') }}"
-                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 active:bg-blue-100 font-medium transition">Giriş</a>
+                    class="block w-full text-left px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 active:bg-blue-100 dark:active:bg-gray-600 font-medium transition">Giriş</a>
                 <a href="{{ url_for('auth.register') }}"
-                    class="block w-full text-left px-4 py-3 rounded-lg text-blue-700 hover:bg-blue-100 active:bg-blue-200 font-medium transition">Kayıt
+                    class="block w-full text-left px-4 py-3 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-gray-700 active:bg-blue-200 dark:active:bg-gray-600 font-medium transition">Kayıt
                     Ol</a>
                 {% endif %}
             </div>
@@ -173,10 +203,11 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-6 mt-8">
+    <footer
+        class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-6 mt-8 transition-colors duration-200">
         <div class="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
-            <div class="text-gray-700 font-semibold">Randevu Sistemi</div>
-            <div class="text-gray-400 text-sm">&copy; 2024 Randevu Sistemi. Tüm hakları saklıdır.
+            <div class="text-gray-700 dark:text-gray-200 font-semibold">Randevu Sistemi</div>
+            <div class="text-gray-400 dark:text-gray-500 text-sm">&copy; 2024 Randevu Sistemi. Tüm hakları saklıdır.
             </div>
         </div>
     </footer>

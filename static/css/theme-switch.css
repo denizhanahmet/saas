@@ -1,66 +1,33 @@
-.theme-switch {
-    display: flex;
-    align-items: center;
-    position: relative;
-    width: 56px;
-    height: 32px;
-    background: #e5e7eb;
-    border-radius: 9999px;
-    border: 2px solid #d1d5db;
-    cursor: pointer;
-    transition: background 0.2s;
-    outline: none;
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f3f4f6;
+    --bg-card: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --table-row-hover: #f9fafb;
+    --btn-primary-bg: #2563eb;
+    --btn-primary-text: #ffffff;
+    --btn-secondary-bg: #e5e7eb;
+    --btn-secondary-text: #1f2937;
+    --color-danger: #dc2626;
+    --link-color: #2563eb;
 }
 
-.theme-switch:focus {
-    box-shadow: 0 0 0 2px #2563eb33;
-}
-
-.theme-switch .switch-thumb {
-    position: absolute;
-    left: 4px;
-    top: 4px;
-    width: 24px;
-    height: 24px;
-    background: #fff;
-    border-radius: 50%;
-    transition: left 0.2s, background 0.2s;
-    z-index: 2;
-}
-
-.theme-switch .switch-icon {
-    font-size: 1.1rem;
-    z-index: 1;
-    color: #fbbf24;
-    margin: 0 8px;
-    opacity: 0.7;
-    transition: color 0.2s;
-}
-
-.theme-switch .moon {
-    color: #fbbf24;
-    margin-left: auto;
-}
-
-.theme-switch .sun {
-    color: #f59e42;
-    margin-right: auto;
-}
-
-html.dark .theme-switch {
-    background: #374151;
-    border-color: #4b5563;
-}
-
-html.dark .theme-switch .switch-thumb {
-    background: #111827;
-    left: 28px;
-}
-
-html.dark .theme-switch .sun {
-    color: #d1d5db;
-}
-
-html.dark .theme-switch .moon {
-    color: #fbbf24;
+.dark {
+    --bg-primary: #111827;
+    --bg-secondary: #1f2937;
+    --bg-card: #1f2937;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --border-color: #374151;
+    --table-row-hover: #374151;
+    --btn-primary-bg: #3b82f6;
+    --btn-primary-text: #ffffff;
+    --btn-secondary-bg: #374151;
+    --btn-secondary-text: #f3f4f6;
+    --color-danger: #ef4444;
+    --link-color: #60a5fa;
 }

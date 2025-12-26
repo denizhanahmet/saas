@@ -1,12 +1,3 @@
-def get_scheduler_service():
-    pass
-
-def init_scheduler():
-    pass
-
-def shutdown_scheduler():
-    pass
-
 # OOP tabanlı Flask App Factory
 import logging
 import os
@@ -43,6 +34,7 @@ class AppFactory:
         self.mail = None
         self.moment = None
         self.csrf = None
+        self.scheduler_service = None
         self._configure_logging()
         self._set_utf8_encoding()
         load_dotenv()
@@ -160,17 +152,31 @@ class AppFactory:
         def kvkk():
             return render_template('kvkk.html')
 
-    # Scheduler ve diğer servisler için placeholder metotlar
+    # Scheduler Yönetimi
     def get_scheduler_service(self):
-        pass
+        return self.scheduler_service
+        
     def init_scheduler(self):
-        pass
+        """Initialize and start the scheduler service"""
+        if not self.scheduler_service and self.app:
+            from services.scheduler_service import SchedulerService
+            # Scheduler servisini başlat
+            self.scheduler_service = SchedulerService(self.app)
+            self.scheduler_service.start()
+            # Bekleyen hatırlatmaları yükle
+            self.scheduler_service.schedule_all_pending_reminders()
+            
     def shutdown_scheduler(self):
-        pass
+        if self.scheduler_service:
+            self.scheduler_service.stop()
+            
 factory = AppFactory()
 app = factory.create_app()
 factory.add_routes()
 
 if __name__ == '__main__':
-    
+    # Development ortamında scheduler'ı başlat
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or os.name == 'nt':
+        factory.init_scheduler()
+        
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,45 +1,48 @@
 {% extends "base.html" %}
 {% block title %}Takvim{% endblock %}
 {% block content %}
-<div class="w-full max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-8 border border-gray-200 mt-8">
+<div class="w-full max-w-5xl mx-auto rounded-xl shadow-lg p-8 border border-gray-200 mt-8 transition-colors duration-200"
+    style="background-color: var(--bg-primary); color: var(--text-primary);">
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <h2 class="text-2xl font-bold text-blue-700 flex items-center gap-2"><span
+        <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2"><span
                 class="material-icons align-middle">calendar_today</span>Takvim Görünümü</h2>
         <div class="flex gap-2">
             <a href="{{ url_for('dashboard.appointments') }}"
-                class="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition flex items-center gap-2"><span
+                class="px-6 py-2 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition flex items-center gap-2"><span
                     class="material-icons align-middle">list</span>Liste Görünümü</a>
             <a href="{{ url_for('appointments.create') }}"
                 class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center gap-2"><span
                     class="material-icons align-middle">add</span>Yeni Randevu</a>
         </div>
     </div>
-    <div class="bg-white rounded-lg border border-gray-100 p-4">
+    <div class="rounded-lg border border-gray-100 p-4" style="background-color: var(--bg-secondary);">
         <div id="calendar"></div>
     </div>
 </div>
 <!-- Randevu Detay Modal -->
 <div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary);">
+            <div class="modal-header dark:border-gray-700">
                 <h5 class="modal-title" id="appointmentModalTitle">Randevu Detayı</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+                <button type="button"
+                    class="bg-transparent border-0 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors"
+                    data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class="text-2xl">&times;</span>
                 </button>
             </div>
             <div class="modal-body" id="appointmentModalBody">
                 <!-- İçerik JavaScript ile doldurulacak -->
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+            <div class="modal-footer dark:border-gray-700" style="border-top-color: var(--border-color);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
                 <a href="#" class="btn btn-primary" id="editAppointmentBtn">Düzenle</a>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-{% block extra_js %}
+{% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -97,7 +100,7 @@
                         ${appointment.start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
-                <hr>
+                <hr class="dark:border-gray-600 my-3">
                 <div class="row">
                     <div class="col-md-6">
                         <strong>Süre:</strong><br>
@@ -111,7 +114,7 @@
                     </div>
                 </div>
                 ${extendedProps.client ? `
-                <hr>
+                <hr class="dark:border-gray-600 my-3">
                 <div class="row">
                     <div class="col-12">
                         <strong>Müşteri:</strong><br>
@@ -120,7 +123,7 @@
                 </div>
                 ` : ''}
                 ${extendedProps.location ? `
-                <hr>
+                <hr class="dark:border-gray-600 my-3">
                 <div class="row">
                     <div class="col-12">
                         <strong>Konum:</strong><br>
@@ -129,7 +132,7 @@
                 </div>
                 ` : ''}
                 ${extendedProps.description ? `
-                <hr>
+                <hr class="dark:border-gray-600 my-3">
                 <div class="row">
                     <div class="col-12">
                         <strong>Açıklama:</strong><br>
@@ -139,7 +142,8 @@
                 ` : ''}
             `;
 
-            $('#appointmentModal').modal('show');
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('appointmentModal'));
+            modal.show();
         }
         });
 

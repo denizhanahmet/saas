@@ -1,19 +1,26 @@
 {% extends "base.html" %}
 {% block title %}Randevularım{% endblock %}
 {% block content %}
-<div class="w-full max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-8 border border-gray-200 mt-8">
+<div
+    class="w-full max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700 mt-8 transition-colors duration-200 text-gray-900 dark:text-gray-200">
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <h2 class="text-2xl font-bold text-blue-700 flex items-center gap-2"><span
+        <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2"><span
                 class="material-icons align-middle">calendar_month</span>Randevularım</h2>
-        <a href="{{ url_for('appointments.create') }}"
-            class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center gap-2"><span
-                class="material-icons align-middle">add</span>Yeni Randevu</a>
+        <div class="flex gap-2">
+            <a href="{{ url_for('appointments.pending_appointments') }}"
+                class="px-6 py-2 rounded bg-yellow-500 text-white font-semibold hover:bg-yellow-600 transition flex items-center gap-2"><span
+                    class="material-icons align-middle">hourglass_empty</span>Bekleyen Talepler</a>
+            <a href="{{ url_for('appointments.create') }}"
+                class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center gap-2"><span
+                    class="material-icons align-middle">add</span>Yeni Randevu</a>
+        </div>
     </div>
     <form method="GET" class="flex flex-col md:flex-row gap-4 mb-6">
         <div class="flex-1">
-            <label for="status_filter" class="block text-gray-700 text-sm font-medium mb-1">Durum</label>
+            <label for="status_filter"
+                class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Durum</label>
             <select id="status_filter" name="status_filter"
-                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400">
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="">Tümü</option>
                 <option value="scheduled" {% if request.args.get('status_filter')=='scheduled' %}selected{% endif %}>
                     Planlandı</option>
@@ -24,43 +31,54 @@
             </select>
         </div>
         <div class="flex-1">
-            <label for="date_from" class="block text-gray-700 text-sm font-medium mb-1">Başlangıç Tarihi</label>
+            <label for="date_from" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Başlangıç
+                Tarihi</label>
             <input type="date" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}"
-                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
         </div>
         <div class="flex-1">
-            <label for="date_to" class="block text-gray-700 text-sm font-medium mb-1">Bitiş Tarihi</label>
+            <label for="date_to" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Bitiş
+                Tarihi</label>
             <input type="date" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}"
-                class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
         </div>
         <div class="flex items-end gap-2">
             <button type="submit"
                 class="px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition flex items-center gap-2"><span
                     class="material-icons align-middle">filter_alt</span>Filtrele</button>
             <a href="{{ url_for('dashboard.appointments') }}"
-                class="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition flex items-center gap-2"><span
+                class="px-6 py-2 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition flex items-center gap-2"><span
                     class="material-icons align-middle">close</span>Temizle</a>
         </div>
     </form>
-    <div class="bg-white rounded-lg border border-gray-100">
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
         {% if appointments %}
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih
+                        <th
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Tarih
                         </th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saat
+                        <th
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Saat
                         </th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Başlık</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum
+                        <th
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Durum
                         </th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             İşlemler</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody
+                    class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-200">
                     {% for appointment in appointments %}
                     <tr>
                         <td class="px-4 py-2">{% if appointment.appointment_date and
@@ -100,15 +118,39 @@
                             <a href="{{ url_for('dashboard.edit', appointment_id=appointment.id) }}"
                                 class="px-3 py-1 rounded bg-yellow-500 text-white text-xs font-semibold hover:bg-yellow-600 transition flex items-center gap-1"><span
                                     class="material-icons align-middle text-base">edit</span>Düzenle</a>
+                            {% if appointment.status == 'pending' %}
+                            <form
+                                action="{{ url_for('appointments.approve_appointment', appointment_id=appointment.id) }}"
+                                method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit"
+                                    class="px-3 py-1 rounded bg-green-600 text-white text-xs font-semibold hover:bg-green-700 transition flex items-center gap-1"
+                                    title="Onayla">
+                                    <span class="material-icons align-middle text-base">check</span>Onayla
+                                </button>
+                            </form>
+                            <form
+                                action="{{ url_for('appointments.reject_appointment', appointment_id=appointment.id) }}"
+                                method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit"
+                                    class="px-3 py-1 rounded bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition flex items-center gap-1"
+                                    title="Reddet"
+                                    onclick="return confirm('Bu randevuyu reddetmek istediğinize emin misiniz?');">
+                                    <span class="material-icons align-middle text-base">close</span>Reddet
+                                </button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 {% else %}
                 <div class="text-center py-5">
-                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">Henüz randevu bulunmuyor</h5>
-                    <p class="text-muted">İlk randevunuzu oluşturmak için yukarıdaki butonu kullanın.</p>
+                    <i class="fas fa-calendar-times fa-3x text-gray-400 dark:text-gray-500 mb-3"></i>
+                    <h5 class="text-gray-500 dark:text-gray-400">Henüz randevu bulunmuyor</h5>
+                    <p class="text-gray-500 dark:text-gray-400">İlk randevunuzu oluşturmak için yukarıdaki butonu
+                        kullanın.</p>
                     <a href="{{ url_for('appointments.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Yeni Randevu Oluştur
                     </a>

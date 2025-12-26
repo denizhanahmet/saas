@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
+from flask_mail import Message
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.executors.pool import ThreadPoolExecutor
 
@@ -17,10 +18,11 @@ logger = logging.getLogger(__name__)
 class SchedulerService:
     """Service for managing appointment reminder scheduling"""
     
-    def __init__(self, db, app):
-        self.db = db
+    def __init__(self, app):
+        # db parametresi kaldırıldı çünkü Firebase modülleri doğrudan import ediliyor
         self.app = app
         self.scheduler = None
+        self.sms_service = None
         self._setup_scheduler()
         
     def _setup_scheduler(self):
@@ -151,70 +153,117 @@ class SchedulerService:
             appointment_id: ID of the appointment
         """
         try:
-            from app import Appointment, BlockedDay, Client, SmsLog, User
+            # SQL Modelleri yerine Firebase fonksiyonlarını kullanıyoruz
+            from firebase_realtime import get_data, add_data
             from services.sms_service import get_sms_service
             
             with self.app.app_context():
-                # Get appointment with user and client
-                appointment = Appointment.query.get(appointment_id)
+                # 1. Randevuyu Firebase'den çek
+                appointment = get_data(f'appointments/{appointment_id}')
                 if not appointment:
                     logger.error(f"Appointment {appointment_id} not found")
                     return
                 
-                # Check if appointment is still scheduled
-                if appointment.status != 'scheduled':
+                # 2. Durum kontrolü (Dictionary erişimi)
+                if appointment.get('status') != 'scheduled':
                     logger.info(f"Appointment {appointment_id} is no longer scheduled, skipping reminder")
                     return
                 
-                # Get user and client
-                user = User.query.get(appointment.user_id)
-                client = Client.query.get(appointment.client_id) if appointment.client_id else None
+                # 3. User ve Client verilerini çek
+                user_id = appointment.get('user_id')
+                client_id = appointment.get('client_id')
+                
+                user = get_data(f'users/{user_id}') if user_id else None
+                client = get_data(f'clients/{client_id}') if client_id else None
                 
                 if not user:
                     logger.error(f"User for appointment {appointment_id} not found")
                     return
                 
-                # Get SMS service
-                sms_service = get_sms_service()
+                # SMS servisini başlat (Singleton mantığıyla)
+                if not self.sms_service:
+                    self.sms_service = get_sms_service()
                 
-                # Send reminder SMS
-                result = sms_service.send_reminder_sms(appointment, user, client)
+                # 4. SMS Gönder (Verileri dict olarak gönderiyoruz, SMS servisi buna uygun olmalı)
+                # Not: SMS servisi nesne bekliyorsa, burada basit bir wrapper sınıfı veya
+                # SMS servisini dict kabul edecek şekilde güncellemek gerekebilir.
+                # Şimdilik SMS servisine dict gönderdiğimizi varsayıyoruz.
+                result = self.sms_service.send_reminder_sms(appointment, user, client)
                 
-                # Log SMS in database
-                sms_log = SmsLog(
-                    user_id=user.id,
-                    client_id=client.id if client else None,
-                    message=f"Reminder: {appointment.title} - {appointment.appointment_date} {appointment.appointment_time}",
-                    status=result['status'],
-                    error_message=result.get('error_message'),
-                    sms_provider=result.get('provider', 'unknown'),
-                    cost=result.get('cost', 0.0)
-                )
+                # 5. Logu Firebase'e kaydet
+                sms_log = {
+                    'user_id': user_id,
+                    'client_id': client_id,
+                    'message': f"Reminder: {appointment.get('title')} - {appointment.get('appointment_date')} {appointment.get('appointment_time')}",
+                    'status': result['status'],
+                    'error_message': result.get('error_message'),
+                    'sms_provider': result.get('provider', 'unknown'),
+                    'cost': result.get('cost', 0.0),
+                    'created_at': datetime.now().isoformat()
+                }
                 
-                self.db.session.add(sms_log)
-                self.db.session.commit()
+                add_data('sms_logs', sms_log)
                 
                 logger.info(f"Reminder SMS sent for appointment {appointment_id}: {result['status']}")
+                
+                # 6. Hatırlatma E-postası Gönder
+                client_email = None
+                if client:
+                    client_email = client.get('email')
+                if not client_email:
+                    client_email = appointment.get('client_email')
+                
+                if client_email:
+                    try:
+                        company_name = user.get('company_display_name') or user.get('company_name') or f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "Randevu Sistemi"
+                        
+                        subject = f"Randevu Hatırlatması - {company_name}"
+                        
+                        # Saat formatı temizliği
+                        appt_time_str = str(appointment.get('appointment_time'))
+                        if len(appt_time_str) > 5:
+                            appt_time_str = appt_time_str[:5]
+                        
+                        client_name = appointment.get('client_name')
+                        if not client_name and client:
+                            client_name = client.get('name')
+                        
+                        body = f"""Sayın {client_name or 'Müşteri'},
+
+{company_name} ile olan randevunuzu hatırlatmak isteriz.
+
+Randevu Detayları:
+Tarih: {appointment.get('appointment_date')}
+Saat: {appt_time_str}
+Konu: {appointment.get('title')}
+
+Saygılarımızla,
+{company_name}"""
+                        msg = Message(subject, recipients=[client_email], body=body)
+                        self.app.extensions['mail'].send(msg)
+                        logger.info(f"Reminder email sent to {client_email}")
+                    except Exception as e:
+                        logger.error(f"Failed to send reminder email: {str(e)}")
             
         except Exception as e:
             logger.error(f"Failed to send reminder SMS for appointment {appointment_id}: {str(e)}")
-            # Try to log the error in database
+            # Hata logunu Firebase'e kaydet
             try:
-                from app import Appointment, BlockedDay, Client, SmsLog, User
+                from firebase_realtime import get_data, add_data
                 
                 with self.app.app_context():
-                    appointment = Appointment.query.get(appointment_id)
+                    appointment = get_data(f'appointments/{appointment_id}')
                     if appointment:
-                        sms_log = SmsLog(
-                            user_id=appointment.user_id,
-                            message=f"Reminder failed: {appointment.title}",
-                            status='failed',
-                            error_message=str(e),
-                            sms_provider='scheduler',
-                            cost=0.0
-                        )
-                        self.db.session.add(sms_log)
-                        self.db.session.commit()
+                        sms_log = {
+                            'user_id': appointment.get('user_id'),
+                            'message': f"Reminder failed: {appointment.get('title')}",
+                            'status': 'failed',
+                            'error_message': str(e),
+                            'sms_provider': 'scheduler',
+                            'cost': 0.0,
+                            'created_at': datetime.now().isoformat()
+                        }
+                        add_data('sms_logs', sms_log)
             except:
                 pass
     
@@ -249,26 +298,36 @@ class SchedulerService:
         This should be called on application startup
         """
         try:
-            from app import Appointment, BlockedDay, Client, SmsLog, User
+            from firebase_realtime import get_data
             
             with self.app.app_context():
-                # Get all scheduled appointments that are in the future
+                # Tüm randevuları çek (Firebase'de filtreleme kısıtlı olduğu için hepsini çekip Python'da filtreliyoruz)
+                # Not: Veri büyüdüğünde burası optimize edilmeli (Query parametreleri ile)
+                appointments_dict = get_data('appointments') or {}
                 now = datetime.now()
-                future_appointments = Appointment.query.filter(
-                    Appointment.status == 'scheduled',
-                    Appointment.appointment_date >= now.date()
-                ).all()
             
                 scheduled_count = 0
-                for appointment in future_appointments:
-                    appointment_datetime = appointment.get_datetime()
+                for app_id, appointment in appointments_dict.items():
+                    if appointment.get('status') != 'scheduled':
+                        continue
+
+                    # Tarih string'ini datetime'a çevir
+                    date_str = appointment.get('appointment_date') # YYYY-MM-DD varsayılıyor
+                    time_str = appointment.get('appointment_time') # HH:MM varsayılıyor
+                    
+                    # Saat verisi saniye/mikrosaniye içeriyorsa temizle (HH:MM al)
+                    if time_str and len(str(time_str)) > 5:
+                        time_str = str(time_str)[:5]
+
+                    app_dt_str = f"{date_str} {time_str}"
+                    appointment_datetime = datetime.strptime(app_dt_str, "%Y-%m-%d %H:%M")
                     
                     # Calculate reminder time (24 hours before)
                     reminder_time = appointment_datetime - timedelta(hours=24)
                     
                     # Only schedule if reminder time is in the future
                     if reminder_time > now:
-                        self.schedule_appointment_reminder(appointment.id, reminder_time)
+                        self.schedule_appointment_reminder(app_id, reminder_time)
                         scheduled_count += 1
                 
                 logger.info(f"Scheduled {scheduled_count} appointment reminders")

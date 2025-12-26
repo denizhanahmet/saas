@@ -139,18 +139,27 @@ Randevunuzu iptal etmek veya değiştirmek için lütfen bizimle iletişime geç
         Send reminder SMS for an appointment
         
         Args:
-            appointment: Appointment object
-            user: User object (appointment owner)
-            client: Client object (optional)
+            appointment: Appointment object or dict
+            user: User object or dict (appointment owner)
+            client: Client object or dict (optional)
             
         Returns:
             Dict with SMS sending result
         """
+        # Helper to get attribute or dict item
+        def get_val(obj, attr):
+            if isinstance(obj, dict):
+                return obj.get(attr)
+            return getattr(obj, attr, None)
+
         # Get recipient phone number
-        if client and client.phone:
-            phone_number = client.phone
-        elif user.phone:
-            phone_number = user.phone
+        client_phone = get_val(client, 'phone') if client else None
+        user_phone = get_val(user, 'phone')
+        
+        if client_phone:
+            phone_number = client_phone
+        elif user_phone:
+            phone_number = user_phone
         else:
             return {
                 'status': 'failed',
@@ -159,20 +168,36 @@ Randevunuzu iptal etmek veya değiştirmek için lütfen bizimle iletişime geç
                 'provider': 'sms_provider'
             }
         
+        # Parse dates if they are strings (Firebase case)
+        app_date = get_val(appointment, 'appointment_date')
+        app_time = get_val(appointment, 'appointment_time')
+        
+        # If they are datetime objects (SQLAlchemy case), format them
+        if hasattr(app_date, 'strftime'):
+            app_date = app_date.strftime('%d.%m.%Y')
+        if hasattr(app_time, 'strftime'):
+            app_time = app_time.strftime('%H:%M')
+        # String ise ve saniye içeriyorsa temizle (Firebase'den gelen veri için)
+        elif isinstance(app_time, str) and len(app_time) > 5:
+            app_time = app_time[:5]
+            
+        # User company name
+        company_name = get_val(user, 'company_display_name') or get_val(user, 'company_name') or "Randevu Sistemi"
+
         # Create reminder message
         message = self.create_reminder_message(
-            appointment_title=appointment.title,
-            appointment_date=appointment.appointment_date.strftime('%d.%m.%Y'),
-            appointment_time=appointment.appointment_time.strftime('%H:%M'),
-            company_name=user.get_company_display_name()
+            appointment_title=get_val(appointment, 'title'),
+            appointment_date=app_date,
+            appointment_time=app_time,
+            company_name=company_name
         )
         
         # Send SMS
         return self.send_sms(
             phone_number=phone_number,
             message=message,
-            user_id=user.id,
-            client_id=client.id if client else None
+            user_id=get_val(user, 'id'),
+            client_id=get_val(client, 'id') if client else None
         )
 
 
