@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Randevu İptal Edildi{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto px-4">
+    <div class="card-modern p-8 animate-fade-in-up text-center">
+        <!-- Success Icon -->
+        <div
+            class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+            <span class="material-icons text-4xl text-white">check_circle</span>
+        </div>
+
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Randevu İptal Edildi</h1>
+        <p class="text-gray-500 dark:text-gray-400 mb-8">Randevunuz başarıyla iptal edilmiştir.</p>
+
+        <!-- Cancelled Appointment Details -->
+        <div
+            class="mb-8 p-6 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-left">
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Müşteri:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ appointment.client_name }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Tarih:</span>
+                    <span class="font-medium text-gray-900 dark:text-white line-through text-gray-400">{{
+                        appointment.appointment_date }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Saat:</span>
+                    <span class="font-medium text-gray-900 dark:text-white line-through text-gray-400">{{
+                        appointment.appointment_time }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Durum:</span>
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                        <span class="material-icons text-sm">cancel</span>
+                        İptal Edildi
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            {{ company_name }} ile yeni bir randevu almak için tekrar iletişime geçebilirsiniz.
+        </p>
+    </div>
+</div>
+{% endblock %}

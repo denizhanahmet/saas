@@ -92,24 +92,42 @@
                         <td class="px-4 py-2">{{ appointment.title }}</td>
                         <td class="px-4 py-2">
                             {% set status = appointment.status %}
-                            {% set badge_class = {
-                            'scheduled': 'bg-primary',
-                            'completed': 'bg-success',
-                            'cancelled': 'bg-danger',
-                            'pending': 'bg-warning',
-                            'approved': 'bg-info',
-                            }[status] if status in ['scheduled', 'completed', 'cancelled', 'pending', 'approved'] else
-                            'bg-secondary' %}
-                            {% set status_text = {
-                            'scheduled': 'Planlandı',
-                            'completed': 'Tamamlandı',
-                            'cancelled': 'İptal',
-                            'pending': 'Bekliyor',
-                            'approved': 'Onaylandı',
-                            }[status] if status in ['scheduled', 'completed', 'cancelled', 'pending', 'approved'] else
-                            status|capitalize %}
-                            <span class="px-3 py-1 rounded text-xs font-semibold {{ badge_class }}">{{ status_text
-                                }}</span>
+                            {% if status == 'scheduled' or status == 'approved' %}
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                <span class="material-icons text-sm">event</span>
+                                {% if status == 'scheduled' %}Planlandı{% else %}Onaylandı{% endif %}
+                            </span>
+                            {% elif status == 'completed' %}
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                <span class="material-icons text-sm">check_circle</span>
+                                Tamamlandı
+                            </span>
+                            {% elif status == 'pending' %}
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                                <span class="material-icons text-sm">hourglass_empty</span>
+                                Bekliyor
+                            </span>
+                            {% elif status == 'cancelled' %}
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                <span class="material-icons text-sm">cancel</span>
+                                İptal
+                            </span>
+                            {% elif status == 'rejected' %}
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                <span class="material-icons text-sm">block</span>
+                                Reddedildi
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                                {{ status|capitalize }}
+                            </span>
+                            {% endif %}
                         </td>
                         <td class="px-4 py-2 flex gap-2">
                             <a href="{{ url_for('dashboard.view', appointment_id=appointment.id) }}"

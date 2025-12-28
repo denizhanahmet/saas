@@ -85,11 +85,40 @@ def users_list():
     elif status_filter == 'superadmin':
         users_list = [u for u in users_list if u.get('is_superadmin')]
     users_list = sorted(users_list, key=lambda u: u.get('created_at', ''), reverse=True)
+    
+    # Pagination object
+    total = len(users_list)
     start = (page-1)*per_page
     end = start+per_page
     paged_users = users_list[start:end]
+    
+    class Pagination:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+            self.has_prev = page > 1
+            self.has_next = page < self.pages
+            self.prev_num = page - 1 if self.has_prev else None
+            self.next_num = page + 1 if self.has_next else None
+        
+        def iter_pages(self, left_edge=2, left_current=2, right_current=2, right_edge=2):
+            last = 0
+            for num in range(1, self.pages + 1):
+                if (num <= left_edge or 
+                    (self.page - left_current <= num <= self.page + right_current) or 
+                    num > self.pages - right_edge):
+                    if last + 1 != num:
+                        yield None
+                    yield num
+                    last = num
+    
+    pagination = Pagination(paged_users, page, per_page, total)
+    
     return render_template('admin/users.html',
-                         users=paged_users,
+                         users=pagination,
                          search=search,
                          role_filter=role_filter,
                          status_filter=status_filter)

@@ -21,6 +21,80 @@ def get_limiter():
     """Get limiter from current app context"""
     return current_app.limiter if hasattr(current_app, 'limiter') else None
 
+def get_default_working_hours():
+    """Varsayılan çalışma saatleri oluştur (Pzt-Cum 09:00-18:00)"""
+    return {
+        'monday': {'enabled': True, 'start': '09:00', 'end': '18:00'},
+        'tuesday': {'enabled': True, 'start': '09:00', 'end': '18:00'},
+        'wednesday': {'enabled': True, 'start': '09:00', 'end': '18:00'},
+        'thursday': {'enabled': True, 'start': '09:00', 'end': '18:00'},
+        'friday': {'enabled': True, 'start': '09:00', 'end': '18:00'},
+        'saturday': {'enabled': False, 'start': '09:00', 'end': '13:00'},
+        'sunday': {'enabled': False, 'start': '', 'end': ''}
+    }
+
+def parse_working_hours_from_form(form):
+    """Form verilerinden çalışma saatlerini parse et"""
+    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    working_hours = {}
+    for day in days:
+        enabled = form.get(f'working_{day}') == 'on'
+        start = form.get(f'working_{day}_start', '09:00')
+        end = form.get(f'working_{day}_end', '18:00')
+        working_hours[day] = {
+            'enabled': enabled,
+            'start': start if enabled else '',
+            'end': end if enabled else ''
+        }
+    return working_hours
+
+# --- Session Caching Helpers ---
+# Hassas bilgiler (şifre hash, salt, token) cache'lenmez
+SAFE_USER_FIELDS = [
+    'id', 'email', 'first_name', 'last_name', 'phone', 'company_name',
+    'unique_link', 'logo_path', 'created_at', 'is_active', 'is_superadmin',
+    'role', 'sms_quota', 'remaining_sms_quota', 'working_hours'
+]
+
+def cache_user_to_session(user_data):
+    """Kullanıcı bilgilerini session'a güvenli şekilde cache'le (hassas bilgiler hariç)"""
+    if not user_data:
+        return
+    cached = {k: v for k, v in user_data.items() if k in SAFE_USER_FIELDS}
+    cached['_cache_time'] = datetime.utcnow().isoformat()
+    session['user_cache'] = cached
+
+def get_cached_user(force_refresh=False):
+    """Session'dan cache'lenmiş kullanıcı bilgilerini al, yoksa Firebase'den çek"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
+    
+    # Cache kontrolü
+    if not force_refresh and 'user_cache' in session:
+        cache = session['user_cache']
+        # Cache 5 dakikadan eski mi kontrol et
+        if cache.get('_cache_time'):
+            try:
+                cache_time = datetime.fromisoformat(cache['_cache_time'])
+                if (datetime.utcnow() - cache_time).total_seconds() < 300:  # 5 dakika
+                    return cache
+            except:
+                pass
+    
+    # Cache yok veya eski, Firebase'den çek
+    from firebase_realtime import get_data
+    users = get_data('users') or {}
+    user = users.get(str(user_id))
+    if user:
+        cache_user_to_session(user)
+        return session.get('user_cache')
+    return None
+
+def clear_user_cache():
+    """Session cache'ini temizle"""
+    session.pop('user_cache', None)
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     # Session tabanlı oturum kontrolü
@@ -54,6 +128,7 @@ def login():
                 atomic_update(f"users/{user_id}", lambda current: user)
                 session['session_token'] = user['session_token']
                 session['user_id'] = user_id
+                cache_user_to_session(user)  # Session cache
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
@@ -77,6 +152,7 @@ def login():
                 atomic_update(f"users/{user_id}", lambda current: user)
                 session['session_token'] = user['session_token']
                 session['user_id'] = user_id
+                cache_user_to_session(user)  # Session cache
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
@@ -207,6 +283,13 @@ def register():
         pw = hash_password_pbkdf2(password)
         import uuid
         user_id = str(uuid.uuid4())
+        
+        # Çalışma saatlerini formdan al veya varsayılan kullan
+        working_hours = parse_working_hours_from_form(request.form)
+        # Eğer hiçbir gün seçilmediyse varsayılan kullan
+        if not any(day.get('enabled') for day in working_hours.values()):
+            working_hours = get_default_working_hours()
+        
         user_data = {
             'id': user_id,
             'email': email,
@@ -219,7 +302,8 @@ def register():
             'password_hash': pw['hash'],
             'password_salt': pw['salt'],
             'password_iterations': pw['iterations'],
-            'is_active': False
+            'is_active': False,
+            'working_hours': working_hours
         }
         try:
             from firebase_realtime_transaction import atomic_update
@@ -233,6 +317,7 @@ def register():
 
 @auth_bp.route('/logout')
 def logout():
+    clear_user_cache()  # Clear session cache
     session.pop('user_id', None)
     session.pop('session_token', None)
     flash('Başarıyla çıkış yaptınız.', 'info')
@@ -242,9 +327,8 @@ def logout():
 def profile():
     if not session.get('user_id'):
         return redirect(url_for('auth.login'))
-    from firebase_realtime import get_data
-    users = get_data('users') or {}
-    user = users.get(str(session.get('user_id')))
+    # Cache'den kullanıcı bilgilerini al
+    user = get_cached_user()
     return render_template('auth/profile.html', user=user)
 
 @auth_bp.route('/profile/edit', methods=['GET', 'POST'])
@@ -278,6 +362,14 @@ def edit_profile():
         user['phone'] = new_phone
         user['company_name'] = request.form.get('company_name', user.get('company_name', ''))
         user['updated_at'] = datetime.utcnow().isoformat()
+
+        # Çalışma saatlerini güncelle
+        working_hours = parse_working_hours_from_form(request.form)
+        # Eğer form'dan gelen veriler boşsa mevcut saatleri koru
+        if any(day.get('enabled') for day in working_hours.values()):
+            user['working_hours'] = working_hours
+        elif not user.get('working_hours'):
+            user['working_hours'] = get_default_working_hours()
 
         # Şifre değiştirme işlemi
         current_password = request.form.get('current_password')
@@ -340,6 +432,7 @@ def edit_profile():
         try:
             from firebase_realtime_transaction import atomic_update
             atomic_update(f"users/{session.get('user_id')}", lambda current: user)
+            cache_user_to_session(user)  # Cache yenile
             flash('Profil başarıyla güncellendi.', 'success')
             return redirect(url_for('auth.profile'))
         except Exception as e:

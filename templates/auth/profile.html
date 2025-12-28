@@ -65,9 +65,10 @@
                         {% if user.created_at.strftime is defined %}
                         {{ user.created_at.strftime('%d') }} {{ aylar[user.created_at.month - 1] }} {{
                         user.created_at.strftime('%Y') }}
-                        {% elif 'T' in user.created_at|string %}
+                        {% elif 'T' in user.created_at|string or ' ' in user.created_at|string %}
                         {% set dt = user.created_at|string %}
-                        {{ dt[8:10] }} {{ aylar[(dt[5:7]|int) - 1] }} {{ dt[0:4] }}
+                        {% set date_part = dt.split('T')[0] if 'T' in dt else dt.split(' ')[0] %}
+                        {{ date_part[8:10] }} {{ aylar[(date_part[5:7]|int) - 1] }} {{ date_part[0:4] }}
                         {% else %}
                         {{ user.created_at }}
                         {% endif %}

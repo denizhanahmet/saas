@@ -124,6 +124,57 @@ def has_time_conflict(user_id, appointment_date, appointment_time, duration, exc
     
     return False
 
+def is_within_working_hours(instructor, appointment_date, appointment_time):
+    """
+    Randevu saatinin şirketin çalışma saatleri içinde olup olmadığını kontrol et.
+    Returns: (is_valid: bool, error_message: str or None)
+    """
+    # Gün adını İngilizce olarak al
+    day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    day_index = appointment_date.weekday()  # 0 = Monday, 6 = Sunday
+    day_name = day_names[day_index]
+    
+    # Türkçe gün adları
+    day_names_tr = {
+        'monday': 'Pazartesi',
+        'tuesday': 'Salı', 
+        'wednesday': 'Çarşamba',
+        'thursday': 'Perşembe',
+        'friday': 'Cuma',
+        'saturday': 'Cumartesi',
+        'sunday': 'Pazar'
+    }
+    
+    working_hours = instructor.get('working_hours', {})
+    
+    # Eğer working_hours tanımlı değilse, varsayılan olarak izin ver
+    if not working_hours:
+        return True, None
+    
+    day_hours = working_hours.get(day_name, {})
+    
+    # Gün kapalıysa
+    if not day_hours.get('enabled', False):
+        return False, f"{day_names_tr[day_name]} günü kapalıdır. Lütfen başka bir gün seçiniz."
+    
+    # Saatleri kontrol et
+    start_str = day_hours.get('start', '09:00')
+    end_str = day_hours.get('end', '18:00')
+    
+    if not start_str or not end_str:
+        return True, None
+    
+    try:
+        start_time = datetime.strptime(start_str, '%H:%M').time()
+        end_time = datetime.strptime(end_str, '%H:%M').time()
+    except ValueError:
+        return True, None
+    
+    if not (start_time <= appointment_time <= end_time):
+        return False, f"Bu şirketin çalışma saatleri: {start_str} - {end_str}. Lütfen mesai saatleri içerisinden bir randevu seçiniz."
+    
+    return True, None
+
 # Eğitmen panelinde bekleyen randevular
 @appointments_bp.route('/pending')
 def pending_appointments():
@@ -176,12 +227,20 @@ def approve_appointment(appointment_id):
         return redirect(url_for('appointments.pending_appointments'))
     
     try:
-        # Update appointment status
+        # Generate unique cancellation token
+        import secrets
+        cancel_token = secrets.token_urlsafe(32)
+        
+        # Update appointment status and add cancel token
         appointment['status'] = 'scheduled'
+        appointment['cancel_token'] = cancel_token
         appointment['updated_at'] = datetime.now().isoformat()
         set_data(f'appointments/{appointment_id}', appointment)
         
-        # Müşteriye onay SMS'i gönder
+        # Generate cancellation URL
+        cancel_url = url_for('appointments.client_cancel', appointment_id=appointment_id, token=cancel_token, _external=True)
+        
+        # Müşteriye onay SMS'i gönder (iptal linki ile)
         client_phone = appointment.get('client_phone')
         # Eski kayıtlar için notlardan telefon bulmaya çalış
         if not client_phone and appointment.get('notes'):
@@ -194,10 +253,10 @@ def approve_appointment(appointment_id):
             sms_service = get_sms_service()
             appt_date = appointment.get('appointment_date')
             appt_time = appointment.get('appointment_time')
-            msg = f"Sayın {appointment.get('client_name', 'Müşteri')}, {appt_date} saat {appt_time} randevunuz onaylanmıştır."
+            msg = f"Sayın {appointment.get('client_name', 'Müşteri')}, {appt_date} saat {appt_time} randevunuz onaylanmıştır. İptal etmek için: {cancel_url}"
             sms_service.send_sms(client_phone, msg, user_id)
             
-        # Müşteriye onay E-postası gönder
+        # Müşteriye onay E-postası gönder (iptal linki ile)
         client_email = appointment.get('client_email')
         if client_email:
             try:
@@ -209,6 +268,9 @@ def approve_appointment(appointment_id):
                 body = f"""Sayın {appointment.get('client_name', 'Müşteri')},
 
 {appointment.get('appointment_date')} tarihinde saat {appointment.get('appointment_time')} için oluşturduğunuz randevu talebiniz onaylanmıştır.
+
+Randevunuzu iptal etmek isterseniz aşağıdaki linke tıklayabilirsiniz:
+{cancel_url}
 
 Teşekkürler,
 {company_name}"""
@@ -222,6 +284,7 @@ Teşekkürler,
         flash(f'Hata oluştu: {str(e)}', 'error')
     
     return redirect(request.referrer or url_for('dashboard.appointments'))
+
 
 @appointments_bp.route('/reject/<int:appointment_id>', methods=['POST'])
 def reject_appointment(appointment_id):
@@ -284,6 +347,55 @@ Saygılarımızla,
         flash(f'Hata oluştu: {str(e)}', 'error')
     
     return redirect(request.referrer or url_for('dashboard.appointments'))
+
+# --- Müşteri tarafından randevu iptali ---
+@appointments_bp.route('/cancel/<int:appointment_id>/<token>', methods=['GET', 'POST'])
+def client_cancel(appointment_id, token):
+    """Müşterinin email/SMS linki ile randevusunu iptal etmesi"""
+    # Get appointment from Firebase
+    all_appointments_data = get_data('appointments') or {}
+    appointment = all_appointments_data.get(str(appointment_id))
+    
+    if not appointment:
+        return render_template('appointments/cancel_error.html', 
+                             error="Randevu bulunamadı.")
+    
+    # Verify token
+    if appointment.get('cancel_token') != token:
+        return render_template('appointments/cancel_error.html', 
+                             error="Geçersiz iptal linki.")
+    
+    # Check if already cancelled
+    if appointment.get('status') == 'cancelled':
+        return render_template('appointments/cancel_error.html', 
+                             error="Bu randevu zaten iptal edilmiş.")
+    
+    # Get instructor info
+    users = get_data('users') or {}
+    instructor = users.get(str(appointment.get('user_id')), {})
+    company_name = instructor.get('company_name') or f"{instructor.get('first_name', '')} {instructor.get('last_name', '')}".strip() or "Randevu Sistemi"
+    
+    if request.method == 'POST':
+        try:
+            # Cancel the appointment
+            appointment['status'] = 'cancelled'
+            appointment['cancelled_by'] = 'client'
+            appointment['cancelled_at'] = datetime.now().isoformat()
+            appointment['updated_at'] = datetime.now().isoformat()
+            set_data(f'appointments/{appointment_id}', appointment)
+            
+            return render_template('appointments/cancel_success.html',
+                                 appointment=appointment,
+                                 company_name=company_name)
+        except Exception as e:
+            return render_template('appointments/cancel_error.html', 
+                                 error=f"İptal işlemi sırasında bir hata oluştu: {str(e)}")
+    
+    # GET request - show cancellation confirmation page
+    return render_template('appointments/cancel_confirm.html',
+                         appointment=appointment,
+                         company_name=company_name,
+                         token=token)
 
 # --- Öğrenci randevu talep formu (kayıtsız) ---
 @appointments_bp.route('/r/<unique_link>', methods=['GET', 'POST'])
@@ -352,6 +464,13 @@ def public_appointment_request(unique_link):
             if is_date_blocked(instructor_id, appt_date_obj):
                 flash('Seçilen tarih bloklanmış! Bu tarihte randevu alınamaz.', 'error')
                 return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+            
+            # Check working hours
+            is_valid, error_msg = is_within_working_hours(instructor, appt_date_obj, appt_time_obj)
+            if not is_valid:
+                flash(error_msg, 'error')
+                return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+            
             # Check for time conflicts
             if has_time_conflict(instructor_id, appt_date_obj, appt_time_obj, 60):
                 flash('Bu saatte zaten bir randevu var!', 'error')

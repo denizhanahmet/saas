@@ -1,63 +1,199 @@
-{% extends "base.html" %} {% block title %}Randevu Talep Formu{% endblock %} {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow" style="background-color: var(--bg-primary); color: var(--text-primary);">
-                <div class="card-header bg-primary text-white text-center dark:bg-blue-900">
-                    <h4 class="mb-0">
-                        <i class="bi bi-calendar-plus"></i> Randevu Talep Formu
-                    </h4>
-                    <div class="mt-2">
-                        <span class="badge bg-info">
-                            Eğitmen: {{ user.first_name|default('') }} {{ user.last_name|default('') }}
-                        </span>
-                    </div>
+{% extends "base.html" %}
+
+{% block title %}Randevu Talep Formu{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto px-4">
+    <div class="card-modern p-8 animate-fade-in-up">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                <span class="material-icons text-3xl text-white">calendar_month</span>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Randevu Talep Formu</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">
+                <span
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm">
+                    <span class="material-icons text-base">person</span>
+                    {{ user.first_name|default('') }} {{ user.last_name|default('') }}
+                </span>
+            </p>
+        </div>
+
+        <!-- Working Hours Info -->
+        {% if user.working_hours %}
+        <div class="mb-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons text-blue-500 text-lg">schedule</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300 text-sm">Çalışma Saatleri</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1 text-xs text-gray-600 dark:text-gray-400">
+                {% set days = [
+                ('monday', 'Pzt'),
+                ('tuesday', 'Sal'),
+                ('wednesday', 'Çar'),
+                ('thursday', 'Per'),
+                ('friday', 'Cum'),
+                ('saturday', 'Cmt'),
+                ('sunday', 'Paz')
+                ] %}
+                {% for day_key, day_name in days %}
+                {% set day_hours = user.working_hours.get(day_key, {}) %}
+                <div class="flex justify-between {% if not day_hours.enabled %}opacity-40{% endif %}">
+                    <span>{{ day_name }}:</span>
+                    {% if day_hours.enabled %}
+                    <span>{{ day_hours.start }} - {{ day_hours.end }}</span>
+                    {% else %}
+                    <span>Kapalı</span>
+                    {% endif %}
                 </div>
-                <div class="card-body p-4">
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <div class="mb-3">
-                            <label for="name" class="form-label dark:text-gray-200">Ad Soyad *</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="phone" class="form-label dark:text-gray-200">Telefon *</label>
-                            <input type="text" class="form-control" id="phone" name="phone" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label dark:text-gray-200">E-posta</label>
-                            <input type="email" class="form-control" id="email" name="email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="appointment_date" class="form-label dark:text-gray-200">Tarih *</label>
-                            <input type="date"
-                                class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                id="appointment_date" name="appointment_date"
-                                value="{{ appointment.appointment_date if appointment and appointment.appointment_date else '' }}"
-                                required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="appointment_time" class="form-label dark:text-gray-200">Saat *</label>
-                            <input type="time" class="form-control" id="appointment_time" name="appointment_time"
-                                value="{% if appointment and appointment.appointment_time %}{% if appointment.appointment_time.strftime is defined %}{{ appointment.appointment_time.strftime('%H:%M') }}{% else %}{{ appointment.appointment_time }}{% endif %}{% else %}{% endif %}"
-                                required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="note" class="form-label dark:text-gray-200">Not (isteğe bağlı)</label>
-                            <textarea class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                id="note" name="note" rows="2"
-                                style="background-color: var(--bg-primary); color: var(--text-primary);"></textarea>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary"
-                                style="background-color:#0d6efd !important;color:#fff !important;border:2px solid #0d6efd !important;min-height:44px;font-weight:700;border-radius:8px;width:100%;box-shadow:0 2px 8px rgba(13,110,253,0.08);display:block;">
-                                <i class="bi bi-send"></i> Randevu Talebi Gönder
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                {% endfor %}
             </div>
         </div>
+        {% endif %}
+
+        <!-- Form -->
+        <form method="POST" class="space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <!-- Name -->
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ad Soyad *
+                </label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">person</span>
+                    <input type="text" id="name" name="name" required placeholder="Adınız Soyadınız"
+                        class="input-modern pl-11" />
+                </div>
+            </div>
+
+            <!-- Phone -->
+            <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Telefon *
+                </label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">phone</span>
+                    <input type="tel" id="phone" name="phone" required placeholder="05XX XXX XX XX"
+                        class="input-modern pl-11" />
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    E-posta <span class="text-gray-400 font-normal">(Opsiyonel)</span>
+                </label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">mail</span>
+                    <input type="email" id="email" name="email" placeholder="ornek@email.com"
+                        class="input-modern pl-11" />
+                </div>
+            </div>
+
+            <!-- Date -->
+            <div>
+                <label for="appointment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Tarih *
+                </label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">event</span>
+                    <input type="date" id="appointment_date" name="appointment_date" required
+                        class="input-modern pl-11" />
+                </div>
+                <p id="date_warning" class="text-xs text-red-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- Time -->
+            <div>
+                <label for="appointment_time" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Saat *
+                </label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">schedule</span>
+                    <input type="time" id="appointment_time" name="appointment_time" required
+                        class="input-modern pl-11" />
+                </div>
+                <p id="time_info" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></p>
+            </div>
+
+            <!-- Note -->
+            <div>
+                <label for="note" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Not <span class="text-gray-400 font-normal">(Opsiyonel)</span>
+                </label>
+                <textarea id="note" name="note" rows="2" placeholder="Varsa eklemek istediğiniz notlar..."
+                    class="input-modern resize-none"></textarea>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" id="submitBtn" class="btn-modern w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white 
+                       hover:from-blue-600 hover:to-blue-700 transition-all">
+                <span class="material-icons text-xl">send</span>
+                Randevu Talebi Gönder
+            </button>
+        </form>
     </div>
 </div>
+
+<!-- Working hours data for JavaScript -->
+<script>
+    const workingHours = {{ user.working_hours| tojson |default ('{}') }};
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+    document.getElementById('appointment_date').addEventListener('change', function () {
+        const dateInput = this.value;
+        if (!dateInput) return;
+
+        const selectedDate = new Date(dateInput);
+        const dayIndex = selectedDate.getDay(); // 0 = Sunday
+        const dayName = dayNames[dayIndex];
+
+        const dayNamesTr = {
+            'monday': 'Pazartesi',
+            'tuesday': 'Salı',
+            'wednesday': 'Çarşamba',
+            'thursday': 'Perşembe',
+            'friday': 'Cuma',
+            'saturday': 'Cumartesi',
+            'sunday': 'Pazar'
+        };
+
+        const dateWarning = document.getElementById('date_warning');
+        const timeInfo = document.getElementById('time_info');
+        const timeInput = document.getElementById('appointment_time');
+
+        if (!workingHours || Object.keys(workingHours).length === 0) {
+            dateWarning.classList.add('hidden');
+            timeInfo.textContent = '';
+            timeInput.removeAttribute('min');
+            timeInput.removeAttribute('max');
+            return;
+        }
+
+        const dayHours = workingHours[dayName] || {};
+
+        if (!dayHours.enabled) {
+            dateWarning.textContent = `⚠️ ${dayNamesTr[dayName]} günü kapalıdır. Lütfen başka bir gün seçin.`;
+            dateWarning.classList.remove('hidden');
+            timeInfo.textContent = '';
+            timeInput.value = '';
+        } else {
+            dateWarning.classList.add('hidden');
+            timeInput.setAttribute('min', dayHours.start || '09:00');
+            timeInput.setAttribute('max', dayHours.end || '18:00');
+            timeInfo.textContent = `Çalışma saatleri: ${dayHours.start || '09:00'} - ${dayHours.end || '18:00'}`;
+        }
+    });
+
+    // Set minimum date to today
+    document.getElementById('appointment_date').min = new Date().toISOString().split('T')[0];
+</script>
 {% endblock %}

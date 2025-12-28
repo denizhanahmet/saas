@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Randevu İptali - {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto px-4">
+    <div class="card-modern p-8 animate-fade-in-up">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg">
+                <span class="material-icons text-3xl text-white">event_busy</span>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Randevu İptali</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">{{ company_name }}</p>
+        </div>
+
+        <!-- Appointment Details -->
+        <div class="mb-8 p-6 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+            <h3 class="font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+                <span class="material-icons text-blue-500">info</span>
+                Randevu Bilgileri
+            </h3>
+
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Müşteri:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ appointment.client_name }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Tarih:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ appointment.appointment_date }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Saat:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ appointment.appointment_time }}</span>
+                </div>
+                {% if appointment.title %}
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Başlık:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ appointment.title }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Warning -->
+        <div class="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <div class="flex items-start gap-3">
+                <span class="material-icons text-red-500">warning</span>
+                <p class="text-sm text-red-700 dark:text-red-300">
+                    Bu randevuyu iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+                </p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="flex gap-3">
+                <a href="/" class="flex-1 btn-modern btn-secondary-modern text-center py-3">
+                    <span class="material-icons">arrow_back</span>
+                    Vazgeç
+                </a>
+                <button type="submit"
+                    class="flex-1 btn-modern py-3 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700">
+                    <span class="material-icons">cancel</span>
+                    Randevuyu İptal Et
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -49,6 +49,51 @@
                     class="underline text-blue-600">Görüntüle</a></small>
             {% endif %}
         </div>
+
+        <!-- Çalışma Saatleri -->
+        <div class="border-t pt-4 mt-4">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <span class="material-icons text-blue-500">schedule</span>
+                Çalışma Saatleri
+            </h3>
+            <p class="text-sm text-gray-400 mb-4">Randevu alınabilecek gün ve saatleri belirleyin</p>
+
+            <div class="space-y-2">
+                {% set days = [
+                ('monday', 'Pazartesi'),
+                ('tuesday', 'Salı'),
+                ('wednesday', 'Çarşamba'),
+                ('thursday', 'Perşembe'),
+                ('friday', 'Cuma'),
+                ('saturday', 'Cumartesi'),
+                ('sunday', 'Pazar')
+                ] %}
+                {% set working_hours = user.working_hours or {} %}
+                {% for day_key, day_name in days %}
+                {% set day_hours = working_hours.get(day_key, {'enabled': day_key not in ['saturday', 'sunday'],
+                'start': '09:00', 'end': '18:00'}) %}
+                <div
+                    class="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+                    <input type="checkbox" id="working_{{ day_key }}" name="working_{{ day_key }}"
+                        class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" {% if
+                        day_hours.enabled %}checked{% endif %} onchange="toggleDayInputs('{{ day_key }}')">
+                    <label for="working_{{ day_key }}" class="w-24 font-medium text-gray-700 dark:text-gray-300">{{
+                        day_name }}</label>
+                    <div id="working_{{ day_key }}_inputs"
+                        class="flex items-center gap-2 flex-1 {% if not day_hours.enabled %}opacity-50{% endif %}">
+                        <input type="time" name="working_{{ day_key }}_start" value="{{ day_hours.start or '09:00' }}"
+                            class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            {% if not day_hours.enabled %}disabled{% endif %}>
+                        <span class="text-gray-500">-</span>
+                        <input type="time" name="working_{{ day_key }}_end" value="{{ day_hours.end or '18:00' }}"
+                            class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            {% if not day_hours.enabled %}disabled{% endif %}>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="border-t pt-4 mt-4">
             <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Şifre Değiştir</h3>
             <p class="text-sm text-gray-400 mb-4">Şifrenizi değiştirmek istemiyorsanız bu alanları boş bırakın.</p>
@@ -86,6 +131,21 @@
 {% endblock %}
 {% block extra_scripts %}
 <script>
+    // Toggle day inputs enabled/disabled
+    function toggleDayInputs(day) {
+        const checkbox = document.getElementById('working_' + day);
+        const inputsDiv = document.getElementById('working_' + day + '_inputs');
+        const inputs = inputsDiv.querySelectorAll('input');
+
+        if (checkbox.checked) {
+            inputsDiv.classList.remove('opacity-50');
+            inputs.forEach(input => input.disabled = false);
+        } else {
+            inputsDiv.classList.add('opacity-50');
+            inputs.forEach(input => input.disabled = true);
+        }
+    }
+
     // Şifre doğrulama
     document.getElementById('confirm_password').addEventListener('input', function () {
         var newPassword = document.getElementById('new_password').value;
