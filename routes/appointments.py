@@ -14,6 +14,11 @@ from services.sms_service import get_sms_service
 
 appointments_bp = Blueprint('appointments', __name__)
 
+# Rate limiter yardımcı fonksiyonu
+def get_limiter():
+    """Get limiter from current app context"""
+    return current_app.limiter if hasattr(current_app, 'limiter') else None
+
 def send_async_email(app, msg):
     with app.app_context():
         try:

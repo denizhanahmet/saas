@@ -1,205 +1,242 @@
-{% extends "base.html" %} {% block title %}Kullanıcı Yönetimi{% endblock %} {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-people"></i> Kullanıcı Yönetimi</h2>
-                <div class="text-muted">
-                    <small>Toplam {{ users.total }} kullanıcı</small>
-                </div>
-            </div>
+{% extends "base.html" %}
+
+{% block title %}Kullanıcı Yönetimi{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-blue-500">people</span>
+                Kullanıcı Yönetimi
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Toplam {{ users.total }} kullanıcı</p>
         </div>
+        <a href="{{ url_for('admin.admin_dashboard') }}"
+            class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+            <span class="material-icons text-xl">arrow_back</span>
+            Admin Panel
+        </a>
     </div>
 
-    <!-- Filtreler -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <form method="GET" class="row g-3">
-                        <div class="col-md-4">
-                            <label for="search" class="form-label">Arama</label>
-                            <input type="text" class="form-control" id="search" name="search" value="{{ search }}"
-                                placeholder="E-posta veya ad soyad...">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="role" class="form-label">Rol</label>
-                            <select class="form-select" id="role" name="role">
-                                <option value="">Tüm Roller</option>
-                                <option value="customer" {% if role_filter=='customer' %}selected{% endif %}>Müşteri
-                                </option>
-                                <option value="provider" {% if role_filter=='provider' %}selected{% endif %}>Sağlayıcı
-                                </option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="status" class="form-label">Durum</label>
-                            <select class="form-select" id="status" name="status">
-                                <option value="">Tüm Durumlar</option>
-                                <option value="active" {% if status_filter=='active' %}selected{% endif %}>Aktif
-                                </option>
-                                <option value="inactive" {% if status_filter=='inactive' %}selected{% endif %}>Pasif
-                                </option>
-                                <option value="superadmin" {% if status_filter=='superadmin' %}selected{% endif %}>
-                                    Superadmin</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-search"></i> Filtrele
+    <!-- Filters -->
+    <div class="card-modern p-4 sm:p-6 mb-6">
+        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="lg:col-span-2">
+                <label for="search"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arama</label>
+                <div class="relative">
+                    <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                    <input type="text" id="search" name="search" value="{{ search }}"
+                        placeholder="E-posta veya ad soyad..."
+                        class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+            </div>
+            <div>
+                <label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
+                <select id="role" name="role"
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <option value="">Tüm Roller</option>
+                    <option value="customer" {% if role_filter=='customer' %}selected{% endif %}>Müşteri</option>
+                    <option value="provider" {% if role_filter=='provider' %}selected{% endif %}>Sağlayıcı</option>
+                </select>
+            </div>
+            <div>
+                <label for="status"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durum</label>
+                <select id="status" name="status"
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <option value="">Tüm Durumlar</option>
+                    <option value="active" {% if status_filter=='active' %}selected{% endif %}>Aktif</option>
+                    <option value="inactive" {% if status_filter=='inactive' %}selected{% endif %}>Pasif</option>
+                    <option value="superadmin" {% if status_filter=='superadmin' %}selected{% endif %}>Superadmin
+                    </option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit"
+                    class="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-2">
+                    <span class="material-icons text-xl">search</span>
+                    Filtrele
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card-modern p-6">
+        <div class="flex items-center gap-2 mb-6">
+            <span class="material-icons text-blue-500">list</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Kullanıcı Listesi</h2>
+        </div>
+
+        {% if users.items %}
+        <div class="overflow-x-auto">
+            <table class="table-modern w-full">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Ad Soyad</th>
+                        <th>E-posta</th>
+                        <th>Telefon</th>
+                        <th>Şirket</th>
+                        <th>Rol</th>
+                        <th>Durum</th>
+                        <th>Kayıt Tarihi</th>
+                        {% if current_user.is_superadmin %}
+                        <th>Özel Link</th>
+                        {% endif %}
+                        <th class="rounded-tr-lg text-right">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users.items %}
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                {% if user.is_superadmin %}
+                                <span class="material-icons text-red-500 text-sm" title="Superadmin">shield</span>
+                                {% endif %}
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    {% if user.first_name or user.last_name %}
+                                    {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                                    {% else %}
+                                    Kullanıcı
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="text-gray-600 dark:text-gray-300">{{ user.email }}</td>
+                        <td class="text-gray-600 dark:text-gray-300">{{ user.phone or '-' }}</td>
+                        <td class="text-gray-600 dark:text-gray-300">{{ user.company_name or '-' }}</td>
+                        <td>
+                            {% if user.is_superadmin %}
+                            <span class="badge-modern badge-danger">Superadmin</span>
+                            {% else %}
+                            <span class="badge-modern badge-info">{{ user.role }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge-modern badge-success">Aktif</span>
+                            {% else %}
+                            <span class="badge-modern"
+                                style="background: rgba(107,114,128,0.1); color: #6B7280;">Pasif</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-gray-600 dark:text-gray-300 text-sm">
+                            {% set aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
+                            'Ara'] %}
+                            {% if user.created_at %}
+                            {% if user.created_at.strftime is defined %}
+                            {{ user.created_at.strftime('%d') }} {{ aylar[user.created_at.month - 1] }} {{
+                            user.created_at.strftime('%Y') }}
+                            {% elif 'T' in user.created_at|string %}
+                            {% set dt = user.created_at|string %}
+                            {{ dt[8:10] }} {{ aylar[(dt[5:7]|int) - 1] }} {{ dt[0:4] }}
+                            {% else %}
+                            {{ user.created_at }}
+                            {% endif %}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        {% if current_user.is_superadmin %}
+                        <td>
+                            {% if user.unique_link %}
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
+                                    .../r/{{ user.unique_link }}
+                                </span>
+                                <button
+                                    onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}');this.innerHTML='<span class=\'material-icons text-sm\'>check</span>';setTimeout(()=>this.innerHTML='<span class=\'material-icons text-sm\'>content_copy</span>',1500)"
+                                    class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 transition-colors"
+                                    title="Kopyala">
+                                    <span class="material-icons text-sm">content_copy</span>
                                 </button>
                             </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Kullanıcı Listesi -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-list-ul"></i> Kullanıcı Listesi
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if users.items %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <!-- Kullanıcı adı başlığı kaldırıldı -->
-                                    <th>Ad Soyad</th>
-                                    <th>E-posta</th>
-                                    <th>Telefon</th>
-                                    <th>Şirket</th>
-                                    <th>Rol</th>
-                                    <th>Durum</th>
-                                    <th>Kayıt Tarihi</th>
-                                    {% if current_user.is_superadmin %}
-                                    <th>Özel Randevu Linki</th>
-                                    {% endif %}
-                                    <th>İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in users.items %}
-                                <tr>
-                                    <td>
-                                        <!-- Kullanıcı adı gösterimi kaldırıldı --> {% if user.is_superadmin %}
-                                        <i class="bi bi-shield-check text-danger" title="Superadmin"></i> {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if user.first_name or user.last_name %}
-                                        {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
-                                        <!-- Kullanıcı adı gösterimi kaldırıldı -->
-                                        {% else %}
-                                        Kullanıcı
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ user.email }}</td>
-                                    <td>{{ user.phone or '-' }}</td>
-                                    <td>{{ user.company_name or '-' }}</td>
-                                    <td>
-                                        {% if user.is_superadmin %}
-                                        <span class="badge bg-danger">Superadmin</span> {% else %}
-                                        <span class="badge bg-primary">{{ user.role }}</span> {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if user.is_active %}
-                                        <span class="badge bg-success">Aktif</span> {% else %}
-                                        <span class="badge bg-secondary">Pasif</span> {% endif %}
-                                    </td>
-                                    <td>{% if user.created_at and user.created_at.strftime is defined %}{{
-                                        user.created_at.strftime('%d.%m.%Y') }}{% elif user.created_at %}{{
-                                        user.created_at }}{% endif %}</td>
-                                    {% if current_user.is_superadmin %}
-                                    <td>
-                                        {% if user.unique_link %}
-                                        <span class="text-break small">{{ request.host_url.rstrip('/')
-                                            }}/appointments/r/{{ user.unique_link }}</span>
-                                        <button class="btn btn-outline-primary btn-sm ms-2"
-                                            onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}');this.textContent='Kopyalandı!';setTimeout(()=>this.textContent='Kopyala',1500)">Kopyala</button>
-                                        {% else %}
-                                        <span class="text-muted">-</span> {% endif %}
-                                    </td>
-                                    {% endif %}
-                                    <td>
-                                        <div class="btn-group d-flex justify-content-center align-items-center"
-                                            role="group" style="min-width:90px;">
-                                            <a href="{{ url_for('admin.user_detail', user_id=user.id) }}"
-                                                class="btn btn-sm btn-outline-primary" title="Detay"
-                                                style="min-width:36px; font-size:1.1rem; background:#fff !important; border:1.5px solid #0d6efd; color:#0d6efd; display:inline-flex; align-items:center; justify-content:center;">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            {% if user.id != current_user.id %}
-                                            <form method="POST"
-                                                action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
-                                                style="display:inline-block; margin:0; padding:0;">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit"
-                                                    class="btn btn-sm {% if user.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} px-2 py-1"
-                                                    title="{% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}"
-                                                    style="min-width:36px; font-size:1.1rem; display:inline-flex; align-items:center; justify-content:center;">
-                                                    <i
-                                                        class="bi bi-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
-                                                </button>
-                                            </form>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Sayfalama -->
-                    {% if users.pages > 1 %}
-                    <nav aria-label="Sayfa navigasyonu">
-                        <ul class="pagination justify-content-center">
-                            {% if users.has_prev %}
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="{{ url_for('admin.users_list', page=users.prev_num, search=search, role=role_filter, status=status_filter) }}">Önceki</a>
-                            </li>
-                            {% endif %} {% for page_num in users.iter_pages() %} {% if page_num %} {% if page_num !=
-                            users.page %}
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="{{ url_for('admin.users_list', page=page_num, search=search, role=role_filter, status=status_filter) }}">{{
-                                    page_num }}</a>
-                            </li>
                             {% else %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ page_num }}</span>
-                            </li>
-                            {% endif %} {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">…</span>
-                            </li>
-                            {% endif %} {% endfor %} {% if users.has_next %}
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="{{ url_for('admin.users_list', page=users.next_num, search=search, role=role_filter, status=status_filter) }}">Sonraki</a>
-                            </li>
+                            <span class="text-gray-400">-</span>
                             {% endif %}
-                        </ul>
-                    </nav>
-                    {% endif %} {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-person-x fs-1"></i>
-                        <p>Filtrelere uygun kullanıcı bulunamadı.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+                        </td>
+                        {% endif %}
+                        <td>
+                            <div class="flex items-center justify-end gap-1">
+                                <a href="{{ url_for('admin.user_detail', user_id=user.id) }}"
+                                    class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                                    title="Detay">
+                                    <span class="material-icons">visibility</span>
+                                </a>
+                                {% if user.id != current_user.id %}
+                                <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
+                                    class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="p-2 rounded-lg transition-colors {% if user.is_active %}text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30{% else %}text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30{% endif %}"
+                                        title="{% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}">
+                                        <span class="material-icons">{% if user.is_active %}pause{% else %}play_arrow{%
+                                            endif %}</span>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+
+        <!-- Pagination -->
+        {% if users.pages > 1 %}
+        <div class="flex items-center justify-center gap-2 mt-6">
+            {% if users.has_prev %}
+            <a href="{{ url_for('admin.users_list', page=users.prev_num, search=search, role=role_filter, status=status_filter) }}"
+                class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
+                <span class="material-icons text-sm">chevron_left</span>
+                Önceki
+            </a>
+            {% endif %}
+
+            <div class="flex items-center gap-1">
+                {% for page_num in users.iter_pages() %}
+                {% if page_num %}
+                {% if page_num != users.page %}
+                <a href="{{ url_for('admin.users_list', page=page_num, search=search, role=role_filter, status=status_filter) }}"
+                    class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center font-medium">
+                    {{ page_num }}
+                </a>
+                {% else %}
+                <span class="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center font-medium">
+                    {{ page_num }}
+                </span>
+                {% endif %}
+                {% else %}
+                <span class="w-10 h-10 flex items-center justify-center text-gray-400">…</span>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if users.has_next %}
+            <a href="{{ url_for('admin.users_list', page=users.next_num, search=search, role=role_filter, status=status_filter) }}"
+                class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
+                Sonraki
+                <span class="material-icons text-sm">chevron_right</span>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-12">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">person_off</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanıcı bulunamadı</h3>
+            <p class="text-gray-500 dark:text-gray-400">Filtrelere uygun kullanıcı bulunamadı.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

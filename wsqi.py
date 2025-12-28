@@ -8,6 +8,8 @@ from flask import Flask, flash, jsonify, redirect, render_template, request, ses
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 class AppFactory:
     def _register_jinja_globals(self, app):
@@ -27,8 +29,18 @@ class AppFactory:
             elif status == "rejected":
                 return "Reddedildi"
             return "Bilinmiyor"
+        def get_user_work_hours(user_id):
+            from firebase_realtime import get_data
+            user = get_data(f'users/{user_id}')
+            if user:
+                return {
+                    'start': user.get('work_start_time', '09:00'),
+                    'end': user.get('work_end_time', '17:00')
+                }
+            return {'start': '09:00', 'end': '17:00'}
         app.jinja_env.globals.update(get_status_badge_class=get_status_badge_class)
         app.jinja_env.globals.update(get_status_text=get_status_text)
+        app.jinja_env.globals.update(get_user_work_hours=get_user_work_hours)
     def __init__(self):
         self.app = None
         self.mail = None
@@ -58,6 +70,18 @@ class AppFactory:
         self.mail = Mail(app)
         self.moment = Moment(app)
         self.csrf = CSRFProtect(app)
+        
+        # Rate Limiter - Brute force saldırılarına karşı koruma
+        self.limiter = Limiter(
+            key_func=get_remote_address,
+            app=app,
+            default_limits=["200 per day", "50 per hour"],
+            storage_uri="memory://",
+            strategy="fixed-window"
+        )
+        # Limiter'ı global olarak erişilebilir yap
+        app.limiter = self.limiter
+        
         self._register_blueprints(app)
         self._register_context_processors(app)
         self._register_error_handlers(app)
@@ -67,15 +91,31 @@ class AppFactory:
         return app
 
     def _configure_app(self, app):
-        app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+        # SECRET_KEY güvenlik kontrolü - zorunlu ve güvenli olmalı
+        secret_key = os.getenv('SECRET_KEY')
+        if not secret_key or secret_key == 'your-secret-key-here':
+            if os.getenv('FLASK_ENV') == 'production':
+                raise ValueError("CRITICAL: SECRET_KEY must be set to a secure random value in production!")
+            else:
+                # Geliştirme ortamı için uyarı ver ama devam et
+                import secrets
+                secret_key = secrets.token_hex(32)
+                logging.warning("WARNING: SECRET_KEY not set! Using temporary key. Set SECRET_KEY in .env for production.")
+        app.config['SECRET_KEY'] = secret_key
         # SQLAlchemy config removed. Only Firebase is used.
         app.config['JSON_AS_ASCII'] = False
-        app.config['SESSION_COOKIE_SECURE'] = False
-        app.config['SESSION_COOKIE_HTTPONLY'] = True
-        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+        
+        # Session Cookie Güvenlik Ayarları
+        # Üretim ortamında HTTPS zorunlu, geliştirmede HTTP kabul edilir
+        is_production = os.getenv('FLASK_ENV') == 'production'
+        app.config['SESSION_COOKIE_SECURE'] = is_production  # HTTPS only in production
+        app.config['SESSION_COOKIE_HTTPONLY'] = True  # JavaScript erişimini engelle
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF koruması
         app.config['PERMANENT_SESSION_LIFETIME'] = 30 * 24 * 3600
-        app.config['WTF_CSRF_TIME_LIMIT'] = None
-        app.config['WTF_CSRF_ENABLED'] = False
+        
+        # CSRF Koruması - AKTİF
+        app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 saat token geçerliliği
+        app.config['WTF_CSRF_ENABLED'] = True  # CSRF koruması aktif
         app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
         app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
         app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'

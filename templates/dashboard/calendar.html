@@ -1,153 +1,212 @@
 {% extends "base.html" %}
 {% block title %}Takvim{% endblock %}
+
 {% block content %}
-<div class="w-full max-w-5xl mx-auto rounded-xl shadow-lg p-8 border border-gray-200 mt-8 transition-colors duration-200"
-    style="background-color: var(--bg-primary); color: var(--text-primary);">
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2"><span
-                class="material-icons align-middle">calendar_today</span>Takvim Görünümü</h2>
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-blue-500">calendar_today</span>
+                Takvim Görünümü
+            </h1>
+        </div>
         <div class="flex gap-2">
             <a href="{{ url_for('dashboard.appointments') }}"
-                class="px-6 py-2 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition flex items-center gap-2"><span
-                    class="material-icons align-middle">list</span>Liste Görünümü</a>
+                class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+                <span class="material-icons text-xl">list</span>
+                Liste Görünümü
+            </a>
             <a href="{{ url_for('appointments.create') }}"
-                class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center gap-2"><span
-                    class="material-icons align-middle">add</span>Yeni Randevu</a>
+                class="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all flex items-center gap-2">
+                <span class="material-icons text-xl">add</span>
+                Yeni Randevu
+            </a>
         </div>
     </div>
-    <div class="rounded-lg border border-gray-100 p-4" style="background-color: var(--bg-secondary);">
+
+    <!-- Calendar Container -->
+    <div class="card-modern p-4 sm:p-6">
         <div id="calendar"></div>
     </div>
 </div>
-<!-- Randevu Detay Modal -->
-<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary);">
-            <div class="modal-header dark:border-gray-700">
-                <h5 class="modal-title" id="appointmentModalTitle">Randevu Detayı</h5>
-                <button type="button"
-                    class="bg-transparent border-0 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors"
-                    data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" class="text-2xl">&times;</span>
+
+<!-- Appointment Detail Modal (Tailwind) -->
+<div id="appointmentModal" class="fixed inset-0 z-50 hidden">
+    <!-- Overlay -->
+    <div id="modalOverlay" class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+
+    <!-- Modal Content -->
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md transform transition-all animate-scale-in">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 id="appointmentModalTitle" class="text-lg font-semibold text-gray-900 dark:text-white">Randevu
+                    Detayı</h3>
+                <button id="closeModal"
+                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <span class="material-icons text-gray-500 dark:text-gray-400">close</span>
                 </button>
             </div>
-            <div class="modal-body" id="appointmentModalBody">
-                <!-- İçerik JavaScript ile doldurulacak -->
+
+            <!-- Body -->
+            <div id="appointmentModalBody" class="p-4">
+                <!-- Content filled via JavaScript -->
             </div>
-            <div class="modal-footer dark:border-gray-700" style="border-top-color: var(--border-color);">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-                <a href="#" class="btn btn-primary" id="editAppointmentBtn">Düzenle</a>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
+                <button id="closeModalBtn"
+                    class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    Kapat
+                </button>
+                <a href="#" id="editAppointmentBtn"
+                    class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    <span class="material-icons text-xl">edit</span>
+                    Düzenle
+                </a>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var calendarEl = document.getElementById('calendar');
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'tr',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            },
-            events: [{
-                %
-                for appointment in appointments %
-            } {
-            id: '{{ appointment.id }}',
-            title: '{{ appointment.title }}',
-            start: '{{ appointment.appointment_date }}T{% if appointment.appointment_time and appointment.appointment_time.strftime is defined %}{{ appointment.appointment_time.strftime("%H:%M") }}{% elif appointment.appointment_time %}{{ appointment.appointment_time }}{% endif %}',
-            end: '{{ appointment.appointment_date }}T{{ (appointment.get_datetime() + timedelta(minutes=appointment.duration)).strftime("%H:%M") }}',
-            backgroundColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
-            borderColor: '{% if appointment.status == "scheduled" %}#007bff{% elif appointment.status == "completed" %}#28a745{% else %}#dc3545{% endif %}',
-            textColor: 'white',
-            extendedProps: {
-                description: '{{ appointment.description or "" }}',
-                location: '{{ appointment.location or "" }}',
-                client: '{% if appointment.client %}{{ appointment.client.name }}{% endif %}',
-                status: '{{ appointment.status }}',
-                duration: '{{ appointment.duration }}'
-            }
-        } {
-                %
-                if not loop.last %
-            }, {
-                % endif %
-            } {
-                % endfor %
-            }],
-        eventClick: function (info) {
-            var appointment = info.event;
-            var extendedProps = appointment.extendedProps;
+        const calendarEl = document.getElementById('calendar');
+        const modal = document.getElementById('appointmentModal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const closeModal = document.getElementById('closeModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
 
-            document.getElementById('appointmentModalTitle').textContent = appointment.title;
-            document.getElementById('editAppointmentBtn').href = '/dashboard/appointment/' + appointment.id + '/edit';
-
-            var modalBody = document.getElementById('appointmentModalBody');
-            modalBody.innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Tarih:</strong><br>
-                        ${appointment.start.toLocaleDateString('tr-TR')}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Saat:</strong><br>
-                        ${appointment.start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                </div>
-                <hr class="dark:border-gray-600 my-3">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Süre:</strong><br>
-                        ${extendedProps.duration} dakika
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Durum:</strong><br>
-                        <span class="badge ${appointment.backgroundColor === '#007bff' ? 'bg-primary' : appointment.backgroundColor === '#28a745' ? 'bg-success' : 'bg-danger'}">
-                            ${extendedProps.status === 'scheduled' ? 'Planlandı' : extendedProps.status === 'completed' ? 'Tamamlandı' : 'İptal Edildi'}
-                        </span>
-                    </div>
-                </div>
-                ${extendedProps.client ? `
-                <hr class="dark:border-gray-600 my-3">
-                <div class="row">
-                    <div class="col-12">
-                        <strong>Müşteri:</strong><br>
-                        ${extendedProps.client}
-                    </div>
-                </div>
-                ` : ''}
-                ${extendedProps.location ? `
-                <hr class="dark:border-gray-600 my-3">
-                <div class="row">
-                    <div class="col-12">
-                        <strong>Konum:</strong><br>
-                        ${extendedProps.location}
-                    </div>
-                </div>
-                ` : ''}
-                ${extendedProps.description ? `
-                <hr class="dark:border-gray-600 my-3">
-                <div class="row">
-                    <div class="col-12">
-                        <strong>Açıklama:</strong><br>
-                        ${extendedProps.description}
-                    </div>
-                </div>
-                ` : ''}
-            `;
-
-            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('appointmentModal'));
-            modal.show();
+        // Modal functions
+        function openModal() {
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
         }
+
+        function hideModal() {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        closeModal.addEventListener('click', hideModal);
+        closeModalBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', hideModal);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideModal();
         });
 
-    calendar.render();
+        // Calendar events data
+        const events = [
+            {% for appointment in appointments %}
+        {
+            id: '{{ appointment.id }}',
+            title: '{{ appointment.title | e }}',
+            start: '{{ appointment.appointment_date }}T{% if appointment.appointment_time and appointment.appointment_time.strftime is defined %}{{ appointment.appointment_time.strftime("%H:%M") }}{% elif appointment.appointment_time %}{{ appointment.appointment_time }}{% endif %}',
+            backgroundColor: '{% if appointment.status == "scheduled" or appointment.status == "approved" %}#3B82F6{% elif appointment.status == "completed" %}#10B981{% elif appointment.status == "pending" %}#F59E0B{% else %}#EF4444{% endif %}',
+            borderColor: '{% if appointment.status == "scheduled" or appointment.status == "approved" %}#2563EB{% elif appointment.status == "completed" %}#059669{% elif appointment.status == "pending" %}#D97706{% else %}#DC2626{% endif %}',
+            textColor: 'white',
+            extendedProps: {
+                description: '{{ appointment.description | default("", true) | e }}',
+                location: '{{ appointment.location | default("", true) | e }}',
+                status: '{{ appointment.status }}',
+                duration: '{{ appointment.duration | default(60) }}'
+            }
+        }{% if not loop.last %}, {% endif %}
+    {% endfor %}
+    ];
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'tr',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: events,
+        eventClick: function (info) {
+            const event = info.event;
+            const props = event.extendedProps;
+
+            document.getElementById('appointmentModalTitle').textContent = event.title;
+            document.getElementById('editAppointmentBtn').href = '/dashboard/appointment/' + event.id + '/edit';
+
+            const statusLabels = {
+                'scheduled': 'Planlandı',
+                'approved': 'Planlandı',
+                'completed': 'Tamamlandı',
+                'pending': 'Beklemede',
+                'cancelled': 'İptal Edildi',
+                'rejected': 'Reddedildi'
+            };
+
+            const statusColors = {
+                'scheduled': 'badge-info',
+                'approved': 'badge-info',
+                'completed': 'badge-success',
+                'pending': 'badge-warning',
+                'cancelled': 'badge-danger',
+                'rejected': 'badge-danger'
+            };
+
+            let html = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Tarih</div>
+                            <div class="font-medium text-gray-900 dark:text-white">${event.start.toLocaleDateString('tr-TR')}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Saat</div>
+                            <div class="font-medium text-gray-900 dark:text-white">${event.start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Süre</div>
+                            <div class="font-medium text-gray-900 dark:text-white">${props.duration} dakika</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Durum</div>
+                            <span class="badge-modern ${statusColors[props.status] || 'badge-info'}">${statusLabels[props.status] || props.status}</span>
+                        </div>
+                    </div>
+            `;
+
+            if (props.location) {
+                html += `
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Konum</div>
+                        <div class="font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                            <span class="material-icons text-sm text-gray-400">location_on</span>
+                            ${props.location}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (props.description) {
+                html += `
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Açıklama</div>
+                        <div class="text-gray-700 dark:text-gray-300">${props.description}</div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+
+            document.getElementById('appointmentModalBody').innerHTML = html;
+            openModal();
+        }
     });
+
+    calendar.render();
+});
 </script>
 {% endblock %}

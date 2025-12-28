@@ -16,6 +16,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
+# Rate limiter yardımcı fonksiyonu
+def get_limiter():
+    """Get limiter from current app context"""
+    return current_app.limiter if hasattr(current_app, 'limiter') else None
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     # Session tabanlı oturum kontrolü

@@ -107,12 +107,18 @@ def dashboard():
     monthly_appointments = upcoming_appointments  # For template compatibility
     status_counts = {}
     
+    # Calculate status counts for the stats cards
+    completed_count = sum(1 for apt in user_appointments if apt.get('status') == 'completed')
+    scheduled_count = sum(1 for apt in user_appointments if apt.get('status') in ['scheduled', 'approved'])
+    
     return render_template('dashboard/index.html',
                          today_appointments=today_appointments,
                          upcoming_appointments=upcoming_appointments,
                          total_appointments=total_appointments,
                          today_count=today_count,
                          upcoming_count=upcoming_count,
+                         completed_count=completed_count,
+                         scheduled_count=scheduled_count,
                          monthly_appointments=monthly_appointments,
                          status_counts=status_counts,
                          date_util=date)

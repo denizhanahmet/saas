@@ -3,244 +3,238 @@
 {% block title %}SMS Kullanım İstatistikleri{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-chat-dots"></i> SMS Kullanım İstatistikleri</h2>
-                <div class="text-muted">
-                    <small>
-                        {% if start_date and start_date.strftime is defined %}
-                        {{ start_date.strftime('%d.%m.%Y') }}
-                        {% elif start_date %}
-                        {{ start_date }}
-                        {% endif %}
-                        -
-                        {% if end_date and end_date.strftime is defined %}
-                        {{ end_date.strftime('%d.%m.%Y') }}
-                        {% elif end_date %}
-                        {{ end_date }}
-                        {% endif %}
-                    </small>
-                </div>
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-blue-500">sms</span>
+                SMS Kullanım İstatistikleri
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {% if start_date and start_date.strftime is defined %}
+                {{ start_date.strftime('%d.%m.%Y') }}
+                {% elif start_date %}
+                {{ start_date }}
+                {% endif %}
+                -
+                {% if end_date and end_date.strftime is defined %}
+                {{ end_date.strftime('%d.%m.%Y') }}
+                {% elif end_date %}
+                {{ end_date }}
+                {% endif %}
+            </p>
+        </div>
+        <a href="{{ url_for('admin.admin_dashboard') }}"
+            class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+            <span class="material-icons text-xl">arrow_back</span>
+            Admin Panel
+        </a>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card-modern p-4 sm:p-6 mb-6">
+        <form method="GET" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label for="start_date"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Başlangıç Tarihi</label>
+                <input type="date" id="start_date" name="start_date"
+                    value="{% if start_date and start_date.strftime is defined %}{{ start_date.strftime('%Y-%m-%d') }}{% elif start_date %}{{ start_date }}{% endif %}"
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
             </div>
+            <div>
+                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bitiş
+                    Tarihi</label>
+                <input type="date" id="end_date" name="end_date"
+                    value="{% if end_date and end_date.strftime is defined %}{{ end_date.strftime('%Y-%m-%d') }}{% elif end_date %}{{ end_date }}{% endif %}"
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+            <div class="flex items-end">
+                <button type="submit"
+                    class="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-2">
+                    <span class="material-icons text-xl">search</span>
+                    Filtrele
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats Cards -->
+    {% set total_sms = 0 %}
+    {% set total_cost = 0 %}
+    {% if sms_usage_by_user %}
+    {% for usage in sms_usage_by_user %}
+    {% set total_sms = total_sms + (usage.sms_count or 0) %}
+    {% set total_cost = total_cost + (usage.total_cost or 0) %}
+    {% endfor %}
+    {% endif %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <div class="stat-card stat-card-primary animate-fade-in-up" style="animation-delay: 0.1s">
+            <div class="flex items-start justify-between mb-4">
+                <span class="material-icons text-3xl opacity-80">send</span>
+            </div>
+            <div class="text-3xl font-bold mb-1">{{ total_sms }}</div>
+            <div class="text-sm opacity-80">Toplam SMS</div>
+        </div>
+
+        <div class="stat-card stat-card-success animate-fade-in-up" style="animation-delay: 0.2s">
+            <div class="flex items-start justify-between mb-4">
+                <span class="material-icons text-3xl opacity-80">payments</span>
+            </div>
+            <div class="text-3xl font-bold mb-1">₺{{ "%.2f"|format(total_cost) }}</div>
+            <div class="text-sm opacity-80">Toplam Maliyet</div>
+        </div>
+
+        <div class="stat-card stat-card-info animate-fade-in-up" style="animation-delay: 0.3s">
+            <div class="flex items-start justify-between mb-4">
+                <span class="material-icons text-3xl opacity-80">people</span>
+            </div>
+            <div class="text-3xl font-bold mb-1">{% if sms_usage_by_user %}{{ sms_usage_by_user|length }}{% else %}0{%
+                endif %}</div>
+            <div class="text-sm opacity-80">Aktif Kullanıcı</div>
         </div>
     </div>
 
-    <!-- Tarih Filtresi -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <form method="GET" class="row g-3">
-                        <div class="col-md-4">
-                            <label for="start_date" class="form-label">Başlangıç Tarihi</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date"
-                                value="{% if start_date and start_date.strftime is defined %}{{ start_date.strftime('%Y-%m-%d') }}{% elif start_date %}{{ start_date }}{% endif %}">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="end_date" class="form-label">Bitiş Tarihi</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date"
-                                value="{% if end_date and end_date.strftime is defined %}{{ end_date.strftime('%Y-%m-%d') }}{% elif end_date %}{{ end_date }}{% endif %}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-search"></i> Filtrele
-                                </button>
+    <!-- User SMS Usage -->
+    <div class="card-modern p-6 mb-6">
+        <div class="flex items-center gap-2 mb-6">
+            <span class="material-icons text-blue-500">people</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Kullanıcı Bazında SMS Kullanımı</h2>
+        </div>
+
+        {% if sms_usage_by_user %}
+        <div class="overflow-x-auto">
+            <table class="table-modern w-full">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">E-posta</th>
+                        <th>Aylık Kota</th>
+                        <th>Kullanılan</th>
+                        <th>Kalan</th>
+                        <th>Kullanım</th>
+                        <th>Maliyet</th>
+                        <th class="rounded-tr-lg text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usage in sms_usage_by_user %}
+                    {% set remaining = (usage.sms_quota or 0) - (usage.sms_count or 0) %}
+                    {% set usage_percentage = ((usage.sms_count or 0) / usage.sms_quota * 100) if usage.sms_quota and
+                    usage.sms_quota > 0 else 0 %}
+                    <tr>
+                        <td class="font-medium text-gray-900 dark:text-white">{{ usage.email }}</td>
+                        <td class="text-gray-600 dark:text-gray-300">{{ usage.sms_quota }}</td>
+                        <td>
+                            <span class="badge-modern badge-info">{{ usage.sms_count }}</span>
+                        </td>
+                        <td>
+                            {% if remaining >= 0 %}
+                            <span class="badge-modern badge-success">{{ remaining }}</span>
+                            {% else %}
+                            <span class="badge-modern badge-danger">{{ remaining }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="min-w-[120px]">
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="flex-1 progress-bar {% if usage_percentage > 90 %}bg-red-100 dark:bg-red-900/30{% elif usage_percentage > 70 %}bg-amber-100 dark:bg-amber-900/30{% else %}bg-gray-200 dark:bg-gray-700{% endif %}">
+                                    <div class="progress-fill {% if usage_percentage > 90 %}bg-red-500{% elif usage_percentage > 70 %}bg-amber-500{% else %}bg-emerald-500{% endif %}"
+                                        style="width: {{ usage_percentage }}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-500 w-12">{{ "%.1f"|format(usage_percentage) }}%</span>
                             </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Genel İstatistikler -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body text-center">
-                    {% set total_sms = 0 %}
-                    {% if sms_usage_by_user %}
-                    {% for usage in sms_usage_by_user %}
-                    {% set total_sms = total_sms + (usage.sms_count or 0) %}
+                        </td>
+                        <td class="text-gray-600 dark:text-gray-300">₺{{ "%.2f"|format(usage.total_cost if
+                            usage.total_cost is not none else 0) }}</td>
+                        <td>
+                            <div class="flex items-center justify-end">
+                                <a href="{{ url_for('admin.user_detail', user_id=usage.id) }}"
+                                    class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                                    title="Detay">
+                                    <span class="material-icons">visibility</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
-                    {% endif %}
-                    <h3>{{ total_sms }}</h3>
-                    <p class="mb-0">Toplam SMS</p>
-                </div>
-            </div>
+                </tbody>
+            </table>
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="card bg-success text-white">
-                <div class="card-body text-center">
-                    {% set total_cost = 0 %}
-                    {% if sms_usage_by_user %}
-                    {% for usage in sms_usage_by_user %}
-                    {% set total_cost = total_cost + (usage.total_cost or 0) %}
+        {% else %}
+        <div class="text-center py-12">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">sms_failed</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">SMS kullanımı bulunamadı</h3>
+            <p class="text-gray-500 dark:text-gray-400">Seçilen tarih aralığında SMS kullanımı bulunamadı.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Daily SMS -->
+    <div class="card-modern p-6">
+        <div class="flex items-center gap-2 mb-6">
+            <span class="material-icons text-blue-500">show_chart</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Günlük SMS Gönderimi</h2>
+        </div>
+
+        {% if daily_sms %}
+        {% set max_count = 0 %}
+        {% for daily in daily_sms %}
+        {% if daily.count > max_count %}
+        {% set max_count = daily.count %}
+        {% endif %}
+        {% endfor %}
+
+        <div class="overflow-x-auto">
+            <table class="table-modern w-full">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Tarih</th>
+                        <th>SMS Sayısı</th>
+                        <th class="rounded-tr-lg">Grafik</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for daily in daily_sms %}
+                    <tr>
+                        <td class="font-medium text-gray-900 dark:text-white">
+                            {% if daily.date and daily.date.strftime is defined %}
+                            {{ daily.date.strftime('%d.%m.%Y') }}
+                            {% elif daily.date %}
+                            {{ daily.date }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge-modern badge-info">{{ daily.count }}</span>
+                        </td>
+                        <td class="w-1/2">
+                            {% if max_count > 0 %}
+                            {% set bar_width = (daily.count / max_count * 100) %}
+                            {% else %}
+                            {% set bar_width = 0 %}
+                            {% endif %}
+                            <div class="progress-bar bg-gray-200 dark:bg-gray-700">
+                                <div class="progress-fill bg-blue-500" style="width: {{ bar_width }}%"></div>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
-                    {% endif %}
-                    <h3>{{ "%.2f"|format(total_cost) }}</h3>
-                    <p class="mb-0">Toplam Maliyet (₺)</p>
-                </div>
-            </div>
+                </tbody>
+            </table>
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="card bg-info text-white">
-                <div class="card-body text-center">
-                    <h3>{% if sms_usage_by_user %}{{ sms_usage_by_user|length }}{% else %}0{% endif %}</h3>
-                    <p class="mb-0">Aktif Kullanıcı</p>
-                </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">trending_down</span>
             </div>
+            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Günlük veri bulunamadı</h3>
+            <p class="text-gray-500 dark:text-gray-400">Seçilen tarih aralığında günlük SMS verisi bulunamadı.</p>
         </div>
-    </div>
-
-    <!-- Kullanıcı Bazında SMS Kullanımı -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-people"></i> Kullanıcı Bazında SMS Kullanımı
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if sms_usage_by_user %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <!-- Kullanıcı adı başlığı kaldırıldı -->
-                                    <th>E-posta</th>
-                                    <th>Aylık Kota</th>
-                                    <th>Kullanılan SMS</th>
-                                    <th>Kalan Kota</th>
-                                    <th>Kota Kullanımı</th>
-                                    <th>Toplam Maliyet</th>
-                                    <th>İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for usage in sms_usage_by_user %}
-                                <tr>
-                                    <!-- Kullanıcı adı gösterimi kaldırıldı -->
-                                    <td>{{ usage.email }}</td>
-                                    <td>{{ usage.sms_quota }}</td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ usage.sms_count }}</span>
-                                    </td>
-                                    <td>
-                                        {% set remaining = (usage.sms_quota or 0) - (usage.sms_count or 0) %}
-                                        {% if remaining >= 0 %}
-                                        <span class="badge bg-success">{{ remaining }}</span>
-                                        {% else %}
-                                        <span class="badge bg-danger">{{ remaining }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if usage.sms_quota and usage.sms_quota > 0 %}
-                                        {% set usage_percentage = (usage.sms_count or 0) / usage.sms_quota * 100 %}
-                                        {% else %}
-                                        {% set usage_percentage = 0 %}
-                                        {% endif %}
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar {% if usage_percentage > 90 %}bg-danger{% elif usage_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}"
-                                                role="progressbar" style="width: {{ usage_percentage }}%">
-                                                {{ "%.1f"|format(usage_percentage) }}%
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>₺{{ "%.2f"|format(usage.total_cost if usage.total_cost is not none else 0) }}
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('admin.user_detail', user_id=usage.id) }}"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-chat-x fs-1"></i>
-                        <p>Seçilen tarih aralığında SMS kullanımı bulunamadı.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Günlük SMS Gönderimi -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-graph-up"></i> Günlük SMS Gönderimi
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if daily_sms %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Tarih</th>
-                                    <th>Gönderilen SMS</th>
-                                    <th>Grafik</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% set max_count = 0 %}
-                                {% for daily in daily_sms %}
-                                {% if daily.count > max_count %}
-                                {% set max_count = daily.count %}
-                                {% endif %}
-                                {% endfor %}
-
-                                {% for daily in daily_sms %}
-                                <tr>
-                                    <td>
-                                        {% if daily.date and daily.date.strftime is defined %}
-                                        {{ daily.date.strftime('%d.%m.%Y') }}
-                                        {% elif daily.date %}
-                                        {{ daily.date }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ daily.count }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="progress" style="height: 15px;">
-                                            {% if max_count > 0 %}
-                                            {% set bar_width = (daily.count / max_count * 100) %}
-                                            {% else %}
-                                            {% set bar_width = 0 %}
-                                            {% endif %}
-                                            <div class="progress-bar bg-info" role="progressbar"
-                                                style="width: {{ bar_width }}%"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-graph-down fs-1"></i>
-                        <p>Seçilen tarih aralığında günlük SMS verisi bulunamadı.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

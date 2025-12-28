@@ -1,286 +1,302 @@
 {% extends "base.html" %}
+
 {% block title %}{{ user.email if user else 'Kullanıcı' }} - Kullanıcı Detayı{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
     {% if not user %}
-    <div class="alert alert-danger">
-        <i class="bi bi-exclamation-triangle"></i> Kullanıcı bulunamadı!
+    <div
+        class="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 mb-6">
+        <span class="material-icons">error</span>
+        <span>Kullanıcı bulunamadı!</span>
     </div>
     {% else %}
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-person"></i>
-                    {% if user.first_name or user.last_name %}
-                    {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
-                    <!-- Kullanıcı adı gösterimi kaldırıldı -->
-                    {% else %}
-                    Kullanıcı
-                    {% endif %}
-                </h2>
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-blue-500">person</span>
+                {% if user.first_name or user.last_name %}
+                {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                {% else %}
+                Kullanıcı
+                {% endif %}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ user.email }}</p>
+        </div>
+        <a href="{{ url_for('admin.users_list') }}"
+            class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+            <span class="material-icons text-xl">arrow_back</span>
+            Geri Dön
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- User Info -->
+        <div class="lg:col-span-2 card-modern p-6">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="material-icons text-blue-500">info</span>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Kullanıcı Bilgileri</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Ad Soyad</div>
+                        <div class="font-medium text-gray-900 dark:text-white mt-1">
+                            {% if user.first_name or user.last_name %}
+                            {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                            {% else %}
+                            Kullanıcı
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">E-posta</div>
+                        <div class="font-medium text-gray-900 dark:text-white mt-1">{{ user.email }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Telefon</div>
+                        <div class="font-medium text-gray-900 dark:text-white mt-1">{{ user.phone or '-' }}</div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Şirket</div>
+                        <div class="font-medium text-gray-900 dark:text-white mt-1">{{ user.company_name or '-' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Rol</div>
+                        <div class="mt-1">
+                            {% if user.is_superadmin %}
+                            <span class="badge-modern badge-danger">Superadmin</span>
+                            {% else %}
+                            <span class="badge-modern badge-info">{{ user.role }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Durum</div>
+                        <div class="mt-1">
+                            {% if user.is_active %}
+                            <span class="badge-modern badge-success">Aktif</span>
+                            {% else %}
+                            <span class="badge-modern"
+                                style="background: rgba(107,114,128,0.1); color: #6B7280;">Pasif</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Kayıt Tarihi</div>
+                        <div class="font-medium text-gray-900 dark:text-white mt-1">
+                            {% set aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
+                            'Ara'] %}
+                            {% if user.created_at %}
+                            {% if user.created_at.strftime is defined %}
+                            {{ user.created_at.strftime('%d') }} {{ aylar[user.created_at.month - 1] }} {{
+                            user.created_at.strftime('%Y %H:%M') }}
+                            {% elif 'T' in user.created_at|string %}
+                            {% set dt = user.created_at|string %}
+                            {{ dt[8:10] }} {{ aylar[(dt[5:7]|int) - 1] }} {{ dt[0:4] }} {{ dt[11:16] }}
+                            {% else %}
+                            {{ user.created_at }}
+                            {% endif %}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SMS Stats -->
+        <div class="card-modern p-6">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="material-icons text-blue-500">pie_chart</span>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">SMS İstatistikleri</h2>
+            </div>
+            <div class="space-y-6">
+                <div class="text-center p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20">
+                    <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ user.sms_quota or 0 }}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Aylık Kota</div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
+                        <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ sms_stats.successful
+                            if sms_stats else 0 }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Başarılı</div>
+                    </div>
+                    <div class="text-center p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20">
+                        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ sms_stats.failed if
+                            sms_stats else 0 }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Başarısız</div>
+                    </div>
+                </div>
+                {% if user.sms_quota and user.sms_quota > 0 and sms_stats %}
+                {% set quota_usage = (sms_stats.successful / user.sms_quota * 100) %}
+                {% else %}
+                {% set quota_usage = 0 %}
+                {% endif %}
                 <div>
-                    <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Geri Dön
-                    </a>
+                    <div class="progress-bar bg-gray-200 dark:bg-gray-700">
+                        <div class="progress-fill bg-blue-500" style="width: {{ '%.1f'|format(quota_usage) }}%"></div>
+                    </div>
+                    <div class="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">{{ "%.1f"|format(quota_usage)
+                        }}% kullanıldı</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Kullanıcı Bilgileri -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-info-circle"></i> Kullanıcı Bilgileri
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tr>
-                                    <!-- Kullanıcı adı satırı kaldırıldı -->
-                                </tr>
-                                <tr>
-                                    <td><strong>Ad Soyad:</strong></td>
-                                    <td>
-                                        {% if user.first_name or user.last_name %}
-                                        {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
-                                        <!-- Kullanıcı adı gösterimi kaldırıldı -->
-                                        {% else %}
-                                        Kullanıcı
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>E-posta:</strong></td>
-                                    <td>{{ user.email }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Telefon:</strong></td>
-                                    <td>{{ user.phone or '-' }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td><strong>Şirket:</strong></td>
-                                    <td>{{ user.company_name or '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Rol:</strong></td>
-                                    <td>
-                                        {% if user.is_superadmin %}
-                                        <span class="badge bg-danger">Superadmin</span>
-                                        {% else %}
-                                        <span class="badge bg-primary">{{ user.role }}</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Durum:</strong></td>
-                                    <td>
-                                        {% if user.is_active %}
-                                        <span class="badge bg-success">Aktif</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">Pasif</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Kayıt Tarihi:</strong></td>
-                                    <td>{% if user.created_at and user.created_at.strftime is defined %}{{
-                                        user.created_at.strftime('%d.%m.%Y %H:%M') }}{% elif user.created_at %}{{
-                                        user.created_at }}{% endif %}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-pie-chart"></i> SMS İstatistikleri
-                    </h5>
-                </div>
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <h3 class="text-primary">{{ user.sms_quota or 0 }}</h3>
-                        <p class="text-muted mb-0">Aylık Kota</p>
-                    </div>
-                    <div class="mb-3">
-                        <h3 class="text-success">{{ sms_stats.successful if sms_stats else 0 }}</h3>
-                        <p class="text-muted mb-0">Başarılı SMS</p>
-                    </div>
-                    <div class="mb-3">
-                        <h3 class="text-warning">{{ sms_stats.failed if sms_stats else 0 }}</h3>
-                        <p class="text-muted mb-0">Başarısız SMS</p>
-                    </div>
-                    <div class="progress mb-2">
-                        {% if user.sms_quota and user.sms_quota > 0 and sms_stats %}
-                        {% set quota_usage = (sms_stats.successful / user.sms_quota * 100) %}
-                        {% else %}
-                        {% set quota_usage = 0 %}
-                        {% endif %}
-                        <div class="progress-bar" role="progressbar" style="width: {{ '%.1f'|format(quota_usage) }}%">
-                        </div>
-                    </div>
-                    <small class="text-muted">{{ "%.1f"|format(quota_usage) }}% kullanıldı</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- İşlemler -->
+    <!-- User Actions -->
     {% if current_user and user.id != current_user.id %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-gear"></i> Kullanıcı İşlemleri
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="btn-group" role="group">
-                        <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
-                            style="display: inline;"
-                            onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit"
-                                class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %}"
-                                style="min-width:36px; font-size:1.1rem; display:inline-flex; align-items:center; justify-content:center;">
-                                <i class="bi bi-{% if user.is_active %}pause{% else %}play{% endif %}"></i>
-                                {% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
-                            </button>
-                        </form>
-                        <a href="{{ url_for('admin.quota_management') }}" class="btn btn-outline-primary">
-                            <i class="bi bi-pie-chart"></i> Kota Yönetimi
-                        </a>
-                    </div>
-                </div>
-            </div>
+    <div class="card-modern p-6 mb-6">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-icons text-blue-500">settings</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Kullanıcı İşlemleri</h2>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
+                onsubmit="return confirm('Kullanıcı durumunu değiştirmek istediğinizden emin misiniz?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                    class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 {% if user.is_active %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50{% else %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50{% endif %}">
+                    <span class="material-icons">{% if user.is_active %}pause{% else %}play_arrow{% endif %}</span>
+                    {% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
+                </button>
+            </form>
+            <a href="{{ url_for('admin.quota_management') }}"
+                class="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium transition-all flex items-center gap-2">
+                <span class="material-icons">pie_chart</span>
+                Kota Yönetimi
+            </a>
         </div>
     </div>
     {% endif %}
 
-    <!-- Son Randevular -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-calendar-event"></i> Son Randevular
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if appointments %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Başlık</th>
-                                    <th>Tarih</th>
-                                    <th>Saat</th>
-                                    <th>Süre</th>
-                                    <th>Durum</th>
-                                    <th>Lokasyon</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for appointment in appointments %}
-                                <tr>
-                                    <td>{{ appointment.title }}</td>
-                                    <td>{% if appointment.appointment_date and appointment.appointment_date.strftime is
-                                        defined %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}{% elif
-                                        appointment.appointment_date %}{{ appointment.appointment_date }}{% endif %}
-                                    </td>
-                                    <td>{% if appointment.appointment_time and appointment.appointment_time.strftime is
-                                        defined %}{{ appointment.appointment_time.strftime('%H:%M') }}{% elif
-                                        appointment.appointment_time %}{{ appointment.appointment_time }}{% endif %}
-                                    </td>
-                                    <td>{{ appointment.duration }} dk</td>
-                                    <td>
-                                        <span class="badge {{ get_status_badge_class(appointment.status) }}">
-                                            {{ get_status_text(appointment.status) }}
-                                        </span>
-                                    </td>
-                                    <td>{{ appointment.location or '-' }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-calendar-x fs-1"></i>
-                        <p>Henüz randevu bulunmuyor.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+    <!-- Appointments -->
+    <div class="card-modern p-6 mb-6">
+        <div class="flex items-center gap-2 mb-6">
+            <span class="material-icons text-blue-500">event</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Son Randevular</h2>
         </div>
+        {% if appointments %}
+        <div class="overflow-x-auto">
+            <table class="table-modern w-full">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Başlık</th>
+                        <th>Tarih</th>
+                        <th>Saat</th>
+                        <th>Süre</th>
+                        <th>Durum</th>
+                        <th class="rounded-tr-lg">Lokasyon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td class="font-medium text-gray-900 dark:text-white">{{ appointment.title }}</td>
+                        <td class="text-gray-600 dark:text-gray-300">
+                            {% if appointment.appointment_date and appointment.appointment_date.strftime is defined %}
+                            {{ appointment.appointment_date.strftime('%d.%m.%Y') }}
+                            {% elif appointment.appointment_date %}
+                            {{ appointment.appointment_date }}
+                            {% endif %}
+                        </td>
+                        <td class="text-gray-600 dark:text-gray-300">
+                            {% if appointment.appointment_time and appointment.appointment_time.strftime is defined %}
+                            {{ appointment.appointment_time.strftime('%H:%M') }}
+                            {% elif appointment.appointment_time %}
+                            {{ appointment.appointment_time }}
+                            {% endif %}
+                        </td>
+                        <td class="text-gray-600 dark:text-gray-300">{{ appointment.duration }} dk</td>
+                        <td>
+                            {% if appointment.status == 'scheduled' or appointment.status == 'approved' %}
+                            <span class="badge-modern badge-info">Planlandı</span>
+                            {% elif appointment.status == 'completed' %}
+                            <span class="badge-modern badge-success">Tamamlandı</span>
+                            {% elif appointment.status == 'cancelled' %}
+                            <span class="badge-modern badge-danger">İptal</span>
+                            {% else %}
+                            <span class="badge-modern badge-info">{{ appointment.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-gray-600 dark:text-gray-300">{{ appointment.location or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">event_busy</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Randevu bulunamadı</h3>
+            <p class="text-gray-500 dark:text-gray-400">Henüz randevu bulunmuyor.</p>
+        </div>
+        {% endif %}
     </div>
 
-    <!-- Son SMS Logları -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-chat-dots"></i> Son SMS Logları
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if sms_logs %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Tarih</th>
-                                    <th>Mesaj</th>
-                                    <th>Durum</th>
-                                    <th>Maliyet</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for sms in sms_logs %}
-                                <tr>
-                                    <td>{% if sms.timestamp and sms.timestamp.strftime is defined %}{{
-                                        sms.timestamp.strftime('%d.%m.%Y %H:%M') }}{% elif sms.timestamp %}{{
-                                        sms.timestamp }}{% endif %}</td>
-                                    <td>
-                                        <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
-                                            {{ sms.message }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge {{ get_status_badge_class(sms.status) }}">
-                                            {{ get_status_text(sms.status) }}
-                                        </span>
-                                    </td>
-                                    <td>₺{{ "%.2f"|format(sms.cost or 0) }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-chat-x fs-1"></i>
-                        <p>Henüz SMS logu bulunmuyor.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+    <!-- SMS Logs -->
+    <div class="card-modern p-6">
+        <div class="flex items-center gap-2 mb-6">
+            <span class="material-icons text-blue-500">sms</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Son SMS Logları</h2>
         </div>
+        {% if sms_logs %}
+        <div class="overflow-x-auto">
+            <table class="table-modern w-full">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Tarih</th>
+                        <th>Mesaj</th>
+                        <th>Durum</th>
+                        <th class="rounded-tr-lg">Maliyet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sms in sms_logs %}
+                    <tr>
+                        <td class="text-gray-600 dark:text-gray-300 text-sm">
+                            {% if sms.timestamp and sms.timestamp.strftime is defined %}
+                            {{ sms.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                            {% elif sms.timestamp %}
+                            {{ sms.timestamp }}
+                            {% endif %}
+                        </td>
+                        <td class="text-gray-700 dark:text-gray-200">
+                            <div class="max-w-[200px] truncate">{{ sms.message }}</div>
+                        </td>
+                        <td>
+                            {% if sms.status == 'success' or sms.status == 'sent' %}
+                            <span class="badge-modern badge-success">Gönderildi</span>
+                            {% elif sms.status == 'failed' %}
+                            <span class="badge-modern badge-danger">Başarısız</span>
+                            {% else %}
+                            <span class="badge-modern badge-info">{{ sms.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-gray-600 dark:text-gray-300">₺{{ "%.2f"|format(sms.cost or 0) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">sms_failed</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">SMS logu bulunamadı</h3>
+            <p class="text-gray-500 dark:text-gray-400">Henüz SMS logu bulunmuyor.</p>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 </div>
