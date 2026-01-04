@@ -248,13 +248,15 @@ def approve_appointment(appointment_id):
             match = re.search(r'Telefon: ([\d\+\s]+)', appointment['notes'])
             if match:
                 client_phone = match.group(1).strip()
-                
-        if client_phone:
-            sms_service = get_sms_service()
-            appt_date = appointment.get('appointment_date')
-            appt_time = appointment.get('appointment_time')
-            msg = f"Sayın {appointment.get('client_name', 'Müşteri')}, {appt_date} saat {appt_time} randevunuz onaylanmıştır. İptal etmek için: {cancel_url}"
-            sms_service.send_sms(client_phone, msg, user_id)
+                appointment['client_phone'] = client_phone
+        
+        # SMS Event Service ile SMS gönder
+        from services.sms_event_service import get_event_service
+        event_service = get_event_service()
+        users = get_data('users') or {}
+        instructor = users.get(user_id, {})
+        context = event_service.create_context_from_appointment(appointment, instructor, cancel_url)
+        event_service.trigger_event('appointment_approved', context)
             
         # Müşteriye onay E-postası gönder (iptal linki ile)
         client_email = appointment.get('client_email')
@@ -307,18 +309,21 @@ def reject_appointment(appointment_id):
         appointment['updated_at'] = datetime.now().isoformat()
         set_data(f'appointments/{appointment_id}', appointment)
         
-        # Müşteriye ret SMS'i gönder
+        # Müşteriye ret SMS'i gönder - Event Service ile
         client_phone = appointment.get('client_phone')
         if not client_phone and appointment.get('notes'):
             import re
             match = re.search(r'Telefon: ([\d\+\s]+)', appointment['notes'])
             if match:
                 client_phone = match.group(1).strip()
-                
-        if client_phone:
-            sms_service = get_sms_service()
-            msg = f"Sayın {appointment.get('client_name', 'Müşteri')}, randevu talebiniz maalesef onaylanamamıştır."
-            sms_service.send_sms(client_phone, msg, user_id)
+                appointment['client_phone'] = client_phone
+        
+        from services.sms_event_service import get_event_service
+        event_service = get_event_service()
+        users = get_data('users') or {}
+        instructor = users.get(user_id, {})
+        context = event_service.create_context_from_appointment(appointment, instructor)
+        event_service.trigger_event('appointment_rejected', context)
             
         # Müşteriye ret E-postası gönder
         client_email = appointment.get('client_email')

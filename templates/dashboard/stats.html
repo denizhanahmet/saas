@@ -1,27 +1,404 @@
 {% extends "base.html" %}
 {% block title %}İstatistikler{% endblock %}
+
 {% block content %}
-<div
-    class="w-full max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700 mt-8 transition-colors duration-200">
-    <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-8 flex items-center gap-2"><span
-            class="material-icons align-middle">bar_chart</span>İstatistikler</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="rounded-lg bg-blue-600 text-white p-6 flex flex-col items-center justify-center">
-            <span class="material-icons text-4xl mb-2">calendar_month</span>
-            <div class="text-3xl font-bold">{{ stats.total_appointments }}</div>
-            <div class="text-sm">Toplam Randevu</div>
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
+
+    <!-- Page Header -->
+    <div class="mb-8 animate-fade-in">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+            <span class="material-icons text-blue-500 text-3xl">analytics</span>
+            İstatistikler
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400">Randevu verilerinizin detaylı analizi</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <!-- Total Appointments -->
+        <div class="stat-card stat-card-primary animate-fade-in-up" style="animation-delay: 0.1s">
+            <div class="flex items-start justify-between mb-4">
+                <span class="material-icons text-3xl opacity-80">calendar_month</span>
+            </div>
+            <div class="text-3xl font-bold mb-1">{{ stats.total_appointments }}</div>
+            <div class="text-sm opacity-80">Toplam Randevu</div>
         </div>
-        <div class="rounded-lg bg-green-600 text-white p-6 flex flex-col items-center justify-center">
-            <span class="material-icons text-4xl mb-2">check_circle</span>
-            <div class="text-3xl font-bold">{{ stats.completed_appointments }}</div>
-            <div class="text-sm">Tamamlanan</div>
+
+        <!-- Completed -->
+        <div class="stat-card stat-card-success animate-fade-in-up" style="animation-delay: 0.2s">
+            <div class="flex items-start justify-between mb-4">
+                <span class="material-icons text-3xl opacity-80">check_circle</span>
+            </div>
+            <div class="text-3xl font-bold mb-1">{{ stats.completed_appointments }}</div>
+            <div class="text-sm opacity-80 mb-2">Tamamlanan</div>
+            <div class="progress-bar bg-white/20">
+                <div class="progress-fill bg-white/60" style="width: {{ stats.completion_rate }}%"></div>
+            </div>
+            <div class="text-xs mt-1 opacity-70">%{{ stats.completion_rate }} başarı</div>
         </div>
-        <div class="rounded-lg bg-yellow-500 text-white p-6 flex flex-col items-center justify-center">
-            <span class="material-icons text-4xl mb-2">schedule</span>
-            <div class="text-3xl font-bold">{{ stats.scheduled_appointments }}</div>
-            <div class="text-sm">Planlanan</div>
+
+        <!-- Scheduled -->
+        <div class="stat-card stat-card-info animate-fade-in-up" style="animation-delay: 0.3s">
+            <div class="flex items-start justify-between mb-4">
+                <span class="material-icons text-3xl opacity-80">schedule</span>
+            </div>
+            <div class="text-3xl font-bold mb-1">{{ stats.scheduled_appointments }}</div>
+            <div class="text-sm opacity-80">Planlanan</div>
+        </div>
+
+        <!-- Cancelled -->
+        <div class="stat-card stat-card-warning animate-fade-in-up" style="animation-delay: 0.4s">
+            <div class="flex items-start justify-between mb-4">
+                <span class="material-icons text-3xl opacity-80">cancel</span>
+            </div>
+            <div class="text-3xl font-bold mb-1">{{ stats.cancelled_appointments }}</div>
+            <div class="text-sm opacity-80">İptal Edilen</div>
         </div>
     </div>
-    <!-- Diğer istatistikler ve grafikler burada devam edebilir -->
+
+    <!-- Charts Row 1: Weekly + Monthly Trend -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+        <!-- Weekly Trend Chart -->
+        <div class="card-modern p-6 animate-fade-in-up" style="animation-delay: 0.5s">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span class="material-icons text-blue-500">show_chart</span>
+                    Haftalık Trend
+                </h2>
+                <span class="text-sm text-gray-500 dark:text-gray-400">Son 7 gün</span>
+            </div>
+            <div class="relative" style="height: 280px;">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Monthly Trend Chart -->
+        <div class="card-modern p-6 animate-fade-in-up" style="animation-delay: 0.6s">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span class="material-icons text-purple-500">bar_chart</span>
+                    Aylık Trend
+                </h2>
+                <span class="text-sm text-gray-500 dark:text-gray-400">Son 12 ay</span>
+            </div>
+            <div class="relative" style="height: 280px;">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Status Distribution + Busiest Hours -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+        <!-- Status Distribution Chart -->
+        <div class="card-modern p-6 animate-fade-in-up" style="animation-delay: 0.7s">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span class="material-icons text-emerald-500">pie_chart</span>
+                    Durum Dağılımı
+                </h2>
+            </div>
+            <div class="relative flex items-center justify-center" style="height: 280px;">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Busiest Hours Chart -->
+        <div class="card-modern p-6 animate-fade-in-up" style="animation-delay: 0.8s">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span class="material-icons text-orange-500">access_time</span>
+                    En Yoğun Saatler
+                </h2>
+            </div>
+            {% if stats.busiest_hours %}
+            <div class="space-y-3">
+                {% for hour, count in stats.busiest_hours[:5] %}
+                <div class="flex items-center gap-4">
+                    <div class="w-16 text-sm font-medium text-gray-700 dark:text-gray-300">{{ hour }}</div>
+                    <div class="flex-1">
+                        <div class="h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                            {% set max_count = stats.busiest_hours[0][1] if stats.busiest_hours else 1 %}
+                            {% set percentage = (count / max_count * 100) if max_count > 0 else 0 %}
+                            <div class="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-500"
+                                style="width: {{ percentage }}%"></div>
+                        </div>
+                    </div>
+                    <div class="w-8 text-sm font-bold text-gray-900 dark:text-white text-right">{{ count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center h-48 text-gray-400">
+                <span class="material-icons text-4xl mb-2">hourglass_empty</span>
+                <p>Henüz veri yok</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Busiest Days Table -->
+    <div class="card-modern p-6 animate-fade-in-up" style="animation-delay: 0.9s">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-red-500">event</span>
+                En Yoğun Günler
+            </h2>
+        </div>
+        {% if stats.busiest_days %}
+        <div class="overflow-x-auto">
+            <table class="table-modern w-full">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Sıra</th>
+                        <th>Tarih</th>
+                        <th class="rounded-tr-lg text-right">Randevu Sayısı</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day, count in stats.busiest_days %}
+                    <tr>
+                        <td>
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full 
+                                {% if loop.index == 1 %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400
+                                {% elif loop.index == 2 %}bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300
+                                {% elif loop.index == 3 %}bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400
+                                {% else %}bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400{% endif %}
+                                font-bold text-sm">
+                                {{ loop.index }}
+                            </span>
+                        </td>
+                        <td class="font-medium text-gray-900 dark:text-white">{{ day }}</td>
+                        <td class="text-right">
+                            <span
+                                class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-semibold text-sm">
+                                <span class="material-icons text-sm">event</span>
+                                {{ count }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-gray-400">
+            <span class="material-icons text-4xl mb-2">calendar_today</span>
+            <p>Henüz randevu verisi yok</p>
+        </div>
+        {% endif %}
+    </div>
+
 </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Dark mode detection
+        const isDarkMode = document.documentElement.classList.contains('dark') ||
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        const textColor = isDarkMode ? '#E5E7EB' : '#374151';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+        // Chart.js defaults
+        Chart.defaults.color = textColor;
+        Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
+
+        // Data from backend
+        const weeklyLabels = {{ weekly_labels | tojson | safe
+    }};
+    const weeklyData = {{ weekly_data | tojson | safe }};
+    const monthlyTrendLabels = {{ monthly_trend_labels | tojson | safe }};
+    const monthlyTrendData = {{ monthly_trend_data | tojson | safe }};
+    const statusLabels = {{ status_labels | tojson | safe }};
+    const statusData = {{ status_data | tojson | safe }};
+    const statusColors = {{ status_colors | tojson | safe }};
+
+    // Weekly Trend Chart (Line)
+    const weeklyCtx = document.getElementById('weeklyChart');
+    if (weeklyCtx) {
+        const weeklyGradient = weeklyCtx.getContext('2d').createLinearGradient(0, 0, 0, 280);
+        weeklyGradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+        weeklyGradient.addColorStop(1, 'rgba(59, 130, 246, 0.01)');
+
+        new Chart(weeklyCtx, {
+            type: 'line',
+            data: {
+                labels: weeklyLabels,
+                datasets: [{
+                    label: 'Randevu',
+                    data: weeklyData,
+                    borderColor: '#3B82F6',
+                    backgroundColor: weeklyGradient,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#3B82F6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDarkMode ? '#1F2937' : '#fff',
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: gridColor,
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function (context) {
+                                return context.parsed.y + ' randevu';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: textColor }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: {
+                            color: textColor,
+                            stepSize: 1,
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Monthly Trend Chart (Bar)
+    const monthlyCtx = document.getElementById('monthlyChart');
+    if (monthlyCtx) {
+        new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: monthlyTrendLabels,
+                datasets: [{
+                    label: 'Randevu',
+                    data: monthlyTrendData,
+                    backgroundColor: function (context) {
+                        const chart = context.chart;
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) return '#8B5CF6';
+                        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                        gradient.addColorStop(0, '#8B5CF6');
+                        gradient.addColorStop(1, '#EC4899');
+                        return gradient;
+                    },
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDarkMode ? '#1F2937' : '#fff',
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: gridColor,
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function (context) {
+                                return context.parsed.y + ' randevu';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: textColor,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: {
+                            color: textColor,
+                            stepSize: 1,
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Status Distribution Chart (Doughnut)
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx) {
+        const hasData = statusData.some(val => val > 0);
+
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: hasData ? statusData : [1],
+                    backgroundColor: hasData ? statusColors : ['#E5E7EB'],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor,
+                            padding: 16,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        enabled: hasData,
+                        backgroundColor: isDarkMode ? '#1F2937' : '#fff',
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: gridColor,
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function (context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((context.parsed / total) * 100);
+                                return context.label + ': ' + context.parsed + ' (%' + percentage + ')';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

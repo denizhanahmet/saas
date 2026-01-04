@@ -342,22 +342,69 @@ def stats():
     # General statistics
     total_appointments = len(processed_appointments)
     completed_appointments = sum(1 for apt in processed_appointments if apt['status'] == 'completed')
-    scheduled_appointments = sum(1 for apt in processed_appointments if apt['status'] == 'scheduled')
-    cancelled_appointments = sum(1 for apt in processed_appointments if apt['status'] == 'cancelled')
+    scheduled_appointments = sum(1 for apt in processed_appointments if apt['status'] in ['scheduled', 'approved'])
+    pending_appointments = sum(1 for apt in processed_appointments if apt['status'] == 'pending')
+    cancelled_appointments = sum(1 for apt in processed_appointments if apt['status'] in ['cancelled', 'rejected'])
     
-    # Current year statistics
+    # === WEEKLY TREND (Son 7 gün) ===
+    today = date.today()
+    day_names_tr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']
+    weekly_labels = []
+    weekly_data = []
+    
+    for i in range(6, -1, -1):  # Son 7 gün (6 gün önce -> bugün)
+        target_date = today - timedelta(days=i)
+        day_name = day_names_tr[target_date.weekday()]
+        weekly_labels.append(f"{day_name} ({target_date.day}/{target_date.month})")
+        
+        # O gündeki randevu sayısı
+        count = sum(1 for apt in processed_appointments if apt['date'] == target_date)
+        weekly_data.append(count)
+    
+    # === MONTHLY TREND (Son 12 ay) ===
+    month_names_tr = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 
+                      'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+    monthly_trend_labels = []
+    monthly_trend_data = []
+    
+    current_month = today.month
+    current_year_val = today.year
+    
+    for i in range(11, -1, -1):  # Son 12 ay
+        # Ay hesaplama
+        month = current_month - i
+        year = current_year_val
+        
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        monthly_trend_labels.append(f"{month_names_tr[month-1]} {year}")
+        
+        # O aydaki randevu sayısı
+        count = sum(1 for apt in processed_appointments 
+                   if apt['date'].month == month and apt['date'].year == year)
+        monthly_trend_data.append(count)
+    
+    # === STATUS DISTRIBUTION (Durum dağılımı) ===
+    status_labels = ['Tamamlanan', 'Planlanan', 'Bekleyen', 'İptal']
+    status_data = [completed_appointments, scheduled_appointments, 
+                   pending_appointments, cancelled_appointments]
+    status_colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444']
+    
+    # Current year statistics (mevcut kod)
     current_year = datetime.now().year
     yearly_appointments = [
         apt for apt in processed_appointments
         if apt['date'].year == current_year
     ]
     
-    # Monthly distribution
+    # Monthly distribution (mevcut kod)
     monthly_stats = defaultdict(int)
     for apt in yearly_appointments:
         monthly_stats[apt['date'].month] += 1
     
-    # Chart data
+    # Chart data (mevcut kod)
     monthly_labels = [f'{month}.Ay' for month in sorted(monthly_stats.keys())]
     monthly_data = [monthly_stats[month] for month in sorted(monthly_stats.keys())]
     
@@ -381,19 +428,35 @@ def stats():
     
     sorted_hours = sorted(hour_counts.items(), key=lambda x: x[1], reverse=True)[:10]
     for hour, count in sorted_hours:
-        busiest_hours.append((f'{hour:02d}', count))
+        busiest_hours.append((f'{hour:02d}:00', count))
+    
+    # Completion rate
+    completion_rate = round((completed_appointments / total_appointments * 100), 1) if total_appointments > 0 else 0
     
     stats = {
         'total_appointments': total_appointments,
         'completed_appointments': completed_appointments,
         'scheduled_appointments': scheduled_appointments,
+        'pending_appointments': pending_appointments,
         'cancelled_appointments': cancelled_appointments,
+        'completion_rate': completion_rate,
         'busiest_days': busiest_days,
         'busiest_hours': busiest_hours
     }
     
     return render_template('dashboard/stats.html',
                          stats=stats,
+                         # Haftalık trend
+                         weekly_labels=weekly_labels,
+                         weekly_data=weekly_data,
+                         # Aylık trend
+                         monthly_trend_labels=monthly_trend_labels,
+                         monthly_trend_data=monthly_trend_data,
+                         # Durum dağılımı
+                         status_labels=status_labels,
+                         status_data=status_data,
+                         status_colors=status_colors,
+                         # Mevcut veriler
                          monthly_labels=monthly_labels,
                          monthly_data=monthly_data,
                          current_year=current_year,

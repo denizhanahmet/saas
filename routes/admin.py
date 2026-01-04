@@ -271,3 +271,82 @@ def update_quota(user_id):
     except Exception as e:
         flash(f'Hata: {str(e)}', 'error')
     return redirect(url_for('admin.quota_management'))
+
+# =====================
+# SMS Event Management
+# =====================
+
+@admin_bp.route('/sms-events')
+@admin_required
+def sms_events():
+    """SMS event yönetimi sayfası"""
+    from services.sms_event_service import SMSEventService
+    events = get_data('sms_events') or {}
+    locations = SMSEventService.LOCATIONS
+    return render_template('admin/sms_events.html', 
+                         events=events, 
+                         locations=locations)
+
+@admin_bp.route('/sms-events/create', methods=['POST'])
+@admin_required
+def sms_event_create():
+    """Yeni SMS event oluştur"""
+    import uuid
+    event_id = f"evt_{uuid.uuid4().hex[:8]}"
+    event_data = {
+        'location': request.form.get('location'),
+        'template': request.form.get('template'),
+        'order': int(request.form.get('order', 10)),
+        'priority': int(request.form.get('priority', 2)),
+        'enabled': request.form.get('enabled') == 'on',
+        'conditions': {'has_phone': True}
+    }
+    set_data(f'sms_events/{event_id}', event_data)
+    flash('SMS eventi başarıyla oluşturuldu.', 'success')
+    return redirect(url_for('admin.sms_events'))
+
+@admin_bp.route('/sms-events/update', methods=['POST'])
+@admin_required
+def sms_event_update():
+    """SMS event güncelle"""
+    event_id = request.form.get('event_id')
+    if not event_id:
+        flash('Event bulunamadı!', 'error')
+        return redirect(url_for('admin.sms_events'))
+    
+    event_data = {
+        'location': request.form.get('location'),
+        'template': request.form.get('template'),
+        'order': int(request.form.get('order', 10)),
+        'priority': int(request.form.get('priority', 2)),
+        'enabled': request.form.get('enabled') == 'on',
+        'conditions': {'has_phone': True}
+    }
+    set_data(f'sms_events/{event_id}', event_data)
+    flash('SMS eventi güncellendi.', 'success')
+    return redirect(url_for('admin.sms_events'))
+
+@admin_bp.route('/sms-events/<event_id>/toggle', methods=['POST'])
+@admin_required
+def sms_event_toggle(event_id):
+    """SMS event durumunu değiştir"""
+    events = get_data('sms_events') or {}
+    event = events.get(event_id)
+    if not event:
+        flash('Event bulunamadı!', 'error')
+        return redirect(url_for('admin.sms_events'))
+    
+    event['enabled'] = not event.get('enabled', True)
+    set_data(f'sms_events/{event_id}', event)
+    status = "aktifleştirildi" if event['enabled'] else "devre dışı bırakıldı"
+    flash(f'SMS eventi {status}.', 'success')
+    return redirect(url_for('admin.sms_events'))
+
+@admin_bp.route('/sms-events/<event_id>/delete', methods=['POST'])
+@admin_required
+def sms_event_delete(event_id):
+    """SMS event sil"""
+    delete_data(f'sms_events/{event_id}')
+    flash('SMS eventi silindi.', 'success')
+    return redirect(url_for('admin.sms_events'))
+

@@ -145,7 +145,7 @@
 
 <!-- Working hours data for JavaScript -->
 <script>
-    const workingHours = {{ user.working_hours| tojson |default ('{}') }};
+    const workingHours = {{ (user.working_hours or { })| tojson }};
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
     document.getElementById('appointment_date').addEventListener('change', function () {

@@ -1,0 +1,271 @@
+{% extends "admin/base.html" %}
+{% block title %}SMS Event Yönetimi{% endblock %}
+{% block admin_content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-blue-500">sms</span>
+                SMS Event Yönetimi
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                Hangi olaylarda SMS gönderileceğini yönetin
+            </p>
+        </div>
+        <button onclick="openModal('create')" class="btn-modern bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <span class="material-icons">add</span>
+            Yeni Event Ekle
+        </button>
+    </div>
+
+    <!-- Location Legend -->
+    <div class="card-modern p-4">
+        <h3 class="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <span class="material-icons text-amber-500">info</span>
+            Event Lokasyonları
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+            {% for loc, desc in locations.items() %}
+            <div class="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                <code class="text-blue-600 dark:text-blue-400">{{ loc }}</code>
+                <div class="text-gray-500 text-xs">{{ desc }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Events Table -->
+    <div class="card-modern overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                            Location</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                            Template</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                            Order</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                            Priority</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                            Durum</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                            İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for event_id, event in events.items() %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                        <td class="px-4 py-3">
+                            <code
+                                class="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs">
+                                {{ event.location }}
+                            </code>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                            {{ event.template[:60] }}{% if event.template|length > 60 %}...{% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span
+                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-sm font-medium">
+                                {{ event.order or 10 }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% set priority = event.priority or 2 %}
+                            {% if priority == 1 %}
+                            <span
+                                class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">Kritik</span>
+                            {% elif priority == 2 %}
+                            <span
+                                class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Normal</span>
+                            {% else %}
+                            <span
+                                class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Düşük</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if event.enabled %}
+                            <span
+                                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Aktif
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                                <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                Pasif
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex gap-2">
+                                <button onclick="editEvent('{{ event_id }}', {{ event|tojson|e }})"
+                                    class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 hover:bg-blue-200 transition">
+                                    <span class="material-icons text-sm">edit</span>
+                                </button>
+                                <form method="POST" action="{{ url_for('admin.sms_event_toggle', event_id=event_id) }}"
+                                    class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 hover:bg-amber-200 transition"
+                                        title="{% if event.enabled %}Devre dışı bırak{% else %}Aktifleştir{% endif %}">
+                                        <span class="material-icons text-sm">{% if event.enabled %}pause{% else
+                                            %}play_arrow{% endif %}</span>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.sms_event_delete', event_id=event_id) }}"
+                                    class="inline"
+                                    onsubmit="return confirm('Bu eventi silmek istediğinize emin misiniz?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200 transition">
+                                        <span class="material-icons text-sm">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                            <span class="material-icons text-4xl mb-2">inbox</span>
+                            <p>Henüz SMS event tanımlanmamış</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Template Variables Help -->
+    <div class="card-modern p-4">
+        <h3 class="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <span class="material-icons text-purple-500">code</span>
+            Template Değişkenleri
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+            <div class="px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                <code class="text-purple-600">{client_name}</code>
+                <div class="text-gray-500 text-xs">Müşteri adı</div>
+            </div>
+            <div class="px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                <code class="text-purple-600">{date}</code>
+                <div class="text-gray-500 text-xs">Randevu tarihi</div>
+            </div>
+            <div class="px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                <code class="text-purple-600">{time}</code>
+                <div class="text-gray-500 text-xs">Randevu saati</div>
+            </div>
+            <div class="px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                <code class="text-purple-600">{company_name}</code>
+                <div class="text-gray-500 text-xs">Şirket adı</div>
+            </div>
+            <div class="px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                <code class="text-purple-600">{title}</code>
+                <div class="text-gray-500 text-xs">Randevu başlığı</div>
+            </div>
+            <div class="px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                <code class="text-purple-600">{cancel_url}</code>
+                <div class="text-gray-500 text-xs">İptal linki</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="eventModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 id="modalTitle" class="text-xl font-bold text-gray-900 dark:text-white">Yeni Event</h2>
+        </div>
+        <form id="eventForm" method="POST" action="{{ url_for('admin.sms_event_create') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="event_id" id="eventId">
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                    <select name="location" id="eventLocation" required class="input-modern">
+                        {% for loc, desc in locations.items() %}
+                        <option value="{{ loc }}">{{ loc }} - {{ desc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Template</label>
+                    <textarea name="template" id="eventTemplate" required rows="3" class="input-modern"
+                        placeholder="Sayın {client_name}, {date} saat {time} randevunuz..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order</label>
+                        <input type="number" name="order" id="eventOrder" value="10" min="1" max="100"
+                            class="input-modern">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                        <select name="priority" id="eventPriority" class="input-modern">
+                            <option value="1">Kritik</option>
+                            <option value="2" selected>Normal</option>
+                            <option value="3">Düşük</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="enabled" id="eventEnabled" checked
+                        class="w-5 h-5 rounded border-gray-300">
+                    <label for="eventEnabled" class="text-sm text-gray-700 dark:text-gray-300">Aktif</label>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                <button type="button" onclick="closeModal()" class="btn-secondary-modern">İptal</button>
+                <button type="submit" class="btn-modern bg-blue-600 text-white">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(mode) {
+        document.getElementById('eventModal').classList.remove('hidden');
+        document.getElementById('eventModal').classList.add('flex');
+        if (mode === 'create') {
+            document.getElementById('modalTitle').textContent = 'Yeni Event';
+            document.getElementById('eventForm').action = '{{ url_for("admin.sms_event_create") }}';
+            document.getElementById('eventId').value = '';
+            document.getElementById('eventLocation').value = 'appointment_approved';
+            document.getElementById('eventTemplate').value = '';
+            document.getElementById('eventOrder').value = '10';
+            document.getElementById('eventPriority').value = '2';
+            document.getElementById('eventEnabled').checked = true;
+        }
+    }
+
+    function editEvent(eventId, event) {
+        document.getElementById('eventModal').classList.remove('hidden');
+        document.getElementById('eventModal').classList.add('flex');
+        document.getElementById('modalTitle').textContent = 'Event Düzenle';
+        document.getElementById('eventForm').action = '{{ url_for("admin.sms_event_update") }}';
+        document.getElementById('eventId').value = eventId;
+        document.getElementById('eventLocation').value = event.location || 'appointment_approved';
+        document.getElementById('eventTemplate').value = event.template || '';
+        document.getElementById('eventOrder').value = event.order || 10;
+        document.getElementById('eventPriority').value = event.priority || 2;
+        document.getElementById('eventEnabled').checked = event.enabled !== false;
+    }
+
+    function closeModal() {
+        document.getElementById('eventModal').classList.add('hidden');
+        document.getElementById('eventModal').classList.remove('flex');
+    }
+
+    // Close on background click
+    document.getElementById('eventModal').addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+{% endblock %}
