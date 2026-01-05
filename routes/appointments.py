@@ -46,10 +46,32 @@ def update_status(appointment_id):
         return redirect(url_for('dashboard.view', appointment_id=appointment_id))
 
     try:
+        # Store appointment info before updating
+        cancelled_date = appointment.get('appointment_date')
+        cancelled_time = appointment.get('appointment_time')
+        slot_duration = appointment.get('duration', 60)
+        
         appointment['status'] = status
         appointment['updated_at'] = datetime.now().isoformat()
         set_data(f'appointments/{appointment_id}', appointment)
-        flash('Randevu durumu güncellendi.', 'success')
+        
+        # If cancelled, notify waitlist
+        if status == 'cancelled':
+            try:
+                from services.waitlist_service import get_waitlist_service
+                waitlist_service = get_waitlist_service(user_id)
+                notified_count = waitlist_service.notify_waitlist_on_cancel(
+                    cancelled_date, cancelled_time, slot_duration
+                )
+                if notified_count > 0:
+                    flash(f'Randevu iptal edildi. Bekleme listesinden {notified_count} kişiye bildirim gönderildi.', 'success')
+                else:
+                    flash('Randevu durumu güncellendi.', 'success')
+            except Exception as e:
+                print(f"Waitlist notification error: {e}")
+                flash('Randevu durumu güncellendi.', 'success')
+        else:
+            flash('Randevu durumu güncellendi.', 'success')
     except Exception as e:
         flash(f'Hata oluştu: {str(e)}', 'error')
 
@@ -304,6 +326,11 @@ def reject_appointment(appointment_id):
         return redirect(url_for('appointments.pending_appointments'))
     
     try:
+        # Store appointment info before updating
+        cancelled_date = appointment.get('appointment_date')
+        cancelled_time = appointment.get('appointment_time')
+        slot_duration = appointment.get('duration', 60)
+        
         # Update appointment status
         appointment['status'] = 'rejected'
         appointment['updated_at'] = datetime.now().isoformat()
@@ -347,7 +374,21 @@ Saygılarımızla,
             except Exception as e:
                 print(f"Email error: {e}")
         
-        flash('Randevu reddedildi.', 'info')
+        # Notify waitlist - someone might be waiting for this slot
+        try:
+            from services.waitlist_service import get_waitlist_service
+            waitlist_service = get_waitlist_service(user_id)
+            notified_count = waitlist_service.notify_waitlist_on_cancel(
+                cancelled_date, cancelled_time, slot_duration
+            )
+            if notified_count > 0:
+                flash(f'Randevu reddedildi. Bekleme listesinden {notified_count} kişiye bildirim gönderildi.', 'info')
+            else:
+                flash('Randevu reddedildi.', 'info')
+        except Exception as e:
+            print(f"Waitlist notification error: {e}")
+            flash('Randevu reddedildi.', 'info')
+            
     except Exception as e:
         flash(f'Hata oluştu: {str(e)}', 'error')
     
@@ -376,18 +417,36 @@ def client_cancel(appointment_id, token):
                              error="Bu randevu zaten iptal edilmiş.")
     
     # Get instructor info
+    user_id = str(appointment.get('user_id'))
     users = get_data('users') or {}
-    instructor = users.get(str(appointment.get('user_id')), {})
+    instructor = users.get(user_id, {})
     company_name = instructor.get('company_name') or f"{instructor.get('first_name', '')} {instructor.get('last_name', '')}".strip() or "Randevu Sistemi"
     
     if request.method == 'POST':
         try:
+            # Store info before cancel
+            cancelled_date = appointment.get('appointment_date')
+            cancelled_time = appointment.get('appointment_time')
+            slot_duration = appointment.get('duration', 60)
+            
             # Cancel the appointment
             appointment['status'] = 'cancelled'
             appointment['cancelled_by'] = 'client'
             appointment['cancelled_at'] = datetime.now().isoformat()
             appointment['updated_at'] = datetime.now().isoformat()
             set_data(f'appointments/{appointment_id}', appointment)
+            
+            # Notify waitlist
+            try:
+                from services.waitlist_service import get_waitlist_service
+                waitlist_service = get_waitlist_service(user_id)
+                notified_count = waitlist_service.notify_waitlist_on_cancel(
+                    cancelled_date, cancelled_time, slot_duration
+                )
+                if notified_count > 0:
+                    print(f"Waitlist: {notified_count} person(s) notified for {cancelled_date} {cancelled_time}")
+            except Exception as e:
+                print(f"Waitlist notification error: {e}")
             
             return render_template('appointments/cancel_success.html',
                                  appointment=appointment,

@@ -332,6 +332,43 @@ Saygılarımızla,
                 
                 logger.info(f"Scheduled {scheduled_count} appointment reminders")
                 
+                # Schedule waitlist cleanup job (hourly)
+                self._schedule_waitlist_cleanup()
+                
         except Exception as e:
             logger.error(f"Failed to schedule pending reminders: {str(e)}")
             raise
+    
+    def _schedule_waitlist_cleanup(self):
+        """Schedule hourly waitlist cleanup job"""
+        try:
+            job_id = "waitlist_cleanup"
+            
+            # Remove existing job if it exists
+            if self.scheduler.get_job(job_id):
+                self.scheduler.remove_job(job_id)
+            
+            # Schedule cleanup to run every hour
+            self.scheduler.add_job(
+                func=self._run_waitlist_cleanup,
+                trigger='interval',
+                hours=1,
+                id=job_id,
+                name="Waitlist Cleanup",
+                replace_existing=True
+            )
+            
+            logger.info("Scheduled waitlist cleanup job (hourly)")
+            
+        except Exception as e:
+            logger.error(f"Failed to schedule waitlist cleanup: {str(e)}")
+    
+    def _run_waitlist_cleanup(self):
+        """Run waitlist cleanup"""
+        try:
+            with self.app.app_context():
+                from services.waitlist_service import cleanup_all_waitlists
+                cleanup_all_waitlists()
+        except Exception as e:
+            logger.error(f"Waitlist cleanup failed: {str(e)}")
+

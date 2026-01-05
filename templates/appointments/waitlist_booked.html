@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Randevu Oluşturuldu{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto px-4">
+    <div class="card-modern p-8 animate-fade-in-up text-center">
+        <!-- Success Icon -->
+        <div
+            class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg animate-bounce-slow">
+            <span class="material-icons text-4xl text-white">check_circle</span>
+        </div>
+
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            Randevu Talebiniz Oluşturuldu!
+        </h1>
+
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
+            Randevunuz eğitmenin onayını bekliyor. Onaylandığında size bildirim gönderilecektir.
+        </p>
+
+        <!-- Appointment Details -->
+        <div
+            class="mb-6 p-5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 text-left">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="material-icons text-green-500">event</span>
+                <span class="font-semibold text-green-700 dark:text-green-300">Randevu Bilgileri</span>
+            </div>
+            <div class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                <div class="flex items-center gap-2">
+                    <span class="material-icons text-base text-gray-400">calendar_today</span>
+                    <span><strong>Tarih:</strong> {{ appointment.appointment_date }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-icons text-base text-gray-400">schedule</span>
+                    <span><strong>Saat:</strong> {{ appointment.appointment_time }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-icons text-base text-gray-400">business</span>
+                    <span><strong>Şirket:</strong> {{ instructor_name }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-icons text-base text-gray-400">pending</span>
+                    <span><strong>Durum:</strong> <span class="text-amber-600">Onay Bekliyor</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-6">
+            <div class="flex items-start gap-3 text-left">
+                <span class="material-icons text-blue-500 mt-0.5">info</span>
+                <div class="text-sm text-blue-700 dark:text-blue-300">
+                    <p>E-posta adresinize onay/red bildirimi gönderilecektir.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Link -->
+        <a href="/" class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline">
+            <span class="material-icons text-base">arrow_back</span>
+            Ana Sayfaya Dön
+        </a>
+    </div>
+</div>
+
+<style>
+    @keyframes bounce-slow {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .animate-bounce-slow {
+        animation: bounce-slow 2s ease-in-out infinite;
+    }
+</style>
+{% endblock %}

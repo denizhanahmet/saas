@@ -6,13 +6,33 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2"><span
                 class="material-icons align-middle">calendar_month</span>Randevularım</h2>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
             <a href="{{ url_for('appointments.pending_appointments') }}"
-                class="px-6 py-2 rounded bg-yellow-500 text-white font-semibold hover:bg-yellow-600 transition flex items-center gap-2"><span
+                class="px-4 py-2 rounded bg-yellow-500 text-white font-semibold hover:bg-yellow-600 transition flex items-center gap-2"><span
                     class="material-icons align-middle">hourglass_empty</span>Bekleyen Talepler</a>
             <a href="{{ url_for('appointments.create') }}"
-                class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center gap-2"><span
+                class="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center gap-2"><span
                     class="material-icons align-middle">add</span>Yeni Randevu</a>
+
+            <!-- Export Dropdown -->
+            <div class="relative inline-block" x-data="{ open: false }">
+                <button @click="open = !open" @click.away="open = false"
+                    class="px-4 py-2 rounded bg-purple-600 text-white font-semibold hover:bg-purple-700 transition flex items-center gap-2">
+                    <span class="material-icons align-middle">download</span>Dışa Aktar
+                    <span class="material-icons text-sm">expand_more</span>
+                </button>
+                <div x-show="open" x-transition
+                    class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-50">
+                    <a href="{{ url_for('exports.appointments_csv', status=request.args.get('status_filter', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}"
+                        class="flex items-center gap-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg">
+                        <span class="material-icons text-green-600">description</span>CSV İndir
+                    </a>
+                    <a href="{{ url_for('exports.appointments_pdf', status=request.args.get('status_filter', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}"
+                        class="flex items-center gap-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg">
+                        <span class="material-icons text-red-600">picture_as_pdf</span>PDF İndir
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
     <form method="GET" class="flex flex-col md:flex-row gap-4 mb-6">

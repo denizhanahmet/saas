@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Bekleme Listesi{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-5xl mx-auto px-4 sm:px-6">
+
+    <!-- Page Header -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <span class="material-icons text-purple-500 text-3xl">schedule_send</span>
+                Bekleme Listesi
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Dolu slotlar için bekleyen müşteriler</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span
+                class="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg font-medium">
+                <span class="material-icons text-lg">people</span>
+                {{ total_count }} Kişi
+            </span>
+        </div>
+    </div>
+
+    <!-- Status Tabs -->
+    <div class="mb-6 flex flex-wrap gap-2">
+        <button onclick="showTab('waiting')" id="tab-waiting"
+            class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+            <span class="material-icons text-lg">hourglass_empty</span>
+            Bekleyenler ({{ waiting|length }})
+        </button>
+        <button onclick="showTab('notified')" id="tab-notified"
+            class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+            <span class="material-icons text-lg">notifications_active</span>
+            Bildirilen ({{ notified|length }})
+        </button>
+        <button onclick="showTab('booked')" id="tab-booked"
+            class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+            <span class="material-icons text-lg">check_circle</span>
+            Randevuya Dönüşen ({{ booked|length }})
+        </button>
+    </div>
+
+    <!-- Waiting List -->
+    <div id="content-waiting" class="space-y-4">
+        {% if waiting %}
+        {% for entry in waiting %}
+        <div class="card-modern p-5 animate-fade-in-up" style="animation-delay: {{ loop.index * 0.05 }}s">
+            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div
+                            class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold">
+                            {{ entry.client_name[0]|upper }}
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">{{ entry.client_name }}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ entry.client_email }}</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300 ml-13">
+                        <span class="flex items-center gap-1">
+                            <span class="material-icons text-base text-blue-500">calendar_today</span>
+                            {{ entry.preferred_date }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="material-icons text-base text-green-500">schedule</span>
+                            {{ entry.preferred_time or 'Belirtilmedi' }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="material-icons text-base text-orange-500">phone</span>
+                            {{ entry.client_phone or 'Belirtilmedi' }}
+                        </span>
+                    </div>
+                    {% if entry.notes %}
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 ml-13">
+                        <span class="material-icons text-base align-middle">notes</span>
+                        {{ entry.notes }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">
+                        {{ entry.created_at[:10] if entry.created_at else '' }}
+                    </span>
+                    <form action="{{ url_for('waitlist.remove_entry', waitlist_id=entry.id) }}" method="POST"
+                        class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" onclick="return confirm('Bu kaydı silmek istediğinize emin misiniz?')"
+                            class="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+                            title="Sil">
+                            <span class="material-icons">delete</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card-modern p-12 text-center">
+            <span class="material-icons text-6xl text-gray-300 dark:text-gray-600 mb-4">inbox</span>
+            <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400">Bekleyen kayıt yok</h3>
+            <p class="text-gray-400 dark:text-gray-500 mt-2">Müşteriler dolu slotlar için bekleme listesine eklenebilir
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Notified List -->
+    <div id="content-notified" class="space-y-4 hidden">
+        {% if notified %}
+        {% for entry in notified %}
+        <div class="card-modern p-5 border-l-4 border-blue-500">
+            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div
+                            class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold">
+                            {{ entry.client_name[0]|upper }}
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">{{ entry.client_name }}</h3>
+                            <span
+                                class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded">
+                                Bildirim gönderildi
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300 ml-13">
+                        <span>{{ entry.preferred_date }} {{ entry.preferred_time }}</span>
+                        <span>Bildirim: {{ entry.notified_at[:16] if entry.notified_at else '-' }}</span>
+                    </div>
+                </div>
+                <form action="{{ url_for('waitlist.mark_booked', waitlist_id=entry.id) }}" method="POST" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition flex items-center gap-2">
+                        <span class="material-icons text-lg">check</span>
+                        Randevuya Dönüştü
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card-modern p-12 text-center">
+            <span class="material-icons text-6xl text-gray-300 dark:text-gray-600 mb-4">notifications_off</span>
+            <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400">Bildirilen kayıt yok</h3>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Booked List -->
+    <div id="content-booked" class="space-y-4 hidden">
+        {% if booked %}
+        {% for entry in booked %}
+        <div class="card-modern p-5 border-l-4 border-green-500 opacity-75">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold">
+                    <span class="material-icons">check</span>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">{{ entry.client_name }}</h3>
+                    <p class="text-sm text-gray-500">{{ entry.preferred_date }} - Randevuya dönüştürüldü</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card-modern p-12 text-center">
+            <span class="material-icons text-6xl text-gray-300 dark:text-gray-600 mb-4">event_available</span>
+            <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400">Henüz dönüşüm yok</h3>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all content
+        document.querySelectorAll('[id^="content-"]').forEach(el => el.classList.add('hidden'));
+        // Reset all tabs
+        document.querySelectorAll('[id^="tab-"]').forEach(el => {
+            el.classList.remove('bg-amber-100', 'dark:bg-amber-900/30', 'text-amber-700', 'dark:text-amber-300');
+            el.classList.remove('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300');
+            el.classList.remove('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-300');
+            el.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-300');
+        });
+
+        // Show selected content
+        document.getElementById('content-' + tabName).classList.remove('hidden');
+
+        // Style selected tab
+        const tab = document.getElementById('tab-' + tabName);
+        tab.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-300');
+
+        if (tabName === 'waiting') {
+            tab.classList.add('bg-amber-100', 'dark:bg-amber-900/30', 'text-amber-700', 'dark:text-amber-300');
+        } else if (tabName === 'notified') {
+            tab.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300');
+        } else {
+            tab.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-300');
+        }
+    }
+</script>
+{% endblock %}

@@ -124,11 +124,15 @@ class AppFactory:
         app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', os.getenv('MAIL_USERNAME'))
 
     def _register_blueprints(self, app):
-        from routes import admin_bp, appointments_bp, auth_bp, dashboard_bp
+        from routes import (admin_bp, appointments_bp, auth_bp, dashboard_bp, 
+                            exports_bp, scheduling_bp, waitlist_bp)
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(appointments_bp, url_prefix='/appointments')
         app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
         app.register_blueprint(admin_bp, url_prefix='/admin')
+        app.register_blueprint(exports_bp, url_prefix='/export')
+        app.register_blueprint(scheduling_bp, url_prefix='/api')
+        app.register_blueprint(waitlist_bp, url_prefix='/waitlist')
 
     def _register_context_processors(self, app):
         @app.context_processor

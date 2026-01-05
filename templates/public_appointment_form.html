@@ -140,6 +140,27 @@
                 Randevu Talebi Gönder
             </button>
         </form>
+
+        <!-- Waitlist Info -->
+        <div
+            class="mt-6 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+            <div class="flex items-start gap-3">
+                <span class="material-icons text-purple-500 mt-0.5">schedule_send</span>
+                <div>
+                    <p class="text-sm font-medium text-purple-700 dark:text-purple-300">
+                        Uygun randevu bulamadınız mı?
+                    </p>
+                    <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        Bekleme listesine kaydolun, uygun randevu açıldığında bilgilendirilirsiniz.
+                    </p>
+                    <a href="{{ url_for('waitlist.public_waitlist_form', unique_link=user.unique_link) }}"
+                        class="inline-flex items-center gap-1 mt-2 text-sm font-medium text-purple-700 dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 transition">
+                        <span class="material-icons text-base">arrow_forward</span>
+                        Bekleme Listesine Kayıt Ol
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

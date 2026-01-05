@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Kayıt Başarılı{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto px-4 py-16">
+
+    <div class="card-modern p-12 text-center animate-fade-in">
+
+        <!-- Success Icon -->
+        <div
+            class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg animate-scale-in">
+            <span class="material-icons text-4xl text-white">check_circle</span>
+        </div>
+
+        <!-- Message -->
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            Bekleme Listesine Eklendi!
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 mb-8">
+            Talebiniz başarıyla kaydedildi. İstediğiniz slot müsait olduğunda
+            e-posta ile bilgilendirileceksiniz.
+        </p>
+
+        <!-- What's Next -->
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 mb-8 text-left">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <span class="material-icons text-purple-500">tips_and_updates</span>
+                Bundan sonra ne olacak?
+            </h3>
+            <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                <li class="flex items-start gap-2">
+                    <span class="material-icons text-green-500 text-lg mt-0.5">mail</span>
+                    İstediğiniz tarih/saatte randevu iptal edilirse size e-posta gönderilecek
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="material-icons text-blue-500 text-lg mt-0.5">bolt</span>
+                    E-postadaki bilgilerle hızlıca randevu alabilirsiniz
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="material-icons text-amber-500 text-lg mt-0.5">timer</span>
+                    İlk gelen ilk hizmet alır prensibiyle çalışır
+                </li>
+            </ul>
+        </div>
+
+        <!-- Action -->
+        <a href="{{ url_for('index') }}"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg">
+            <span class="material-icons">home</span>
+            Ana Sayfaya Dön
+        </a>
+    </div>
+
+</div>
+{% endblock %}
