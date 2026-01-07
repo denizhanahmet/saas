@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Fiyatlandırma - Planınızı Seçin{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-12" x-data="{ yearly: false }">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Planınızı Seçin
+        </h1>
+        <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            İşletmeniz için en uygun planı seçin. Yıllık ödemede 2 ay ücretsiz!
+        </p>
+    </div>
+
+    <!-- Billing Toggle -->
+    <div class="flex justify-center items-center gap-4 mb-12">
+        <span class="text-gray-600 dark:text-gray-400 font-medium"
+            :class="{ 'text-gray-900 dark:text-white': !yearly }">Aylık</span>
+        <button @click="yearly = !yearly" class="relative w-16 h-8 rounded-full transition-colors duration-300"
+            :class="yearly ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-300 dark:bg-gray-600'">
+            <span
+                class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300"
+                :class="{ 'translate-x-8': yearly }"></span>
+        </button>
+        <span class="text-gray-600 dark:text-gray-400 font-medium" :class="{ 'text-gray-900 dark:text-white': yearly }">
+            Yıllık
+            <span
+                class="ml-1 px-2 py-1 text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                %17 İndirim
+            </span>
+        </span>
+    </div>
+
+    <!-- Plans Grid -->
+    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+
+        <!-- Starter Plan -->
+        <div class="card-modern p-8 relative">
+            <div class="text-center mb-6">
+                <div
+                    class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <span class="material-icons text-2xl text-white">rocket_launch</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Starter</h3>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">Küçük işletmeler için</p>
+            </div>
+
+            <!-- Price -->
+            <div class="text-center mb-6">
+                <div x-show="!yearly">
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺99</span>
+                    <span class="text-gray-500">/ay</span>
+                </div>
+                <div x-show="yearly">
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺990</span>
+                    <span class="text-gray-500">/yıl</span>
+                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">Aylık ₺82.50 (2 ay ücretsiz)</p>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <ul class="space-y-3 mb-8">
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    50 Randevu/ay
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    E-posta bildirimleri
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    Temel raporlar
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    1 Kullanıcı
+                </li>
+                <li class="flex items-center gap-3 text-gray-400">
+                    <span class="material-icons text-lg">cancel</span>
+                    SMS bildirimleri
+                </li>
+                <li class="flex items-center gap-3 text-gray-400">
+                    <span class="material-icons text-lg">cancel</span>
+                    Bekleme listesi
+                </li>
+            </ul>
+
+            <!-- CTA Button -->
+            <template x-if="!yearly">
+                <a href="{{ url_for('subscription.checkout', plan_id='starter_monthly') }}"
+                    class="btn-modern w-full py-3 justify-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white 
+                          hover:bg-gray-200 dark:hover:bg-gray-600 {% if current_plan == 'starter_monthly' %}opacity-50 cursor-not-allowed{% endif %}">
+                    {% if current_plan == 'starter_monthly' %}
+                    Mevcut Plan
+                    {% else %}
+                    Başla
+                    {% endif %}
+                </a>
+            </template>
+            <template x-if="yearly">
+                <a href="{{ url_for('subscription.checkout', plan_id='starter_yearly') }}"
+                    class="btn-modern w-full py-3 justify-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white 
+                          hover:bg-gray-200 dark:hover:bg-gray-600 {% if current_plan == 'starter_yearly' %}opacity-50 cursor-not-allowed{% endif %}">
+                    {% if current_plan == 'starter_yearly' %}
+                    Mevcut Plan
+                    {% else %}
+                    Başla
+                    {% endif %}
+                </a>
+            </template>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="card-modern p-8 relative border-2 border-purple-500 dark:border-purple-400">
+            <!-- Popular Badge -->
+            <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span
+                    class="px-4 py-1 text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-lg">
+                    En Popüler
+                </span>
+            </div>
+
+            <div class="text-center mb-6 mt-2">
+                <div
+                    class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <span class="material-icons text-2xl text-white">diamond</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Pro</h3>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">Büyüyen işletmeler için</p>
+            </div>
+
+            <!-- Price -->
+            <div class="text-center mb-6">
+                <div x-show="!yearly">
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺199</span>
+                    <span class="text-gray-500">/ay</span>
+                </div>
+                <div x-show="yearly">
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺1990</span>
+                    <span class="text-gray-500">/yıl</span>
+                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">Aylık ₺165.83 (2 ay ücretsiz)</p>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <ul class="space-y-3 mb-8">
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    <strong>Sınırsız</strong> randevu
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    E-posta + SMS bildirimleri
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    Gelişmiş raporlar
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    Bekleme listesi
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    Akıllı zamanlama
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    5 Kullanıcı
+                </li>
+            </ul>
+
+            <!-- CTA Button -->
+            <template x-if="!yearly">
+                <a href="{{ url_for('subscription.checkout', plan_id='pro_monthly') }}"
+                    class="btn-modern w-full py-3 justify-center bg-gradient-to-r from-purple-500 to-pink-500 text-white 
+                          hover:from-purple-600 hover:to-pink-600 {% if current_plan == 'pro_monthly' %}opacity-50 cursor-not-allowed{% endif %}">
+                    {% if current_plan == 'pro_monthly' %}
+                    Mevcut Plan
+                    {% else %}
+                    Pro'ya Geç
+                    {% endif %}
+                </a>
+            </template>
+            <template x-if="yearly">
+                <a href="{{ url_for('subscription.checkout', plan_id='pro_yearly') }}"
+                    class="btn-modern w-full py-3 justify-center bg-gradient-to-r from-purple-500 to-pink-500 text-white 
+                          hover:from-purple-600 hover:to-pink-600 {% if current_plan == 'pro_yearly' %}opacity-50 cursor-not-allowed{% endif %}">
+                    {% if current_plan == 'pro_yearly' %}
+                    Mevcut Plan
+                    {% else %}
+                    Pro'ya Geç
+                    {% endif %}
+                </a>
+            </template>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="mt-16 max-w-3xl mx-auto">
+        <h2 class="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
+            Sıkça Sorulan Sorular
+        </h2>
+
+        <div class="space-y-4">
+            <details class="card-modern p-4 group">
+                <summary class="flex items-center justify-between cursor-pointer list-none">
+                    <span class="font-medium text-gray-900 dark:text-white">İstediğim zaman iptal edebilir miyim?</span>
+                    <span class="material-icons transform transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <p class="mt-3 text-gray-600 dark:text-gray-400">
+                    Evet, aboneliğinizi istediğiniz zaman iptal edebilirsiniz. İptal ettiğinizde mevcut dönem sonuna
+                    kadar kullanmaya devam edebilirsiniz.
+                </p>
+            </details>
+
+            <details class="card-modern p-4 group">
+                <summary class="flex items-center justify-between cursor-pointer list-none">
+                    <span class="font-medium text-gray-900 dark:text-white">Planımı yükseltebilir miyim?</span>
+                    <span class="material-icons transform transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <p class="mt-3 text-gray-600 dark:text-gray-400">
+                    Evet, istediğiniz zaman planınızı yükseltebilirsiniz. Yükseltme anında fark ödenir.
+                </p>
+            </details>
+
+            <details class="card-modern p-4 group">
+                <summary class="flex items-center justify-between cursor-pointer list-none">
+                    <span class="font-medium text-gray-900 dark:text-white">Ödeme yöntemleri nelerdir?</span>
+                    <span class="material-icons transform transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <p class="mt-3 text-gray-600 dark:text-gray-400">
+                    Tüm kredi kartları ve banka kartları ile ödeme yapabilirsiniz. Ödemeler iyzico güvencesiyle işlenir.
+                </p>
+            </details>
+        </div>
+    </div>
+</div>
+{% endblock %}

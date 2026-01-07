@@ -83,6 +83,19 @@ class AppFactory:
         app.limiter = self.limiter
         
         self._register_blueprints(app)
+        
+        # Skip CSRF for iyzico external callbacks
+        @app.before_request
+        def skip_csrf_for_iyzico():
+            if request.path in ['/subscription/callback', '/subscription/webhook']:
+                # Skip CSRF validation for iyzico endpoints
+                from flask import g
+                g.csrf_valid = True
+        
+        # Exempt iyzico routes from CSRF
+        from routes.subscription import callback
+        self.csrf.exempt(callback)
+        
         self._register_context_processors(app)
         self._register_error_handlers(app)
         self._register_before_request(app)
@@ -125,7 +138,7 @@ class AppFactory:
 
     def _register_blueprints(self, app):
         from routes import (admin_bp, appointments_bp, auth_bp, dashboard_bp, 
-                            exports_bp, scheduling_bp, waitlist_bp)
+                            exports_bp, scheduling_bp, waitlist_bp, subscription_bp)
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(appointments_bp, url_prefix='/appointments')
         app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -133,6 +146,7 @@ class AppFactory:
         app.register_blueprint(exports_bp, url_prefix='/export')
         app.register_blueprint(scheduling_bp, url_prefix='/api')
         app.register_blueprint(waitlist_bp, url_prefix='/waitlist')
+        app.register_blueprint(subscription_bp, url_prefix='/subscription')
 
     def _register_context_processors(self, app):
         @app.context_processor
@@ -178,6 +192,44 @@ class AppFactory:
                         session.pop('session_token', None)
                 except Exception as e:
                     app.logger.error(f"Session check error: {str(e)}")
+        
+        @app.before_request
+        def check_subscription():
+            """Check if user has active subscription for protected routes"""
+            # Skip for static files
+            if request.path.startswith('/static'):
+                return
+            
+            # Paths that don't require subscription (public routes)
+            allowed_paths = [
+                '/auth/', '/subscription/', '/about', '/waitlist/public',
+                '/waitlist/success', '/appointments/book/', '/appointments/cancel/',
+                '/waitlist/claim/'
+            ]
+            
+            # Allow exact root path
+            if request.path == '/':
+                return
+            
+            # Check if path is in allowed list
+            for allowed in allowed_paths:
+                if request.path.startswith(allowed):
+                    return
+            
+            # For all other paths, user must be logged in with active subscription
+            if not session.get('user_id'):
+                # Not logged in - let login_required decorators handle this
+                return
+            
+            # User is logged in - check subscription
+            from services.iyzico_service import get_iyzico_service
+            iyzico = get_iyzico_service()
+            subscription = iyzico.get_user_subscription(str(session['user_id']))
+            
+            # Block access if no active subscription
+            if not subscription or subscription.get('status') != 'active':
+                flash('Sistemi kullanmak için aktif bir aboneliğe ihtiyacınız var.', 'warning')
+                return redirect(url_for('subscription.pricing'))
 
     # Route methods
     def add_routes(self):

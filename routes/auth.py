@@ -308,8 +308,19 @@ def register():
         try:
             from firebase_realtime_transaction import atomic_update
             atomic_update(f'users/{user_id}', lambda current: user_data)
-            flash(f'Kayıt başarılı! Randevu linkiniz: /r/{unique_link}', 'success')
-            return redirect(url_for('auth.login'))
+            
+            # Auto-login user after registration
+            import secrets
+            session_token = secrets.token_hex(32)
+            user_data['session_token'] = session_token
+            atomic_update(f'users/{user_id}', lambda current: user_data)
+            
+            session['user_id'] = user_id
+            session['session_token'] = session_token
+            cache_user_to_session(user_data)
+            
+            flash('Kayıt başarılı! Lütfen bir abonelik planı seçin.', 'success')
+            return redirect(url_for('subscription.pricing'))
         except Exception as e:
             print(f"Kayıt hatası: {e}")  # Debug için
             flash(f'Kayıt sırasında bir hata oluştu: {str(e)}', 'error')
@@ -329,7 +340,13 @@ def profile():
         return redirect(url_for('auth.login'))
     # Cache'den kullanıcı bilgilerini al
     user = get_cached_user()
-    return render_template('auth/profile.html', user=user)
+    
+    # Get subscription info
+    from services.iyzico_service import get_iyzico_service
+    iyzico = get_iyzico_service()
+    subscription = iyzico.get_user_subscription(str(session['user_id']))
+    
+    return render_template('auth/profile.html', user=user, subscription=subscription)
 
 @auth_bp.route('/profile/edit', methods=['GET', 'POST'])
 def edit_profile():

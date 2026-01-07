@@ -95,11 +95,58 @@
                         user.upcoming_appointments|length }}{% else %}?{% endif %}</div>
                 </div>
             </div>
-            <div class="flex justify-end mt-6">
+            <div class="flex justify-end mt-6 gap-3">
+                <a href="{{ url_for('subscription.manage') }}"
+                    class="px-6 py-2 rounded bg-purple-600 text-white font-semibold hover:bg-purple-700 transition flex items-center gap-2">
+                    <span class="material-icons">credit_card</span>Abonelik Yönetimi
+                </a>
                 <a href="{{ url_for('auth.edit_profile') }}"
                     class="px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition flex items-center gap-2">
                     <span class="material-icons">edit</span>Profili Düzenle
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Info Section -->
+    <div
+        class="mt-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <span class="material-icons text-white">diamond</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 dark:text-white">
+                        {% if subscription and subscription.status == 'active' %}
+                        {{ subscription.plan_name or 'Aktif Abonelik' }}
+                        {% else %}
+                        Abonelik Yok
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {% if subscription and subscription.status == 'active' %}
+                        {% set expires = subscription.expires_at[:10] if subscription.expires_at else 'Belirsiz' %}
+                        Bitiş: {{ expires }}
+                        {% else %}
+                        Tüm özelliklere erişim için plan seçin
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div>
+                {% if subscription and subscription.status == 'active' %}
+                <span
+                    class="px-3 py-1 text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                    ✓ Aktif
+                </span>
+                {% else %}
+                <a href="{{ url_for('subscription.pricing') }}"
+                    class="px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition">
+                    Plan Seç
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>

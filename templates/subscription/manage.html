@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Abonelik Yönetimi{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-8">Abonelik Yönetimi</h1>
+
+    {% if subscription %}
+    <!-- Current Subscription -->
+    <div class="card-modern p-6 mb-8">
+        <div class="flex items-start justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-xl 
+                    {% if current_plan and 'pro' in current_plan.id %}
+                    bg-gradient-to-br from-purple-500 to-pink-500
+                    {% else %}
+                    bg-gradient-to-br from-blue-500 to-cyan-500
+                    {% endif %}
+                    flex items-center justify-center">
+                    <span class="material-icons text-2xl text-white">
+                        {% if current_plan and 'pro' in current_plan.id %}diamond{% else %}rocket_launch{% endif %}
+                    </span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ current_plan.name if current_plan else 'Abonelik' }}
+                    </h2>
+                    <p class="text-sm text-gray-500">
+                        {% if current_plan %}₺{{ current_plan.price }} / {{ current_plan.interval }}{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                {% if subscription.status == 'active' %}
+                <span
+                    class="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                    <span class="material-icons text-sm align-middle mr-1">check_circle</span>
+                    Aktif
+                </span>
+                {% elif subscription.status == 'cancelled' %}
+                <span
+                    class="px-3 py-1 text-sm font-medium text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
+                    <span class="material-icons text-sm align-middle mr-1">warning</span>
+                    İptal Edildi
+                </span>
+                {% elif subscription.status == 'expired' %}
+                <span
+                    class="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-full">
+                    <span class="material-icons text-sm align-middle mr-1">error</span>
+                    Süresi Doldu
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Subscription Details -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Başlangıç Tarihi</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                    {{ subscription.starts_at[:10] if subscription.starts_at else '-' }}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Bitiş Tarihi</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                    {{ subscription.expires_at[:10] if subscription.expires_at else '-' }}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Son Ödeme</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                    {{ subscription.last_payment_at[:10] if subscription.last_payment_at else '-' }}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Otomatik Yenileme</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                    {% if subscription.auto_renew %}
+                    <span class="text-green-600">Açık</span>
+                    {% else %}
+                    <span class="text-gray-400">Kapalı</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        {% if subscription.status == 'active' %}
+        <div class="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <a href="{{ url_for('subscription.pricing') }}"
+                class="btn-modern bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <span class="material-icons">upgrade</span>
+                Planı Yükselt
+            </a>
+            <button onclick="confirmCancel()"
+                class="btn-modern bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40">
+                <span class="material-icons">cancel</span>
+                Aboneliği İptal Et
+            </button>
+        </div>
+        {% elif subscription.status in ['cancelled', 'expired'] %}
+        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <a href="{{ url_for('subscription.pricing') }}"
+                class="btn-modern bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <span class="material-icons">autorenew</span>
+                Aboneliği Yenile
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <!-- No Subscription -->
+    <div class="card-modern p-12 text-center">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <span class="material-icons text-4xl text-gray-400">credit_card_off</span>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Aktif Abonelik Yok</h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
+            Tüm özelliklere erişmek için bir plan seçin.
+        </p>
+        <a href="{{ url_for('subscription.pricing') }}"
+            class="btn-modern bg-gradient-to-r from-purple-500 to-pink-500 text-white inline-flex">
+            <span class="material-icons">shopping_cart</span>
+            Planları Görüntüle
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Billing History -->
+    <div class="card-modern p-6">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ödeme Geçmişi</h3>
+
+        {% if subscription and subscription.payment_id %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                        <th class="pb-3">Tarih</th>
+                        <th class="pb-3">Plan</th>
+                        <th class="pb-3">Tutar</th>
+                        <th class="pb-3">Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                        <td class="py-3 text-gray-900 dark:text-white">
+                            {{ subscription.starts_at[:10] if subscription.starts_at else '-' }}
+                        </td>
+                        <td class="py-3 text-gray-900 dark:text-white">
+                            {{ current_plan.name if current_plan else '-' }}
+                        </td>
+                        <td class="py-3 text-gray-900 dark:text-white">
+                            ₺{{ current_plan.price if current_plan else '0' }}
+                        </td>
+                        <td class="py-3">
+                            <span
+                                class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded">
+                                Ödendi
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-center py-8">Henüz ödeme kaydı bulunmuyor.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Cancel Confirmation Modal -->
+<div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
+        <div class="text-center mb-6">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <span class="material-icons text-3xl text-red-500">warning</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Aboneliği İptal Et</h3>
+            <p class="text-gray-500 dark:text-gray-400 mt-2">
+                Aboneliğinizi iptal etmek istediğinizden emin misiniz? Mevcut dönem sonuna kadar kullanmaya devam
+                edebilirsiniz.
+            </p>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="closeModal()"
+                class="btn-modern flex-1 justify-center bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                Vazgeç
+            </button>
+            <form action="{{ url_for('subscription.cancel') }}" method="POST" class="flex-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-modern w-full justify-center bg-red-500 text-white hover:bg-red-600">
+                    İptal Et
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmCancel() {
+        document.getElementById('cancelModal').classList.remove('hidden');
+        document.getElementById('cancelModal').classList.add('flex');
+    }
+
+    function closeModal() {
+        document.getElementById('cancelModal').classList.add('hidden');
+        document.getElementById('cancelModal').classList.remove('flex');
+    }
+
+    // Close on backdrop click
+    document.getElementById('cancelModal').addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+{% endblock %}

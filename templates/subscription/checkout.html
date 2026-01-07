@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Ödeme - {{ plan.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="grid md:grid-cols-3 gap-8">
+
+        <!-- Order Summary -->
+        <div class="md:col-span-1">
+            <div class="card-modern p-6 sticky top-24">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Sipariş Özeti</h2>
+
+                <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 rounded-xl 
+                        {% if 'pro' in plan.id %}
+                        bg-gradient-to-br from-purple-500 to-pink-500
+                        {% else %}
+                        bg-gradient-to-br from-blue-500 to-cyan-500
+                        {% endif %}
+                        flex items-center justify-center">
+                        <span class="material-icons text-white">
+                            {% if 'pro' in plan.id %}diamond{% else %}rocket_launch{% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900 dark:text-white">{{ plan.name }}</p>
+                        <p class="text-sm text-gray-500">{{ plan.interval | capitalize }} Plan</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Plan Ücreti</span>
+                        <span class="text-gray-900 dark:text-white">₺{{ plan.price }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">KDV (%20)</span>
+                        <span class="text-gray-900 dark:text-white">₺{{ (plan.price|float * 0.2) | round(2) }}</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between font-bold text-lg">
+                    <span class="text-gray-900 dark:text-white">Toplam</span>
+                    <span class="text-gray-900 dark:text-white">₺{{ plan.price }}</span>
+                </div>
+
+                <p class="text-xs text-gray-400 mt-4 text-center">
+                    <span class="material-icons text-sm align-middle">lock</span>
+                    256-bit SSL ile güvenli ödeme
+                </p>
+            </div>
+        </div>
+
+        <!-- Payment Form -->
+        <div class="md:col-span-2">
+            <div class="card-modern p-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Ödeme Bilgileri</h2>
+
+                <!-- Iyzico Checkout Form -->
+                <div id="iyzipay-checkout-form" class="responsive">
+                    {{ checkout_form | safe }}
+                </div>
+
+                <div class="mt-6 flex items-center justify-center gap-4 text-gray-400 text-sm">
+                    <img src="https://www.iyzico.com/assets/images/content/logo-black.svg" alt="iyzico"
+                        class="h-6 dark:invert">
+                    <span>ile güvenli ödeme</span>
+                </div>
+            </div>
+
+            <!-- Back Link -->
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('subscription.pricing') }}"
+                    class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <span class="material-icons align-middle text-sm">arrow_back</span>
+                    Planlara Geri Dön
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

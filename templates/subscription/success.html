@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Ödeme Başarılı!{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-16 text-center">
+    <div class="card-modern p-8 animate-fade-in-up">
+        <!-- Success Animation -->
+        <div
+            class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-xl">
+            <span class="material-icons text-5xl text-white animate-bounce-slow">check</span>
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            Ödeme Başarılı! 🎉
+        </h1>
+
+        <p class="text-gray-500 dark:text-gray-400 mb-8">
+            Aboneliğiniz başarıyla aktifleştirildi. Artık tüm {{ plan.name }} özelliklerini kullanabilirsiniz.
+        </p>
+
+        <!-- Subscription Details -->
+        <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 mb-8 text-left">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-lg 
+                    {% if plan and 'pro' in plan.id %}
+                    bg-gradient-to-br from-purple-500 to-pink-500
+                    {% else %}
+                    bg-gradient-to-br from-blue-500 to-cyan-500
+                    {% endif %}
+                    flex items-center justify-center">
+                    <span class="material-icons text-white text-lg">
+                        {% if plan and 'pro' in plan.id %}diamond{% else %}rocket_launch{% endif %}
+                    </span>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ plan.name if plan else 'Plan' }}</p>
+                    <p class="text-sm text-green-600 dark:text-green-400">Aktif</p>
+                </div>
+            </div>
+
+            {% if subscription %}
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                    <p class="text-gray-500">Başlangıç</p>
+                    <p class="text-gray-900 dark:text-white">{{ subscription.starts_at[:10] }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Bitiş</p>
+                    <p class="text-gray-900 dark:text-white">{{ subscription.expires_at[:10] }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="space-y-3">
+            <a href="{{ url_for('dashboard.dashboard') }}"
+                class="btn-modern w-full py-3 justify-center bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <span class="material-icons">dashboard</span>
+                Dashboard'a Git
+            </a>
+            <a href="{{ url_for('subscription.manage') }}"
+                class="btn-modern w-full py-3 justify-center bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                <span class="material-icons">settings</span>
+                Aboneliği Yönet
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes bounce-slow {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-8px);
+        }
+    }
+
+    .animate-bounce-slow {
+        animation: bounce-slow 1.5s ease-in-out infinite;
+    }
+</style>
+{% endblock %}
