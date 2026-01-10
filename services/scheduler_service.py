@@ -1,5 +1,5 @@
 """
-Scheduler Service for managing appointment reminders
+Randevu hatırlatmalarını yönetmek için Zamanlayıcı Servisi
 """
 import logging
 import os
@@ -16,7 +16,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 logger = logging.getLogger(__name__)
 
 class SchedulerService:
-    """Service for managing appointment reminder scheduling"""
+    """Randevu hatırlatma zamanlamalarını yönetmek için servis"""
     
     def __init__(self, app):
         # db parametresi kaldırıldı çünkü Firebase modülleri doğrudan import ediliyor
@@ -26,9 +26,9 @@ class SchedulerService:
         self._setup_scheduler()
         
     def _setup_scheduler(self):
-        """Setup APScheduler with SQLAlchemy job store"""
+        """APScheduler'ı yapılandır"""
         try:
-            # Get Flask app instance path
+            # Flask uygulama örnek yolunu al
 
             # SQLAlchemyJobStore ve SQLite kaldırıldı. Sadece memory job store ile başlatılıyor.
             executors = {
@@ -45,7 +45,7 @@ class SchedulerService:
                 timezone='Europe/Istanbul'
             )
             
-            # Add event listeners
+            # Olay dinleyicileri ekle
             self.scheduler.add_listener(self._job_executed, EVENT_JOB_EXECUTED)
             self.scheduler.add_listener(self._job_error, EVENT_JOB_ERROR)
             
@@ -56,7 +56,7 @@ class SchedulerService:
             raise
     
     def start(self):
-        """Start the scheduler"""
+        """Zamanlayıcıyı başlat"""
         try:
             if not self.scheduler.running:
                 self.scheduler.start()
@@ -70,7 +70,7 @@ class SchedulerService:
             raise
     
     def stop(self):
-        """Stop the scheduler"""
+        """Zamanlayıcıyı durdur"""
         try:
             if self.scheduler and self.scheduler.running:
                 self.scheduler.shutdown(wait=True)
@@ -80,19 +80,19 @@ class SchedulerService:
     
     def schedule_appointment_reminder(self, appointment_id: int, reminder_time: datetime):
         """
-        Schedule a reminder SMS for an appointment
+        Bir randevu için hatırlatma SMS'i zamanla
         
-        Args:
-            appointment_id: ID of the appointment
-            reminder_time: When to send the reminder
+        Argümanlar:
+            appointment_id: Randevunun ID'si
+            reminder_time: Hatırlatmanın gönderileceği zaman
         """
         try:
             job_id = f"reminder_{appointment_id}"
             
-            # Remove existing job if it exists
+            # Varsa mevcut işi kaldır
             self.remove_appointment_reminder(appointment_id)
             
-            # Schedule new job
+            # Yeni işi zamanla
             self.scheduler.add_job(
                 func=self._send_reminder_sms,
                 trigger='date',
@@ -111,10 +111,10 @@ class SchedulerService:
     
     def remove_appointment_reminder(self, appointment_id: int):
         """
-        Remove scheduled reminder for an appointment
+        Bir randevu için zamanlanmış hatırlatmayı kaldır
         
-        Args:
-            appointment_id: ID of the appointment
+        Argümanlar:
+            appointment_id: Randevunun ID'si
         """
         try:
             job_id = f"reminder_{appointment_id}"
@@ -126,17 +126,17 @@ class SchedulerService:
     
     def reschedule_appointment_reminder(self, appointment_id: int, new_reminder_time: datetime):
         """
-        Reschedule reminder for an appointment
+        Bir randevu için hatırlatmayı yeniden zamanla
         
-        Args:
-            appointment_id: ID of the appointment
-            new_reminder_time: New reminder time
+        Argümanlar:
+            appointment_id: Randevunun ID'si
+            new_reminder_time: Yeni hatırlatma zamanı
         """
         try:
-            # Remove existing job
+            # Mevcut işi kaldır
             self.remove_appointment_reminder(appointment_id)
             
-            # Schedule new job
+            # Yeni işi zamanla
             self.schedule_appointment_reminder(appointment_id, new_reminder_time)
             
             logger.info(f"Rescheduled reminder for appointment {appointment_id} to {new_reminder_time}")
@@ -147,10 +147,10 @@ class SchedulerService:
     
     def _send_reminder_sms(self, appointment_id: int):
         """
-        Send reminder SMS for an appointment
+        Bir randevu için hatırlatma SMS'i gönder
         
-        Args:
-            appointment_id: ID of the appointment
+        Argümanlar:
+            appointment_id: Randevunun ID'si
         """
         try:
             # SQL Modelleri yerine Firebase fonksiyonlarını kullanıyoruz
@@ -268,15 +268,15 @@ Saygılarımızla,
                 pass
     
     def _job_executed(self, event):
-        """Handle job execution events"""
+        """İş yürütme olaylarını işle"""
         logger.info(f"Job {event.job_id} executed successfully")
     
     def _job_error(self, event):
-        """Handle job error events"""
+        """İş hata olaylarını işle"""
         logger.error(f"Job {event.job_id} failed: {event.exception}")
     
     def get_scheduled_jobs(self):
-        """Get all scheduled jobs"""
+        """Tüm zamanlanmış işleri getir"""
         try:
             return self.scheduler.get_jobs()
         except Exception as e:
@@ -284,7 +284,7 @@ Saygılarımızla,
             return []
     
     def get_appointment_reminder_job(self, appointment_id: int):
-        """Get reminder job for specific appointment"""
+        """Belirli bir randevu için hatırlatma işini getir"""
         try:
             job_id = f"reminder_{appointment_id}"
             return self.scheduler.get_job(job_id)
@@ -294,8 +294,8 @@ Saygılarımızla,
     
     def schedule_all_pending_reminders(self):
         """
-        Schedule reminders for all pending appointments
-        This should be called on application startup
+        Tüm bekleyen randevular için hatırlatmaları zamanla
+        Uygulama başlatılırken çağrılmalıdır
         """
         try:
             from firebase_realtime import get_data
@@ -322,17 +322,17 @@ Saygılarımızla,
                     app_dt_str = f"{date_str} {time_str}"
                     appointment_datetime = datetime.strptime(app_dt_str, "%Y-%m-%d %H:%M")
                     
-                    # Calculate reminder time (24 hours before)
+                    # Hatırlatma zamanını hesapla (24 saat önce)
                     reminder_time = appointment_datetime - timedelta(hours=24)
                     
-                    # Only schedule if reminder time is in the future
+                    # Sadece hatırlatma zamanı gelecekteyse zamanla
                     if reminder_time > now:
                         self.schedule_appointment_reminder(app_id, reminder_time)
                         scheduled_count += 1
                 
                 logger.info(f"Scheduled {scheduled_count} appointment reminders")
                 
-                # Schedule waitlist cleanup job (hourly)
+                # Bekleme listesi temizleme işini zamanla (saatlik)
                 self._schedule_waitlist_cleanup()
                 
         except Exception as e:
@@ -340,15 +340,15 @@ Saygılarımızla,
             raise
     
     def _schedule_waitlist_cleanup(self):
-        """Schedule hourly waitlist cleanup job"""
+        """Saatlik bekleme listesi temizleme işini zamanla"""
         try:
             job_id = "waitlist_cleanup"
             
-            # Remove existing job if it exists
+            # Varsa mevcut işi kaldır
             if self.scheduler.get_job(job_id):
                 self.scheduler.remove_job(job_id)
             
-            # Schedule cleanup to run every hour
+            # Temizliği her saat çalıştırmak için zamanla
             self.scheduler.add_job(
                 func=self._run_waitlist_cleanup,
                 trigger='interval',
@@ -364,7 +364,7 @@ Saygılarımızla,
             logger.error(f"Failed to schedule waitlist cleanup: {str(e)}")
     
     def _run_waitlist_cleanup(self):
-        """Run waitlist cleanup"""
+        """Bekleme listesi temizliğini çalıştır"""
         try:
             with self.app.app_context():
                 from services.waitlist_service import cleanup_all_waitlists

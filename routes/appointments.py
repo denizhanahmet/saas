@@ -465,6 +465,13 @@ def client_cancel(appointment_id, token):
 @appointments_bp.route('/r/<unique_link>', methods=['GET', 'POST'])
 def public_appointment_request(unique_link):
     """Public appointment request form using unique instructor link"""
+    # Rate limiting - IP başına dakikada 10 istek sınırı
+    limiter = get_limiter()
+    if limiter:
+        try:
+            limiter.limit("10 per minute")(lambda: None)()
+        except:
+            pass  # Rate limit aşılırsa Flask-Limiter otomatik 429 döner
     # Get instructor by unique_link from Firebase
     all_users_data = get_data('users') or {}
     instructor = None

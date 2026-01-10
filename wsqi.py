@@ -84,15 +84,15 @@ class AppFactory:
         
         self._register_blueprints(app)
         
-        # Skip CSRF for iyzico external callbacks
+        # iyzico dış callback'leri için CSRF kontrolünü atla
         @app.before_request
         def skip_csrf_for_iyzico():
             if request.path in ['/subscription/callback', '/subscription/webhook']:
-                # Skip CSRF validation for iyzico endpoints
+                # iyzico endpoint'leri için CSRF doğrulamasını atla
                 from flask import g
                 g.csrf_valid = True
         
-        # Exempt iyzico routes from CSRF
+        # iyzico route'larını CSRF'den muaf tut
         from routes.subscription import callback
         self.csrf.exempt(callback)
         
@@ -115,13 +115,13 @@ class AppFactory:
                 secret_key = secrets.token_hex(32)
                 logging.warning("WARNING: SECRET_KEY not set! Using temporary key. Set SECRET_KEY in .env for production.")
         app.config['SECRET_KEY'] = secret_key
-        # SQLAlchemy config removed. Only Firebase is used.
+        # SQLAlchemy konfigürasyonu kaldırıldı. Sadece Firebase kullanılıyor.
         app.config['JSON_AS_ASCII'] = False
         
         # Session Cookie Güvenlik Ayarları
         # Üretim ortamında HTTPS zorunlu, geliştirmede HTTP kabul edilir
         is_production = os.getenv('FLASK_ENV') == 'production'
-        app.config['SESSION_COOKIE_SECURE'] = is_production  # HTTPS only in production
+        app.config['SESSION_COOKIE_SECURE'] = is_production  # Üretimde sadece HTTPS
         app.config['SESSION_COOKIE_HTTPONLY'] = True  # JavaScript erişimini engelle
         app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF koruması
         app.config['PERMANENT_SESSION_LIFETIME'] = 30 * 24 * 3600
@@ -169,7 +169,26 @@ class AppFactory:
 
         @app.errorhandler(500)
         def internal_error(error):
+            # Hata detaylarını logla ama kullanıcıya gösterme
+            app.logger.error(f"500 hatası: {str(error)}")
             return render_template('errors/500.html'), 500
+        
+        # Güvenlik Başlıkları - Yaygın web saldırılarına karşı koruma
+        @app.after_request
+        def add_security_headers(response):
+            # Clickjacking koruması - sayfanın iframe'de yüklenmesini engelle
+            response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+            # MIME type sniffing koruması
+            response.headers['X-Content-Type-Options'] = 'nosniff'
+            # XSS koruması (modern tarayıcılarda CSP tercih edilir)
+            response.headers['X-XSS-Protection'] = '1; mode=block'
+            # Referrer bilgisi sızıntısını azalt
+            response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+            # Cache kontrolü - hassas sayfalarda önbellek devre dışı
+            if request.path.startswith('/admin') or request.path.startswith('/dashboard'):
+                response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                response.headers['Pragma'] = 'no-cache'
+            return response
 
     def _register_before_request(self, app):
         @app.before_request
@@ -195,43 +214,50 @@ class AppFactory:
         
         @app.before_request
         def check_subscription():
-            """Check if user has active subscription for protected routes"""
-            # Skip for static files
+            """Korumalı route'lar için kullanıcının aktif aboneliği olup olmadığını kontrol et"""
+            # Statik dosyalar için atla
             if request.path.startswith('/static'):
                 return
             
-            # Paths that don't require subscription (public routes)
+            # Abonelik gerektirmeyen yollar (herkese açık route'lar)
             allowed_paths = [
                 '/auth/', '/subscription/', '/about', '/waitlist/public',
                 '/waitlist/success', '/appointments/book/', '/appointments/cancel/',
                 '/waitlist/claim/'
             ]
             
-            # Allow exact root path
+            # Tam ana yola izin ver
             if request.path == '/':
                 return
             
-            # Check if path is in allowed list
+            # Yolun izin verilen listede olup olmadığını kontrol et
             for allowed in allowed_paths:
                 if request.path.startswith(allowed):
                     return
             
-            # For all other paths, user must be logged in with active subscription
+            # Diğer tüm yollar için kullanıcı giriş yapmış ve aktif aboneliği olmalı
             if not session.get('user_id'):
-                # Not logged in - let login_required decorators handle this
+                # Giriş yapılmamış - login_required dekoratörlerinin işlemesine izin ver
                 return
             
-            # User is logged in - check subscription
+            # Kullanıcı giriş yapmış - superadmin mi kontrol et (abonelik kontrolünü atla)
+            from firebase_realtime import get_data
+            user = get_data(f"users/{session['user_id']}")
+            if user and user.get('is_superadmin'):
+                # Superadmin kullanıcılarının aboneliğe ihtiyacı yok
+                return
+            
+            # Normal kullanıcılar - abonelik kontrolü
             from services.iyzico_service import get_iyzico_service
             iyzico = get_iyzico_service()
             subscription = iyzico.get_user_subscription(str(session['user_id']))
             
-            # Block access if no active subscription
+            # Aktif abonelik yoksa erişimi engelle
             if not subscription or subscription.get('status') != 'active':
                 flash('Sistemi kullanmak için aktif bir aboneliğe ihtiyacınız var.', 'warning')
                 return redirect(url_for('subscription.pricing'))
 
-    # Route methods
+    # Route metodları
     def add_routes(self):
         app = self.app
 
@@ -253,7 +279,7 @@ class AppFactory:
         return self.scheduler_service
         
     def init_scheduler(self):
-        """Initialize and start the scheduler service"""
+        """Zamanlayıcı servisini başlat ve çalıştır"""
         if not self.scheduler_service and self.app:
             from services.scheduler_service import SchedulerService
             # Scheduler servisini başlat

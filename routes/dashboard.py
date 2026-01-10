@@ -21,9 +21,9 @@ from firebase_realtime import get_data, set_data, update_data, delete_data
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
-# Helper function to parse date strings from Firebase
+# Firebase'den tarih string'lerini parse etmek için yardımcı fonksiyon
 def parse_date(date_str):
-    """Convert date string (YYYY-MM-DD) to date object"""
+    """Tarih string'ini (YYYY-MM-DD) date nesnesine çevir"""
     if isinstance(date_str, str):
         try:
             return datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -31,16 +31,16 @@ def parse_date(date_str):
             return None
     return date_str
 
-# Helper function to format date to string
+# Tarihi string'e formatlamak için yardımcı fonksiyon
 def format_date(date_obj):
-    """Convert date object to YYYY-MM-DD string"""
+    """Date nesnesini YYYY-MM-DD string'ine çevir"""
     if isinstance(date_obj, date):
         return date_obj.strftime('%Y-%m-%d')
     return date_obj
 
-# Helper function to parse time strings from Firebase
+# Firebase'den saat string'lerini parse etmek için yardımcı fonksiyon
 def parse_time(time_str):
-    """Convert time string (HH:MM) to time object"""
+    """Saat string'ini (HH:MM) time nesnesine çevir"""
     if isinstance(time_str, str):
         try:
             return datetime.strptime(time_str, '%H:%M').time()

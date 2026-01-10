@@ -1,3 +1,4 @@
+import logging
 import threading
 
 
@@ -18,7 +19,7 @@ auth_bp = Blueprint('auth', __name__)
 
 # Rate limiter yardımcı fonksiyonu
 def get_limiter():
-    """Get limiter from current app context"""
+    """Mevcut uygulama context'inden limiter'ı getir"""
     return current_app.limiter if hasattr(current_app, 'limiter') else None
 
 def get_default_working_hours():
@@ -132,6 +133,8 @@ def login():
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
+            # Başarısız giriş denemesini logla - güvenlik izleme için
+            logging.warning(f"Başarısız giriş denemesi: {email} - IP: {request.remote_addr}")
             flash('Geçersiz email veya şifre!', 'error')
             return render_template('auth/login.html', csrf_token=generate_csrf)
         elif user and user.get('password_hash'):
@@ -156,11 +159,14 @@ def login():
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
+            # Başarısız giriş denemesini logla - güvenlik izleme için
+            logging.warning(f"Başarısız giriş denemesi: {email} - IP: {request.remote_addr}")
             flash('Geçersiz email veya şifre!', 'error')
             return render_template('auth/login.html', csrf_token=generate_csrf)
-        else:
-            flash('Geçersiz email veya şifre!', 'error')
-            return render_template('auth/login.html', csrf_token=generate_csrf)
+        # Kullanıcı bulunamadı veya şifre hash'i yok
+        logging.warning(f"Başarısız giriş denemesi (kullanıcı yok veya şifre hash'i eksik): {email} - IP: {request.remote_addr}")
+        flash('Geçersiz email veya şifre!', 'error')
+        return render_template('auth/login.html', csrf_token=generate_csrf)
     
     return render_template('auth/login.html', csrf_token=generate_csrf)
 # Şifremi Unuttum: Mail ile sıfırlama bağlantısı gönder

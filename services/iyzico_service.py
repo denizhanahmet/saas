@@ -1,6 +1,6 @@
 """
-Iyzico Payment Service - Subscription management with iyzico API
-Uses official iyzipay SDK for reliable payment processing
+Iyzico Ödeme Servisi - iyzico API ile abonelik yönetimi
+iyzipay SDK kullanılarak güvenilir ödeme işleme
 """
 import logging
 import os
@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class IyzicoService:
-    """Service for managing iyzico payments and subscriptions"""
+    """iyzico ödemeleri ve abonelikleri yönetmek için servis sınıfı"""
     
-    # Subscription plans
+    # Abonelik planları
     PLANS = {
         'starter_monthly': {
             'id': 'starter_monthly',
@@ -92,7 +92,7 @@ class IyzicoService:
         self.secret_key = os.getenv('IYZICO_SECRET_KEY', '').strip()
         base_url = os.getenv('IYZICO_BASE_URL', 'sandbox-api.iyzipay.com').strip()
         
-        # Ensure proper URL format for iyzipay SDK
+        # iyzipay SDK için uygun URL formatını sağla
         if base_url.startswith('https://'):
             base_url = base_url.replace('https://', '')
         if base_url.startswith('http://'):
@@ -100,14 +100,14 @@ class IyzicoService:
         
         self.base_url = base_url
         
-        # iyzipay SDK options
+        # iyzipay SDK ayarları
         self.options = {
             'api_key': self.api_key,
             'secret_key': self.secret_key,
             'base_url': self.base_url
         }
         
-        # Valid API key should be at least 30 chars
+        # Geçerli API key en az 30 karakter olmalı
         valid_api_key = self.api_key and len(self.api_key) >= 30
         valid_secret_key = self.secret_key and len(self.secret_key) >= 30
         
@@ -119,37 +119,37 @@ class IyzicoService:
             logger.info(f"Iyzico configured with base_url: {self.base_url}")
     
     def _generate_random_string(self, length: int = 8) -> str:
-        """Generate random string for conversation ID"""
+        """Conversation ID için rastgele string oluştur"""
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     
     def get_plan(self, plan_id: str) -> Optional[Dict]:
-        """Get plan details by ID"""
+        """ID'ye göre plan detaylarını getir"""
         return self.PLANS.get(plan_id)
     
     def get_all_plans(self) -> Dict:
-        """Get all available plans"""
+        """Tüm mevcut planları getir"""
         return self.PLANS
     
     def create_checkout_form(self, user_id: str, plan_id: str, 
                               buyer_info: Dict, callback_url: str) -> Dict[str, Any]:
         """
-        Create iyzico checkout form for subscription payment
+        Abonelik ödemesi için iyzico ödeme formu oluştur
         """
-        # Ensure user_id is string
+        # user_id'nin string olduğundan emin ol
         user_id = str(user_id)
         
         plan = self.get_plan(plan_id)
         if not plan:
             return {'status': 'error', 'message': 'Invalid plan'}
         
-        # Use mock mode if API keys not properly configured
+        # API anahtarları düzgün yapılandırılmamışsa mock mod kullan
         if self.use_mock:
             return self._mock_checkout_form(user_id, plan_id, plan, callback_url)
         
         try:
             conversation_id = f"sub_{user_id}_{self._generate_random_string()}"
             
-            # Prepare buyer
+            # Alıcı bilgilerini hazırla
             buyer = {
                 'id': str(user_id),
                 'name': buyer_info.get('first_name', 'Ad'),
@@ -164,7 +164,7 @@ class IyzicoService:
                 'zipCode': '34000'
             }
             
-            # Address
+            # Adres bilgileri
             address = {
                 'contactName': f"{buyer_info.get('first_name', '')} {buyer_info.get('last_name', '')}".strip() or 'Müşteri',
                 'city': buyer_info.get('city', 'Istanbul'),
@@ -173,7 +173,7 @@ class IyzicoService:
                 'zipCode': '34000'
             }
             
-            # Basket items
+            # Sepet öğeleri
             basket_items = [
                 {
                     'id': plan_id,
@@ -185,7 +185,7 @@ class IyzicoService:
                 }
             ]
             
-            # Request parameters
+            # İstek parametreleri
             request = {
                 'locale': 'tr',
                 'conversationId': conversation_id,
@@ -204,10 +204,10 @@ class IyzicoService:
             
             logger.info(f"Creating checkout form with conversation_id: {conversation_id}")
             
-            # Use iyzipay SDK
+            # iyzipay SDK kullan
             checkout_form_initialize = iyzipay.CheckoutFormInitialize().create(request, self.options)
             
-            # SDK returns bytes, decode to JSON
+            # SDK bytes döndürür, JSON'a decode et
             import json
             response_bytes = checkout_form_initialize.read()
             result = json.loads(response_bytes.decode('utf-8'))
@@ -215,7 +215,7 @@ class IyzicoService:
             logger.info(f"Iyzico response status: {result.get('status')}")
             
             if result.get('status') == 'success':
-                # Save pending subscription
+                # Bekleyen aboneliği kaydet
                 self._save_pending_subscription(user_id, plan_id, conversation_id, result.get('token'))
                 
                 return {
@@ -237,14 +237,14 @@ class IyzicoService:
             return {'status': 'error', 'message': str(e)}
     
     def _mock_checkout_form(self, user_id: str, plan_id: str, plan: Dict, callback_url: str) -> Dict:
-        """Mock checkout form for testing without API keys"""
+        """API anahtarları olmadan test için sahte ödeme formu oluştur"""
         conversation_id = f"mock_sub_{user_id}_{self._generate_random_string()}"
         token = f"mock_token_{self._generate_random_string(16)}"
         
-        # Save pending subscription
+        # Bekleyen aboneliği kaydet
         self._save_pending_subscription(user_id, plan_id, conversation_id, token)
         
-        # Generate mock checkout form HTML
+        # Sahte ödeme formu HTML'i oluştur
         mock_form = f"""
         <div id="iyzipay-checkout-form" class="responsive">
             <div style="padding: 30px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 16px; text-align: center; border: 2px dashed #dee2e6;">
@@ -276,7 +276,7 @@ class IyzicoService:
     
     def _save_pending_subscription(self, user_id: str, plan_id: str, 
                                     conversation_id: str, token: str):
-        """Save pending subscription to Firebase"""
+        """Bekleyen aboneliği Firebase'e kaydet"""
         pending_data = {
             'user_id': user_id,
             'plan_id': plan_id,
@@ -289,14 +289,14 @@ class IyzicoService:
     
     def verify_payment(self, token: str) -> Dict[str, Any]:
         """
-        Verify payment after callback using iyzipay SDK
+        iyzipay SDK kullanarak callback sonrası ödemeyi doğrula
         """
-        # Get pending subscription
+        # Bekleyen aboneliği getir
         pending = get_data(f'pending_subscriptions/{token}')
         if not pending:
             return {'status': 'error', 'message': 'Invalid payment token'}
         
-        # Check if mock mode
+        # Mock mod kontrolü
         if token.startswith('mock_token_'):
             return self._mock_verify_payment(pending)
         
@@ -307,10 +307,10 @@ class IyzicoService:
                 'token': token
             }
             
-            # Use iyzipay SDK
+            # iyzipay SDK kullan
             checkout_form_result = iyzipay.CheckoutForm().retrieve(request, self.options)
             
-            # SDK returns bytes, decode to JSON
+            # SDK bytes döndürür, JSON'a decode et
             import json
             response_bytes = checkout_form_result.read()
             result = json.loads(response_bytes.decode('utf-8'))
@@ -318,7 +318,7 @@ class IyzicoService:
             logger.info(f"Payment verification result: status={result.get('status')}, paymentStatus={result.get('paymentStatus')}")
             
             if result.get('status') == 'success' and result.get('paymentStatus') == 'SUCCESS':
-                # Activate subscription
+                # Aboneliği aktifleştir
                 self._activate_subscription(pending, result)
                 return {
                     'status': 'success',
@@ -338,7 +338,7 @@ class IyzicoService:
             return {'status': 'error', 'message': str(e)}
     
     def _mock_verify_payment(self, pending: Dict) -> Dict:
-        """Mock payment verification for testing"""
+        """Test için sahte ödeme doğrulaması"""
         self._activate_subscription(pending, {'paymentId': f"mock_payment_{self._generate_random_string()}"})
         return {
             'status': 'success',
@@ -348,7 +348,7 @@ class IyzicoService:
         }
     
     def _activate_subscription(self, pending: Dict, payment_result: Dict):
-        """Activate subscription after successful payment"""
+        """Başarılı ödeme sonrası aboneliği aktifleştir"""
         user_id = pending.get('user_id')
         plan_id = pending.get('plan_id')
         plan = self.get_plan(plan_id)
@@ -356,14 +356,14 @@ class IyzicoService:
         if not plan:
             return
         
-        # Calculate expiry date
+        # Bitiş tarihini hesapla
         now = datetime.now()
         if plan['interval'] == 'monthly':
             expires_at = now + timedelta(days=30)
         else:  # yearly
             expires_at = now + timedelta(days=365)
         
-        # Save subscription to user
+        # Aboneliği kullanıcıya kaydet
         subscription_data = {
             'plan_id': plan_id,
             'plan_name': plan['name'],
@@ -375,13 +375,13 @@ class IyzicoService:
             'auto_renew': True
         }
         
-        # Also activate user account
+        # Kullanıcı hesabını da aktifleştir
         update_data(f'users/{user_id}', {
             'subscription': subscription_data,
             'is_active': True
         })
         
-        # Remove pending subscription
+        # Bekleyen aboneliği sil
         token = pending.get('token')
         if token:
             from firebase_realtime import delete_data
@@ -390,7 +390,7 @@ class IyzicoService:
         logger.info(f"Subscription activated for user {user_id}: {plan_id}")
     
     def get_user_subscription(self, user_id: str) -> Optional[Dict]:
-        """Get user's current subscription"""
+        """Kullanıcının mevcut aboneliğini getir"""
         user = get_data(f'users/{user_id}')
         if not user:
             return None
@@ -399,7 +399,7 @@ class IyzicoService:
         if not subscription:
             return None
         
-        # Check if expired
+        # Süresi dolmuş mu kontrol et
         expires_at = subscription.get('expires_at')
         if expires_at:
             try:
@@ -412,12 +412,12 @@ class IyzicoService:
         return subscription
     
     def cancel_subscription(self, user_id: str) -> Dict:
-        """Cancel user's subscription"""
+        """Kullanıcının aboneliğini iptal et"""
         subscription = self.get_user_subscription(user_id)
         if not subscription:
             return {'status': 'error', 'message': 'Aktif abonelik bulunamadı'}
         
-        # Update subscription status
+        # Abonelik durumunu güncelle
         update_data(f'users/{user_id}/subscription', {
             'status': 'cancelled',
             'cancelled_at': datetime.now().isoformat(),
@@ -432,7 +432,7 @@ class IyzicoService:
         }
     
     def check_feature_access(self, user_id: str, feature: str) -> bool:
-        """Check if user has access to a feature based on subscription"""
+        """Kullanıcının aboneliğine göre bir özelliğe erişimi olup olmadığını kontrol et"""
         subscription = self.get_user_subscription(user_id)
         
         if not subscription or subscription.get('status') != 'active':
@@ -440,15 +440,15 @@ class IyzicoService:
         
         plan_id = subscription.get('plan_id', '')
         
-        # Feature access matrix
+        # Özellik erişim matrisi
         pro_features = ['sms_notifications', 'waitlist', 'smart_scheduling', 'advanced_reports']
         
         if feature in pro_features:
             return 'pro' in plan_id
         
-        return True  # Basic features available to all paid plans
+        return True  # Temel özellikler tüm ücretli planlar için kullanılabilir
 
 
 def get_iyzico_service() -> IyzicoService:
-    """Get iyzico service instance"""
+    """iyzico servis örneğini getir"""
     return IyzicoService()
