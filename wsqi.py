@@ -72,10 +72,11 @@ class AppFactory:
         self.csrf = CSRFProtect(app)
         
         # Rate Limiter - Brute force saldırılarına karşı koruma
+        # NOT: Limitler normal kullanımı engellemeyecek şekilde ayarlandı
         self.limiter = Limiter(
             key_func=get_remote_address,
             app=app,
-            default_limits=["200 per day", "50 per hour"],
+            default_limits=["1000 per day", "200 per hour"],  # Daha makul limitler
             storage_uri="memory://",
             strategy="fixed-window"
         )
