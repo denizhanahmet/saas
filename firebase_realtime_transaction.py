@@ -1,32 +1,38 @@
-import os
-import requests
-from dotenv import load_dotenv
-import time
+"""
+Firebase Realtime Database transaction support using Admin SDK
+Optimistic lock ile atomic update işlemleri için
+"""
+from firebase_admin import db
 
-load_dotenv()
-FIREBASE_DB_URL = os.getenv('FIREBASE_DB_URL')
 
-# Transaction benzeri atomic update fonksiyonu (REST API ile optimistic lock)
 def atomic_update(path, update_fn, max_retries=5):
-    url = f"{FIREBASE_DB_URL}{path}.json"
-    for attempt in range(max_retries):
-        # 1. Mevcut veriyi çek
-        resp = requests.get(url)
-        if resp.status_code != 200:
-            raise Exception(f"Firebase GET error: {resp.text}")
-        current = resp.json()
-        # 2. Yeni veri hesapla
+    """
+    Transaction benzeri atomic update fonksiyonu (Admin SDK ile)
+    
+    Args:
+        path: Firebase path (örn: 'users/user123')
+        update_fn: Mevcut veriyi alıp güncellenmiş veriyi döndüren fonksiyon
+        max_retries: Maximum deneme sayısı (artık kullanılmıyor, uyumluluk için)
+    
+    Returns:
+        Güncellenmiş veri
+    """
+    ref = db.reference(path)
+    
+    # Firebase Admin SDK transaction kullan
+    def transaction_fn(current_data):
+        if current_data is None:
+            # Eğer veri yoksa, update_fn'den None ile çağır
+            return update_fn(None)
+        return update_fn(current_data)
+    
+    try:
+        # Transaction ile atomic update
+        result = ref.transaction(transaction_fn)
+        return result
+    except Exception as e:
+        # Fallback: Basit get + set (daha az güvenli ama çalışır)
+        current = ref.get()
         new_data = update_fn(current)
-        # 3. ETag ile koşullu güncelleme
-        etag = resp.headers.get('ETag')
-        headers = {'if-match': etag} if etag else {}
-        put_resp = requests.put(url, json=new_data, headers=headers)
-        if put_resp.status_code == 200:
-            return put_resp.json()
-        elif put_resp.status_code == 412:
-            # Eşzamanlı değişiklik oldu, tekrar dene
-            time.sleep(0.1)
-            continue
-        else:
-            raise Exception(f"Firebase PUT error: {put_resp.text}")
-    raise Exception("Atomic update failed after retries")
+        ref.set(new_data)
+        return new_data

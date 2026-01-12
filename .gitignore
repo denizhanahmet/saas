@@ -146,3 +146,8 @@ static/uploads/*
 # OS
 .DS_Store
 Thumbs.db
+
+# Firebase Service Account - GİZLİ TUTULMALI!
+securityAccount.json
+serviceAccountKey.json
+*-firebase-adminsdk-*.json

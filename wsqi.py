@@ -301,5 +301,8 @@ if __name__ == '__main__':
     # Development ortamında scheduler'ı başlat
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or os.name == 'nt':
         factory.init_scheduler()
-        
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    
+    # GÜVENLİK: Production'da debug=False olmalı
+    # FLASK_ENV=production veya FLASK_DEBUG=0 ayarla
+    debug_mode = os.getenv('FLASK_DEBUG', '0') == '1' or os.getenv('FLASK_ENV') == 'development'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)

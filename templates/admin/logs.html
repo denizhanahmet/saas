@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Sistem Logları - Admin{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-7xl mx-auto px-4 sm:px-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-purple-500">history</span>
+                Sistem Logları
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">KVKK uyumlu aktivite kayıtları</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ url_for('admin.admin_dashboard') }}"
+                class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center gap-2">
+                <span class="material-icons text-lg">arrow_back</span>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card-modern p-4 mb-6">
+        <form method="GET" class="flex flex-wrap gap-4 items-end">
+            <!-- Action Filter -->
+            <div class="flex-1 min-w-[150px]">
+                <label for="action"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aksiyon</label>
+                <select id="action" name="action"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="">Tümü</option>
+                    {% for value, label in actions %}
+                    <option value="{{ value }}" {% if action_filter==value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Resource Filter -->
+            <div class="flex-1 min-w-[150px]">
+                <label for="resource"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kaynak</label>
+                <select id="resource" name="resource"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="">Tümü</option>
+                    {% for value, label in resources %}
+                    <option value="{{ value }}" {% if resource_filter==value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Start Date -->
+            <div class="flex-1 min-w-[140px]">
+                <label for="start_date"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Başlangıç</label>
+                <input type="date" id="start_date" name="start_date" value="{{ start_date }}"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            </div>
+
+            <!-- End Date -->
+            <div class="flex-1 min-w-[140px]">
+                <label for="end_date"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bitiş</label>
+                <input type="date" id="end_date" name="end_date" value="{{ end_date }}"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2">
+                <button type="submit"
+                    class="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition flex items-center gap-2">
+                    <span class="material-icons text-lg">filter_alt</span>
+                    Filtrele
+                </button>
+                <a href="{{ url_for('admin.activity_logs') }}"
+                    class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500 transition flex items-center gap-2">
+                    <span class="material-icons text-lg">clear</span>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats -->
+    <div class="flex items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
+        <span class="flex items-center gap-1">
+            <span class="material-icons text-lg">list</span>
+            Toplam: <strong class="text-gray-900 dark:text-white">{{ logs.total }}</strong> kayıt
+        </span>
+        <span>|</span>
+        <span>Sayfa {{ logs.page }} / {{ logs.pages or 1 }}</span>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="card-modern overflow-hidden">
+        {% if logs.items %}
+        <div class="overflow-x-auto">
+            <table class="table-modern w-full">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">Tarih</th>
+                        <th>Aksiyon</th>
+                        <th>Kaynak</th>
+                        <th>Kullanıcı ID</th>
+                        <th>IP</th>
+                        <th>Detay</th>
+                        <th class="rounded-tr-lg">Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs.items %}
+                    <tr>
+                        <td class="whitespace-nowrap text-sm">
+                            {% if log.timestamp %}
+                            {% set ts = log.timestamp %}
+                            <div class="text-gray-900 dark:text-white">{{ ts[0:10] }}</div>
+                            <div class="text-gray-500 text-xs">{{ ts[11:19] }}</div>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set action = log.action %}
+                            {% if 'success' in action or 'approve' in action or 'create' in action %}
+                            <span class="badge-modern badge-success">{{ ActivityLogger.get_action_label(action)
+                                }}</span>
+                            {% elif 'failed' in action or 'reject' in action or 'delete' in action %}
+                            <span class="badge-modern badge-danger">{{ ActivityLogger.get_action_label(action) }}</span>
+                            {% elif 'update' in action or 'change' in action %}
+                            <span class="badge-modern badge-warning">{{ ActivityLogger.get_action_label(action)
+                                }}</span>
+                            {% else %}
+                            <span class="badge-modern badge-info">{{ ActivityLogger.get_action_label(action) }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="text-gray-700 dark:text-gray-300 text-sm">
+                                {{ ActivityLogger.get_resource_label(log.resource) }}
+                            </span>
+                        </td>
+                        <td class="text-sm">
+                            <code
+                                class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs">
+                                {{ (log.user_id|string)[:12] }}{% if (log.user_id|string)|length > 12 %}...{% endif %}
+                            </code>
+                        </td>
+                        <td class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ log.ip_address or '-' }}
+                        </td>
+                        <td class="text-sm text-gray-600 dark:text-gray-300 max-w-[200px] truncate">
+                            {{ log.details or '-' }}
+                        </td>
+                        <td>
+                            {% if log.success %}
+                            <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                <span class="material-icons text-sm">check_circle</span>
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+                                <span class="material-icons text-sm">error</span>
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if logs.pages > 1 %}
+        <div class="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+                {{ (logs.page - 1) * logs.per_page + 1 }} - {{ [logs.page * logs.per_page, logs.total]|min }} / {{
+                logs.total }}
+            </div>
+            <div class="flex gap-1">
+                {% if logs.has_prev %}
+                <a href="{{ url_for('admin.activity_logs', page=logs.prev_num, action=action_filter, resource=resource_filter, start_date=start_date, end_date=end_date) }}"
+                    class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <span class="material-icons">chevron_left</span>
+                </a>
+                {% endif %}
+
+                {% for page_num in logs.iter_pages() %}
+                {% if page_num %}
+                {% if page_num == logs.page %}
+                <span class="px-3 py-2 rounded-lg bg-purple-600 text-white">{{ page_num }}</span>
+                {% else %}
+                <a href="{{ url_for('admin.activity_logs', page=page_num, action=action_filter, resource=resource_filter, start_date=start_date, end_date=end_date) }}"
+                    class="px-3 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    {{ page_num }}
+                </a>
+                {% endif %}
+                {% else %}
+                <span class="px-2 py-2 text-gray-400">...</span>
+                {% endif %}
+                {% endfor %}
+
+                {% if logs.has_next %}
+                <a href="{{ url_for('admin.activity_logs', page=logs.next_num, action=action_filter, resource=resource_filter, start_date=start_date, end_date=end_date) }}"
+                    class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <span class="material-icons">chevron_right</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-12">
+            <div
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">receipt_long</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Kayıt Bulunamadı</h3>
+            <p class="text-gray-500 dark:text-gray-400">Filtreleri değiştirerek tekrar deneyin.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- KVKK Notice -->
+    <div class="mt-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+        <div class="flex items-start gap-3">
+            <span class="material-icons text-blue-500 mt-0.5">info</span>
+            <div class="text-sm text-blue-700 dark:text-blue-300">
+                <strong>KVKK Uyumluluğu:</strong> Loglar kişisel veri içermez. IP adresleri maskelenmiştir (örn:
+                192.168.*.*).
+                Kayıtlar sadece sistem aktivitelerini takip etmek için kullanılır.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -78,7 +78,8 @@
                 <div class="relative">
                     <span
                         class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">phone</span>
-                    <input type="tel" id="phone" name="phone" required placeholder="05XX XXX XX XX"
+                    <input type="tel" id="phone" name="phone" required placeholder="05XX XXX XX XX" maxlength="11"
+                        minlength="11" pattern="[0-9]{11}" title="11 haneli telefon numarası giriniz (örn: 05301234567)"
                         class="input-modern pl-11" />
                 </div>
             </div>
@@ -134,10 +135,11 @@
             </div>
 
             <!-- Submit -->
-            <button type="submit" id="submitBtn" class="btn-modern w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white 
-                       hover:from-blue-600 hover:to-blue-700 transition-all">
-                <span class="material-icons text-xl">send</span>
-                Randevu Talebi Gönder
+            <button type="submit" id="submitBtn"
+                class="btn-modern w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white 
+                       hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="material-icons text-xl" id="submitIcon">send</span>
+                <span id="submitText">Randevu Talebi Gönder</span>
             </button>
         </form>
 
@@ -216,5 +218,25 @@
 
     // Set minimum date to today
     document.getElementById('appointment_date').min = new Date().toISOString().split('T')[0];
+
+    // Double-submit protection
+    let isSubmitting = false;
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitIcon = document.getElementById('submitIcon');
+    const submitText = document.getElementById('submitText');
+
+    form.addEventListener('submit', function (e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+
+        isSubmitting = true;
+        submitBtn.disabled = true;
+        submitIcon.textContent = 'hourglass_empty';
+        submitIcon.classList.add('animate-spin');
+        submitText.textContent = 'Gönderiliyor...';
+    });
 </script>
 {% endblock %}

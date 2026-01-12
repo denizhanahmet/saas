@@ -71,9 +71,11 @@
             <a href="{{ url_for('dashboard.dashboard') }}"
                 class="px-6 py-2 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition flex items-center gap-2"><span
                     class="material-icons align-middle">arrow_back</span>İptal</a>
-            <button type="submit" class="btn-primary flex items-center gap-2 justify-center"
+            <button type="submit" id="submitBtn"
+                class="btn-primary flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 style="background-color:#2563eb !important;color:#fff !important;border:2px solid #2563eb !important;width:auto !important;min-width:160px;box-shadow:0 2px 8px rgba(13,110,253,0.08);font-weight:700;min-height:44px;border-radius:8px;">
-                <span class="material-icons align-middle">check_circle</span>Randevu Oluştur
+                <span class="material-icons align-middle" id="submitIcon">check_circle</span>
+                <span id="submitText">Randevu Oluştur</span>
             </button>
         </div>
     </form>
@@ -103,6 +105,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({
                     date: date,
@@ -126,12 +129,33 @@
         dateInput.addEventListener('change', checkConflict);
         timeInput.addEventListener('change', checkConflict);
         durationSelect.addEventListener('change', checkConflict);
+
+        // Double-submit protection
+        let isSubmitting = false;
+        const submitBtn = document.getElementById('submitBtn');
+        const submitIcon = document.getElementById('submitIcon');
+        const submitText = document.getElementById('submitText');
+
         form.addEventListener('submit', function (e) {
-            checkConflict();
+            // Zaten gönderiliyorsa engelle
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Çakışma kontrolü
             if (!conflictWarning.classList.contains('hidden')) {
                 e.preventDefault();
                 alert('Çakışan randevu var! Lütfen farklı bir saat seçin.');
+                return false;
             }
+
+            // İşlem başladı - butonu devre dışı bırak
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitIcon.textContent = 'hourglass_empty';
+            submitIcon.classList.add('animate-spin');
+            submitText.textContent = 'Oluşturuluyor...';
         });
     });
 </script>

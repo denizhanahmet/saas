@@ -57,9 +57,10 @@
                 </label>
                 <div class="relative">
                     <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">phone</span>
-                    <input type="tel" id="client_phone" name="client_phone"
+                    <input type="tel" id="client_phone" name="client_phone" maxlength="11" minlength="11"
+                        pattern="[0-9]{11}" title="11 haneli telefon numarası giriniz (örn: 05301234567)"
                         class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition"
-                        placeholder="5XX XXX XX XX">
+                        placeholder="05XX XXX XX XX">
                 </div>
             </div>
 

@@ -130,11 +130,31 @@ def login():
                 session['session_token'] = user['session_token']
                 session['user_id'] = user_id
                 cache_user_to_session(user)  # Session cache
+                # Log başarılı giriş
+                from services.activity_logger import ActivityLogger
+                ActivityLogger.log_activity(
+                    user_id=user_id,
+                    action=ActivityLogger.LOGIN_SUCCESS,
+                    resource=ActivityLogger.RESOURCE_AUTH,
+                    details='Kullanıcı girişi başarılı',
+                    ip_address=request.remote_addr,
+                    user_agent=request.user_agent.string
+                )
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
             # Başarısız giriş denemesini logla - güvenlik izleme için
             logging.warning(f"Başarısız giriş denemesi: {email} - IP: {request.remote_addr}")
+            from services.activity_logger import ActivityLogger
+            ActivityLogger.log_activity(
+                user_id='unknown',
+                action=ActivityLogger.LOGIN_FAILED,
+                resource=ActivityLogger.RESOURCE_AUTH,
+                details='Şifre hatalı',
+                ip_address=request.remote_addr,
+                user_agent=request.user_agent.string,
+                success=False
+            )
             flash('Geçersiz email veya şifre!', 'error')
             return render_template('auth/login.html', csrf_token=generate_csrf)
         elif user and user.get('password_hash'):
@@ -268,6 +288,9 @@ def register():
         users = get_data('users') or {}
         if any(u.get('email') == email for u in users.values()):
             errors.append('Bu email adresi zaten kullanımda.')
+        # Telefon numarası kontrolü - aynı numara ile kayıt engelle
+        if phone and any(u.get('phone') == phone for u in users.values()):
+            errors.append('Bu telefon numarası zaten kullanımda.')
         if not kvkk_accepted:
             errors.append('Gizlilik ve KVKK hüküm ve koşullarını kabul etmelisiniz.')
         if errors:
@@ -325,6 +348,17 @@ def register():
             session['session_token'] = session_token
             cache_user_to_session(user_data)
             
+            # Log kayıt
+            from services.activity_logger import ActivityLogger
+            ActivityLogger.log_activity(
+                user_id=user_id,
+                action=ActivityLogger.REGISTER,
+                resource=ActivityLogger.RESOURCE_AUTH,
+                details='Yeni kullanıcı kaydı',
+                ip_address=request.remote_addr,
+                user_agent=request.user_agent.string
+            )
+            
             flash('Kayıt başarılı! Lütfen bir abonelik planı seçin.', 'success')
             return redirect(url_for('subscription.pricing'))
         except Exception as e:
@@ -334,6 +368,18 @@ def register():
 
 @auth_bp.route('/logout')
 def logout():
+    user_id = session.get('user_id')
+    # Log çıkış
+    if user_id:
+        from services.activity_logger import ActivityLogger
+        ActivityLogger.log_activity(
+            user_id=user_id,
+            action=ActivityLogger.LOGOUT,
+            resource=ActivityLogger.RESOURCE_AUTH,
+            details='Kullanıcı çıkışı',
+            ip_address=request.remote_addr,
+            user_agent=request.user_agent.string
+        )
     clear_user_cache()  # Clear session cache
     session.pop('user_id', None)
     session.pop('session_token', None)
@@ -450,6 +496,14 @@ def edit_profile():
             for uid, other_user in users.items():
                 if uid != str(session.get('user_id')) and other_user.get('email') == new_email:
                     flash('Bu email adresi zaten kullanımda.', 'error')
+                    return render_template('auth/edit_profile.html', user=user, csrf_token=generate_csrf)
+
+        # Telefon kontrolü - başka bir kullanıcı tarafından kullanılıp kullanılmadığını kontrol et
+        new_phone = user.get('phone')
+        if new_phone:
+            for uid, other_user in users.items():
+                if uid != str(session.get('user_id')) and other_user.get('phone') == new_phone:
+                    flash('Bu telefon numarası zaten kullanımda.', 'error')
                     return render_template('auth/edit_profile.html', user=user, csrf_token=generate_csrf)
 
         try:

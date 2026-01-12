@@ -161,6 +161,19 @@ def toggle_user_status(user_id):
         current['is_active'] = new_status
         return current
     atomic_update(f"users/{user_id}", update_status)
+    
+    # Log kullanıcı durumu değişikliği
+    from services.activity_logger import ActivityLogger
+    ActivityLogger.log_activity(
+        user_id=session.get('user_id'),
+        action=ActivityLogger.USER_STATUS_CHANGE,
+        resource=ActivityLogger.RESOURCE_USER,
+        resource_id=user_id,
+        details=f"Kullanıcı {'aktif' if new_status else 'pasif'} yapıldı",
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string
+    )
+    
     flash('Kullanıcı durumu güncellendi.', 'success')
     return redirect(request.referrer or url_for('admin.users_list'))
 
@@ -267,6 +280,19 @@ def update_quota(user_id):
             current['sms_quota'] = new_quota
             return current
         updated = atomic_update(f"users/{user_id}", update_fn)
+        
+        # Log kota güncelleme
+        from services.activity_logger import ActivityLogger
+        ActivityLogger.log_activity(
+            user_id=session.get('user_id'),
+            action=ActivityLogger.QUOTA_UPDATE,
+            resource=ActivityLogger.RESOURCE_USER,
+            resource_id=str(user_id),
+            details=f"SMS kotası {new_quota} olarak güncellendi",
+            ip_address=request.remote_addr,
+            user_agent=request.user_agent.string
+        )
+        
         flash(f"Kullanıcının SMS kotası {new_quota} olarak güncellendi.", 'success')
     except Exception as e:
         flash(f'Hata: {str(e)}', 'error')
@@ -350,3 +376,98 @@ def sms_event_delete(event_id):
     flash('SMS eventi silindi.', 'success')
     return redirect(url_for('admin.sms_events'))
 
+
+# =====================
+# Activity Logs
+# =====================
+
+@admin_bp.route('/logs')
+@admin_required
+def activity_logs():
+    """Sistem aktivite logları sayfası"""
+    from services.activity_logger import ActivityLogger
+    
+    # Filtreleri al
+    action_filter = request.args.get('action', '')
+    resource_filter = request.args.get('resource', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = 25
+    
+    # Tüm logları çek
+    all_logs = ActivityLogger.get_logs(
+        limit=500,
+        action_filter=action_filter if action_filter else None,
+        resource_filter=resource_filter if resource_filter else None,
+        start_date=start_date if start_date else None,
+        end_date=end_date if end_date else None
+    )
+    
+    # Pagination
+    total = len(all_logs)
+    start = (page - 1) * per_page
+    end = start + per_page
+    logs = all_logs[start:end]
+    
+    # Pagination object
+    class Pagination:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+            self.has_prev = page > 1
+            self.has_next = page < self.pages
+            self.prev_num = page - 1 if self.has_prev else None
+            self.next_num = page + 1 if self.has_next else None
+        
+        def iter_pages(self, left_edge=2, left_current=2, right_current=2, right_edge=2):
+            last = 0
+            for num in range(1, self.pages + 1):
+                if (num <= left_edge or 
+                    (self.page - left_current <= num <= self.page + right_current) or 
+                    num > self.pages - right_edge):
+                    if last + 1 != num:
+                        yield None
+                    yield num
+                    last = num
+    
+    pagination = Pagination(logs, page, per_page, total)
+    
+    # Aksiyon ve kaynak seçenekleri
+    actions = [
+        ('login_success', 'Başarılı Giriş'),
+        ('login_failed', 'Başarısız Giriş'),
+        ('logout', 'Çıkış'),
+        ('register', 'Yeni Kayıt'),
+        ('password_change', 'Şifre Değişikliği'),
+        ('appointment_create', 'Randevu Oluşturma'),
+        ('appointment_update', 'Randevu Güncelleme'),
+        ('appointment_approve', 'Randevu Onaylama'),
+        ('appointment_reject', 'Randevu Reddetme'),
+        ('user_status_change', 'Kullanıcı Durum Değişikliği'),
+        ('quota_update', 'Kota Güncelleme'),
+        ('sms_event_create', 'SMS Event Oluşturma'),
+        ('sms_event_update', 'SMS Event Güncelleme'),
+        ('sms_event_delete', 'SMS Event Silme'),
+    ]
+    
+    resources = [
+        ('auth', 'Kimlik Doğrulama'),
+        ('appointment', 'Randevu'),
+        ('user', 'Kullanıcı'),
+        ('sms', 'SMS'),
+        ('waitlist', 'Bekleme Listesi'),
+    ]
+    
+    return render_template('admin/logs.html',
+                         logs=pagination,
+                         actions=actions,
+                         resources=resources,
+                         action_filter=action_filter,
+                         resource_filter=resource_filter,
+                         start_date=start_date,
+                         end_date=end_date,
+                         ActivityLogger=ActivityLogger)
