@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Deneme Süresi Doldu{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4">
+    <div class="w-full max-w-2xl mx-auto">
+        <!-- Warning Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
+                        <span class="material-icons text-4xl text-white">timer_off</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Deneme Süreniz Doldu</h1>
+                        <p class="text-white/80">3 günlük ücretsiz deneme süreniz sona erdi</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-8">
+                <div class="text-center mb-8">
+                    <p class="text-gray-600 dark:text-gray-300 text-lg">
+                        Sistemi kullanmaya devam etmek için lütfen bir abonelik planı seçin.
+                        Ödemenizi yaptıktan sonra tüm özelliklere tekrar erişebilirsiniz.
+                    </p>
+                </div>
+
+                <!-- Plans -->
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    {% for plan_id, plan in plans.items() %}
+                    <div
+                        class="border-2 {% if plan.interval == 'yearly' %}border-blue-500 dark:border-blue-400{% else %}border-gray-200 dark:border-gray-600{% endif %} rounded-xl p-6 relative transition-all hover:shadow-lg">
+                        {% if plan.interval == 'yearly' %}
+                        <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                EN POPÜLER
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ plan.name }}</h3>
+
+                        <div class="mb-4">
+                            <span class="text-4xl font-bold text-gray-900 dark:text-white">₺{{ plan.price|replace('.00',
+                                '') }}</span>
+                            <span class="text-gray-500 dark:text-gray-400">/{{ 'yıl' if plan.interval == 'yearly' else
+                                'ay' }}</span>
+                        </div>
+
+                        {% if plan.monthly_equivalent %}
+                        <p class="text-sm text-emerald-600 dark:text-emerald-400 mb-4">
+                            Aylık ₺{{ plan.monthly_equivalent|int }} ({% set savings = (1500 * 12) - 15000 %}₺{{
+                            savings|int }} tasarruf)
+                        </p>
+                        {% endif %}
+
+                        <ul class="space-y-2 mb-6">
+                            {% for feature in plan.features %}
+                            <li class="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                <span class="material-icons text-emerald-500 text-lg">check_circle</span>
+                                {{ feature }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                        <a href="{{ url_for('subscription.checkout', plan_id=plan_id) }}" class="block w-full py-3 rounded-lg text-center font-semibold transition-colors
+                            {% if plan.interval == 'yearly' %}
+                            bg-blue-600 text-white hover:bg-blue-700
+                            {% else %}
+                            bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600
+                            {% endif %}">
+                            Şimdi Başla
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Logout Option -->
+                <div class="text-center pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-gray-500 dark:text-gray-400 mb-3">
+                        Şu an için abone olmak istemiyor musunuz?
+                    </p>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors underline">
+                        Çıkış Yap
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="text-center mt-6 text-gray-500 dark:text-gray-400">
+            <p>Sorularınız için: <a href="mailto:destek@randevusistemi.com"
+                    class="text-blue-600 hover:underline">destek@randevusistemi.com</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

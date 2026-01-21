@@ -171,6 +171,67 @@
                 <span class="material-icons">pie_chart</span>
                 Kota Yönetimi
             </a>
+            <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}"
+                onsubmit="return confirm('Bu kullanıcının şifresini sıfırlamak istediğinizden emin misiniz?\n\nYeni geçici şifre kullanıcının e-posta adresine gönderilecek.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                    class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 font-medium transition-all flex items-center gap-2">
+                    <span class="material-icons">lock_reset</span>
+                    Şifre Sıfırla
+                </button>
+            </form>
+        </div>
+
+        <!-- Trial ve Abonelik Yönetimi -->
+        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Abonelik Yönetimi</h3>
+            <div class="flex flex-wrap gap-3">
+                <form method="POST" action="{{ url_for('admin.extend_trial', user_id=user.id) }}"
+                    class="flex items-center gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="days"
+                        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                        <option value="7">7 Gün</option>
+                        <option value="14">14 Gün</option>
+                        <option value="30">30 Gün</option>
+                        <option value="90">90 Gün</option>
+                    </select>
+                    <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 font-medium transition-all flex items-center gap-2">
+                        <span class="material-icons">timer</span>
+                        Trial Uzat
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.grant_subscription', user_id=user.id) }}"
+                    class="flex items-center gap-2"
+                    onsubmit="return confirm('Bu kullanıcıya abonelik vermek istediğinizden emin misiniz?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="plan_type"
+                        class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                        <option value="monthly">Aylık</option>
+                        <option value="yearly">Yıllık</option>
+                    </select>
+                    <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 font-medium transition-all flex items-center gap-2">
+                        <span class="material-icons">card_membership</span>
+                        Abonelik Ver
+                    </button>
+                </form>
+            </div>
+            {% if user.subscription_status %}
+            <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                Mevcut Durum:
+                <span
+                    class="font-medium {% if user.subscription_status == 'active' %}text-emerald-600{% elif user.subscription_status == 'trial' %}text-purple-600{% else %}text-red-600{% endif %}">
+                    {% if user.subscription_status == 'active' %}Aktif Abonelik
+                    {% elif user.subscription_status == 'trial' %}Deneme Sürümü
+                    {% else %}Süresi Dolmuş{% endif %}
+                </span>
+                {% if user.trial_ends_at and user.subscription_status == 'trial' %}
+                <span class="ml-2">(Bitiş: {{ user.trial_ends_at[:10] }})</span>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}

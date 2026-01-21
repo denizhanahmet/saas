@@ -136,13 +136,19 @@ static/uploads/*
 
 # Logs
 *.log
-
+#Tests
+tests/
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
+# Node modules
+node_modules/
+# Instance folder (database)
+instance/
+# Temporary/misc files
+*.png
 # OS
 .DS_Store
 Thumbs.db

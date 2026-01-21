@@ -5,7 +5,7 @@ import threading
 def send_async_email(app, msg):
     with app.app_context():
         current_app.extensions['mail'].send(msg)
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import (Blueprint, current_app, flash, redirect, render_template,
                    request, session, url_for)
@@ -140,6 +140,12 @@ def login():
                     ip_address=request.remote_addr,
                     user_agent=request.user_agent.string
                 )
+                
+                # Zorunlu şifre değişikliği kontrolü
+                if user.get('force_password_change'):
+                    flash('Güvenliğiniz için şifrenizi değiştirmeniz gerekiyor.', 'warning')
+                    return redirect(url_for('auth.force_change_password'))
+                
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
@@ -253,6 +259,80 @@ def reset_password(token):
         flash('Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz.', 'success')
         return redirect(url_for('auth.login'))
     return render_template('auth/reset_password.html', token=token)
+
+
+@auth_bp.route('/force-change-password', methods=['GET', 'POST'])
+def force_change_password():
+    """Zorunlu şifre değiştirme sayfası - admin tarafından sıfırlanmış şifreler için"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth.login'))
+    
+    from firebase_realtime import get_data
+    from firebase_realtime_transaction import atomic_update
+    
+    users = get_data('users') or {}
+    user = users.get(str(user_id))
+    
+    if not user:
+        session.clear()
+        flash('Kullanıcı bulunamadı. Lütfen tekrar giriş yapın.', 'error')
+        return redirect(url_for('auth.login'))
+    
+    # force_password_change flag yoksa normal dashboard'a yönlendir
+    if not user.get('force_password_change'):
+        return redirect(url_for('dashboard.dashboard'))
+    
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not new_password or len(new_password) < 6:
+            flash('Şifre en az 6 karakter olmalı.', 'error')
+            return render_template('auth/force_change_password.html')
+        
+        if new_password != confirm_password:
+            flash('Şifreler eşleşmiyor.', 'error')
+            return render_template('auth/force_change_password.html')
+        
+        from services.password_utils import hash_password_pbkdf2
+        pw = hash_password_pbkdf2(new_password)
+        
+        def update_user_password(current):
+            if not current:
+                return user
+            current['password_hash'] = pw['hash']
+            current['password_salt'] = pw['salt']
+            current['password_iterations'] = pw['iterations']
+            current['force_password_change'] = False
+            current['password_changed_at'] = datetime.utcnow().isoformat()
+            return current
+        
+        atomic_update(f"users/{user_id}", update_user_password)
+        
+        # Cache temizle ve yenile
+        clear_user_cache()
+        updated_user = get_data(f'users/{user_id}')
+        if updated_user:
+            cache_user_to_session(updated_user)
+        
+        # Log şifre değişikliği
+        from services.activity_logger import ActivityLogger
+        ActivityLogger.log_activity(
+            user_id=user_id,
+            action=ActivityLogger.PASSWORD_CHANGE,
+            resource=ActivityLogger.RESOURCE_AUTH,
+            details='Zorunlu şifre değişikliği tamamlandı',
+            ip_address=request.remote_addr,
+            user_agent=request.user_agent.string
+        )
+        
+        flash('Şifreniz başarıyla güncellendi!', 'success')
+        return redirect(url_for('dashboard.dashboard'))
+    
+    return render_template('auth/force_change_password.html')
+
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     session.permanent = True  # Session'ı kalıcı yap (CSRF için gerekli)
@@ -331,7 +411,9 @@ def register():
             'password_hash': pw['hash'],
             'password_salt': pw['salt'],
             'password_iterations': pw['iterations'],
-            'is_active': False,
+            'is_active': True,  # Deneme süresinde aktif
+            'subscription_status': 'trial',  # trial, active, expired
+            'trial_ends_at': (datetime.utcnow() + timedelta(days=3)).isoformat(),  # 3 günlük deneme
             'working_hours': working_hours
         }
         try:

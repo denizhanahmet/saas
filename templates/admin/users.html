@@ -22,221 +22,335 @@
 
     <!-- Filters -->
     <div class="card-modern p-4 sm:p-6 mb-6">
-        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="lg:col-span-2">
-                <label for="search"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arama</label>
+                <label for="liveSearch" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Anlık
+                    Arama</label>
                 <div class="relative">
                     <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-                    <input type="text" id="search" name="search" value="{{ search }}"
-                        placeholder="E-posta veya ad soyad..."
-                        class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <input type="text" id="liveSearch" placeholder="Ad, soyad veya e-posta yazın..."
+                        class="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <button type="button" id="clearSearch"
+                        class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
+                <p id="searchResults" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></p>
             </div>
             <div>
-                <label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
-                <select id="role" name="role"
+                <label for="roleFilter"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
+                <select id="roleFilter"
                     class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     <option value="">Tüm Roller</option>
-                    <option value="customer" {% if role_filter=='customer' %}selected{% endif %}>Müşteri</option>
-                    <option value="provider" {% if role_filter=='provider' %}selected{% endif %}>Sağlayıcı</option>
+                    <option value="superadmin">Superadmin</option>
+                    <option value="user">Kullanıcı</option>
                 </select>
             </div>
             <div>
-                <label for="status"
+                <label for="statusFilter"
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durum</label>
-                <select id="status" name="status"
+                <select id="statusFilter"
                     class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     <option value="">Tüm Durumlar</option>
-                    <option value="active" {% if status_filter=='active' %}selected{% endif %}>Aktif</option>
-                    <option value="inactive" {% if status_filter=='inactive' %}selected{% endif %}>Pasif</option>
-                    <option value="superadmin" {% if status_filter=='superadmin' %}selected{% endif %}>Superadmin
-                    </option>
+                    <option value="active">Aktif</option>
+                    <option value="trial">Deneme</option>
+                    <option value="expired">Süresi Dolmuş</option>
                 </select>
             </div>
-            <div class="flex items-end">
-                <button type="submit"
-                    class="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-2">
-                    <span class="material-icons text-xl">search</span>
-                    Filtrele
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 
-    <!-- Users Table -->
-    <div class="card-modern p-6">
-        <div class="flex items-center gap-2 mb-6">
-            <span class="material-icons text-blue-500">list</span>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Kullanıcı Listesi</h2>
-        </div>
-
-        {% if users.items %}
-        <div class="overflow-x-auto">
-            <table class="table-modern w-full">
-                <thead>
-                    <tr>
-                        <th class="rounded-tl-lg">Ad Soyad</th>
-                        <th>E-posta</th>
-                        <th>Telefon</th>
-                        <th>Şirket</th>
-                        <th>Rol</th>
-                        <th>Durum</th>
-                        <th>Kayıt Tarihi</th>
-                        {% if current_user.is_superadmin %}
-                        <th>Özel Link</th>
-                        {% endif %}
-                        <th class="rounded-tr-lg text-right">İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users.items %}
-                    <tr>
-                        <td>
-                            <div class="flex items-center gap-2">
-                                {% if user.is_superadmin %}
-                                <span class="material-icons text-red-500 text-sm" title="Superadmin">shield</span>
-                                {% endif %}
-                                <span class="font-medium text-gray-900 dark:text-white">
-                                    {% if user.first_name or user.last_name %}
-                                    {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
-                                    {% else %}
-                                    Kullanıcı
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </td>
-                        <td class="text-gray-600 dark:text-gray-300">{{ user.email }}</td>
-                        <td class="text-gray-600 dark:text-gray-300">{{ user.phone or '-' }}</td>
-                        <td class="text-gray-600 dark:text-gray-300">{{ user.company_name or '-' }}</td>
-                        <td>
-                            {% if user.is_superadmin %}
-                            <span class="badge-modern badge-danger">Superadmin</span>
-                            {% else %}
-                            <span class="badge-modern badge-info">{{ user.role }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if user.is_active %}
-                            <span class="badge-modern badge-success">Aktif</span>
-                            {% else %}
-                            <span class="badge-modern"
-                                style="background: rgba(107,114,128,0.1); color: #6B7280;">Pasif</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-gray-600 dark:text-gray-300 text-sm">
-                            {% set aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
-                            'Ara'] %}
-                            {% if user.created_at %}
-                            {% if user.created_at.strftime is defined %}
-                            {{ user.created_at.strftime('%d') }} {{ aylar[user.created_at.month - 1] }} {{
-                            user.created_at.strftime('%Y') }}
-                            {% elif 'T' in user.created_at|string %}
-                            {% set dt = user.created_at|string %}
-                            {{ dt[8:10] }} {{ aylar[(dt[5:7]|int) - 1] }} {{ dt[0:4] }}
-                            {% else %}
-                            {{ user.created_at }}
-                            {% endif %}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        {% if current_user.is_superadmin %}
-                        <td>
-                            {% if user.unique_link %}
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
-                                    .../r/{{ user.unique_link }}
-                                </span>
-                                <button
-                                    onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}/appointments/r/{{ user.unique_link }}');this.innerHTML='<span class=\'material-icons text-sm\'>check</span>';setTimeout(()=>this.innerHTML='<span class=\'material-icons text-sm\'>content_copy</span>',1500)"
-                                    class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 transition-colors"
-                                    title="Kopyala">
-                                    <span class="material-icons text-sm">content_copy</span>
-                                </button>
-                            </div>
-                            {% else %}
-                            <span class="text-gray-400">-</span>
-                            {% endif %}
-                        </td>
-                        {% endif %}
-                        <td>
-                            <div class="flex items-center justify-end gap-1">
-                                <a href="{{ url_for('admin.user_detail', user_id=user.id) }}"
-                                    class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                                    title="Detay">
-                                    <span class="material-icons">visibility</span>
-                                </a>
-                                {% if user.id != current_user.id %}
-                                <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
-                                    class="inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit"
-                                        class="p-2 rounded-lg transition-colors {% if user.is_active %}text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30{% else %}text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30{% endif %}"
-                                        title="{% if user.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}">
-                                        <span class="material-icons">{% if user.is_active %}pause{% else %}play_arrow{%
-                                            endif %}</span>
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        {% if users.pages > 1 %}
-        <div class="flex items-center justify-center gap-2 mt-6">
-            {% if users.has_prev %}
-            <a href="{{ url_for('admin.users_list', page=users.prev_num, search=search, role=role_filter, status=status_filter) }}"
-                class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
-                <span class="material-icons text-sm">chevron_left</span>
-                Önceki
-            </a>
-            {% endif %}
-
-            <div class="flex items-center gap-1">
-                {% for page_num in users.iter_pages() %}
-                {% if page_num %}
-                {% if page_num != users.page %}
-                <a href="{{ url_for('admin.users_list', page=page_num, search=search, role=role_filter, status=status_filter) }}"
-                    class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center font-medium">
-                    {{ page_num }}
-                </a>
-                {% else %}
-                <span class="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center font-medium">
-                    {{ page_num }}
+    <!-- Users List - Card Layout -->
+    {% if users.items %}
+    <div id="usersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {% for user in users.items %}
+        <a href="{{ url_for('admin.user_detail', user_id=user.id) }}"
+            class="user-card card-modern p-4 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer group relative"
+            data-name="{{ ((user.first_name or '') ~ ' ' ~ (user.last_name or ''))|lower }}"
+            data-email="{{ user.email|lower }}" data-phone="{{ user.phone or '' }}"
+            data-role="{{ 'superadmin' if user.is_superadmin else 'user' }}"
+            data-status="{{ user.subscription_status or 'none' }}">
+            <!-- Status indicator -->
+            <div class="absolute top-3 right-3 flex items-center gap-2">
+                {% if user.is_superadmin %}
+                <span
+                    class="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                    Admin
                 </span>
                 {% endif %}
+                {% if user.is_active %}
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500" title="Aktif"></span>
                 {% else %}
-                <span class="w-10 h-10 flex items-center justify-center text-gray-400">…</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-gray-400" title="Pasif"></span>
                 {% endif %}
-                {% endfor %}
             </div>
 
-            {% if users.has_next %}
-            <a href="{{ url_for('admin.users_list', page=users.next_num, search=search, role=role_filter, status=status_filter) }}"
-                class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
-                Sonraki
-                <span class="material-icons text-sm">chevron_right</span>
-            </a>
-            {% endif %}
-        </div>
+            <!-- User avatar & name -->
+            <div class="flex items-center gap-3 mb-3">
+                <div
+                    class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                    {% if user.first_name %}
+                    {{ user.first_name[0]|upper }}
+                    {% else %}
+                    {{ user.email[0]|upper }}
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3
+                        class="font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {% if user.first_name or user.last_name %}
+                        {{ (user.first_name or '') ~ ' ' ~ (user.last_name or '') }}
+                        {% else %}
+                        Kullanıcı
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ user.email }}</p>
+                </div>
+            </div>
+
+            <!-- Quick info -->
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                    <span class="material-icons text-base">phone</span>
+                    <span class="truncate">{{ user.phone or '-' }}</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                    <span class="material-icons text-base">calendar_today</span>
+                    <span>
+                        {% if user.created_at %}
+                        {% if 'T' in user.created_at|string %}
+                        {{ user.created_at[:10] }}
+                        {% elif user.created_at.strftime is defined %}
+                        {{ user.created_at.strftime('%Y-%m-%d') }}
+                        {% else %}
+                        {{ user.created_at }}
+                        {% endif %}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </span>
+                </div>
+                {% if user.subscription_status %}
+                <div class="col-span-2 flex items-center gap-1.5">
+                    <span
+                        class="material-icons text-base {% if user.subscription_status == 'active' %}text-emerald-500{% elif user.subscription_status == 'trial' %}text-purple-500{% else %}text-red-500{% endif %}">
+                        {% if user.subscription_status == 'active' %}verified{% elif user.subscription_status == 'trial'
+                        %}hourglass_top{% else %}cancel{% endif %}
+                    </span>
+                    <span
+                        class="{% if user.subscription_status == 'active' %}text-emerald-600 dark:text-emerald-400{% elif user.subscription_status == 'trial' %}text-purple-600 dark:text-purple-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                        {% if user.subscription_status == 'active' %}Aktif Abone
+                        {% elif user.subscription_status == 'trial' %}Deneme
+                        {% else %}Süresi Dolmuş{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Hover indicator -->
+            <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="material-icons text-blue-500">arrow_forward</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if users.pages > 1 %}
+    <div class="flex items-center justify-center gap-2">
+        {% if users.has_prev %}
+        <a href="{{ url_for('admin.users_list', page=users.prev_num, search=search, role=role_filter, status=status_filter) }}"
+            class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
+            <span class="material-icons text-sm">chevron_left</span>
+            Önceki
+        </a>
         {% endif %}
 
-        {% else %}
-        <div class="text-center py-12">
-            <div
-                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">person_off</span>
-            </div>
-            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanıcı bulunamadı</h3>
-            <p class="text-gray-500 dark:text-gray-400">Filtrelere uygun kullanıcı bulunamadı.</p>
+        <div class="flex items-center gap-1">
+            {% for page_num in users.iter_pages() %}
+            {% if page_num %}
+            {% if page_num != users.page %}
+            <a href="{{ url_for('admin.users_list', page=page_num, search=search, role=role_filter, status=status_filter) }}"
+                class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center font-medium">
+                {{ page_num }}
+            </a>
+            {% else %}
+            <span class="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center font-medium">
+                {{ page_num }}
+            </span>
+            {% endif %}
+            {% else %}
+            <span class="w-10 h-10 flex items-center justify-center text-gray-400">…</span>
+            {% endif %}
+            {% endfor %}
         </div>
+
+        {% if users.has_next %}
+        <a href="{{ url_for('admin.users_list', page=users.next_num, search=search, role=role_filter, status=status_filter) }}"
+            class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
+            Sonraki
+            <span class="material-icons text-sm">chevron_right</span>
+        </a>
         {% endif %}
     </div>
+    {% endif %}
+
+    {% else %}
+    <div class="card-modern p-12 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+            <span class="material-icons text-3xl text-gray-400 dark:text-gray-500">person_off</span>
+        </div>
+        <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanıcı bulunamadı</h3>
+        <p class="text-gray-500 dark:text-gray-400">Filtrelere uygun kullanıcı bulunamadı.</p>
+    </div>
+    {% endif %}
 </div>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('liveSearch');
+        const clearBtn = document.getElementById('clearSearch');
+        const resultsText = document.getElementById('searchResults');
+        const roleFilter = document.getElementById('roleFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const usersGrid = document.getElementById('usersGrid');
+        const originalCards = usersGrid ? usersGrid.innerHTML : '';
+        const paginationContainer = document.querySelector('.flex.items-center.justify-center.gap-2');
+
+        let debounceTimer = null;
+        let isSearchMode = false;
+
+        function createUserCard(user) {
+            const initial = user.first_name ? user.first_name[0].toUpperCase() : user.email[0].toUpperCase();
+            const fullName = (user.first_name || '') + ' ' + (user.last_name || '') || 'Kullanıcı';
+
+            let statusBadge = '';
+            if (user.subscription_status === 'active') {
+                statusBadge = `<span class="material-icons text-base text-emerald-500">verified</span><span class="text-emerald-600 dark:text-emerald-400">Aktif Abone</span>`;
+            } else if (user.subscription_status === 'trial') {
+                statusBadge = `<span class="material-icons text-base text-purple-500">hourglass_top</span><span class="text-purple-600 dark:text-purple-400">Deneme</span>`;
+            } else if (user.subscription_status === 'expired') {
+                statusBadge = `<span class="material-icons text-base text-red-500">cancel</span><span class="text-red-600 dark:text-red-400">Süresi Dolmuş</span>`;
+            }
+
+            return `
+                <a href="/admin/users/${user.id}" class="user-card card-modern p-4 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer group relative">
+                    <div class="absolute top-3 right-3 flex items-center gap-2">
+                        ${user.is_superadmin ? '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">Admin</span>' : ''}
+                        <span class="w-2.5 h-2.5 rounded-full ${user.is_active ? 'bg-emerald-500' : 'bg-gray-400'}" title="${user.is_active ? 'Aktif' : 'Pasif'}"></span>
+                    </div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">${initial}</div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${fullName}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 truncate">${user.email}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                            <span class="material-icons text-base">phone</span>
+                            <span class="truncate">${user.phone || '-'}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                            <span class="material-icons text-base">calendar_today</span>
+                            <span>${user.created_at || '-'}</span>
+                        </div>
+                        ${statusBadge ? `<div class="col-span-2 flex items-center gap-1.5">${statusBadge}</div>` : ''}
+                    </div>
+                    <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="material-icons text-blue-500">arrow_forward</span>
+                    </div>
+                </a>
+            `;
+        }
+
+        async function searchUsers() {
+            const query = searchInput.value.trim();
+            const role = roleFilter.value;
+            const status = statusFilter.value;
+
+            // If all filters are empty, restore original
+            if (!query && !role && !status) {
+                if (isSearchMode) {
+                    usersGrid.innerHTML = originalCards;
+                    if (paginationContainer) paginationContainer.style.display = '';
+                    resultsText.textContent = '';
+                    isSearchMode = false;
+                }
+                clearBtn.classList.add('hidden');
+                return;
+            }
+
+            clearBtn.classList.toggle('hidden', !query);
+            resultsText.innerHTML = '<span class="animate-pulse">Aranıyor...</span>';
+
+            try {
+                const params = new URLSearchParams();
+                if (query) params.set('q', query);
+                if (role) params.set('role', role);
+                if (status) params.set('status', status);
+
+                const response = await fetch(`/admin/api/users/search?${params.toString()}`);
+                const data = await response.json();
+
+                isSearchMode = true;
+                if (paginationContainer) paginationContainer.style.display = 'none';
+
+                if (data.users && data.users.length > 0) {
+                    usersGrid.innerHTML = data.users.map(createUserCard).join('');
+                    resultsText.textContent = `${data.total} kullanıcı bulundu`;
+                } else {
+                    usersGrid.innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                <span class="material-icons text-3xl text-gray-400">person_off</span>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Sonuç bulunamadı</h3>
+                            <p class="text-gray-500">Farklı arama terimleri deneyin.</p>
+                        </div>
+                    `;
+                    resultsText.textContent = 'Sonuç bulunamadı';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                resultsText.textContent = 'Arama sırasında hata oluştu';
+            }
+        }
+
+        function debounceSearch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(searchUsers, 300);
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', debounceSearch);
+        roleFilter.addEventListener('change', searchUsers);
+        statusFilter.addEventListener('change', searchUsers);
+
+        clearBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            roleFilter.value = '';
+            statusFilter.value = '';
+            searchUsers();
+            searchInput.focus();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName))) {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+            if (e.key === 'Escape' && document.activeElement === searchInput) {
+                searchInput.value = '';
+                searchUsers();
+                searchInput.blur();
+            }
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

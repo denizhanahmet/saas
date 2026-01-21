@@ -26,15 +26,32 @@ def login_required(f):
     return decorated_function
 
 
+@subscription_bp.route('/trial-expired')
+def trial_expired():
+    """Trial süresi dolmuş kullanıcılar için uyarı sayfası"""
+    iyzico = get_iyzico_service()
+    plans = iyzico.get_all_plans()
+    
+    # Kullanıcı bilgilerini al
+    trial_info = None
+    if session.get('user_id'):
+        user = get_data(f"users/{session['user_id']}")
+        if user:
+            trial_info = {
+                'trial_ends_at': user.get('trial_ends_at'),
+                'subscription_status': user.get('subscription_status', 'expired')
+            }
+    
+    return render_template('subscription/trial_expired.html',
+                           plans=plans,
+                           trial_info=trial_info)
+
+
 @subscription_bp.route('/pricing')
 def pricing():
     """Public pricing page"""
     iyzico = get_iyzico_service()
     plans = iyzico.get_all_plans()
-    
-    # Group by type
-    starter_plans = {k: v for k, v in plans.items() if 'starter' in k}
-    pro_plans = {k: v for k, v in plans.items() if 'pro' in k}
     
     # Check if user is logged in and has subscription
     current_plan = None
@@ -44,8 +61,7 @@ def pricing():
             current_plan = subscription.get('plan_id')
     
     return render_template('subscription/pricing.html',
-                           starter_plans=starter_plans,
-                           pro_plans=pro_plans,
+                           plans=plans,
                            current_plan=current_plan)
 
 

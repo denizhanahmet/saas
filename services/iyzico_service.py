@@ -21,40 +21,10 @@ class IyzicoService:
     
     # Abonelik planları
     PLANS = {
-        'starter_monthly': {
-            'id': 'starter_monthly',
-            'name': 'Starter Aylık',
-            'price': '99.00',
-            'currency': 'TRY',
-            'interval': 'monthly',
-            'interval_count': 1,
-            'features': [
-                '50 Randevu/ay',
-                'E-posta bildirimleri',
-                'Temel raporlar',
-                '1 Kullanıcı'
-            ]
-        },
-        'starter_yearly': {
-            'id': 'starter_yearly',
-            'name': 'Starter Yıllık',
-            'price': '990.00',
-            'currency': 'TRY',
-            'interval': 'yearly',
-            'interval_count': 1,
-            'monthly_equivalent': 82.50,
-            'features': [
-                '50 Randevu/ay',
-                'E-posta bildirimleri',
-                'Temel raporlar',
-                '1 Kullanıcı',
-                '2 ay ücretsiz'
-            ]
-        },
-        'pro_monthly': {
-            'id': 'pro_monthly',
-            'name': 'Pro Aylık',
-            'price': '199.00',
+        'monthly': {
+            'id': 'monthly',
+            'name': 'Aylık Plan',
+            'price': '1500.00',
             'currency': 'TRY',
             'interval': 'monthly',
             'interval_count': 1,
@@ -64,25 +34,25 @@ class IyzicoService:
                 'Gelişmiş raporlar',
                 'Bekleme listesi',
                 'Akıllı zamanlama',
-                '5 Kullanıcı'
+                'Öncelikli destek'
             ]
         },
-        'pro_yearly': {
-            'id': 'pro_yearly',
-            'name': 'Pro Yıllık',
-            'price': '1990.00',
+        'yearly': {
+            'id': 'yearly',
+            'name': 'Yıllık Plan',
+            'price': '15000.00',
             'currency': 'TRY',
             'interval': 'yearly',
             'interval_count': 1,
-            'monthly_equivalent': 165.83,
+            'monthly_equivalent': 1250.00,
             'features': [
                 'Sınırsız randevu',
                 'E-posta + SMS bildirimleri',
                 'Gelişmiş raporlar',
                 'Bekleme listesi',
                 'Akıllı zamanlama',
-                '5 Kullanıcı',
-                '2 ay ücretsiz'
+                'Öncelikli destek',
+                '2 ay ücretsiz (3.000 TL tasarruf)'
             ]
         }
     }

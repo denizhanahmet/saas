@@ -472,9 +472,15 @@ def blocked_days():
     
     # Get all blocked days
     all_blocked_data = get_data('blocked_days') or {}
+    
+    # Handle both dict and list (Firebase returns list for sequential integer keys)
+    if isinstance(all_blocked_data, list):
+        # Convert list to dict with index as key, filter None values
+        all_blocked_data = {str(i): v for i, v in enumerate(all_blocked_data) if v is not None}
+    
     user_blocked_days = [
         bd for bd in all_blocked_data.values()
-        if str(bd.get('user_id')) == str(user_id)
+        if bd and str(bd.get('user_id')) == str(user_id)
     ]
     
     # Process and categorize blocked days
@@ -517,7 +523,7 @@ def blocked_days():
                          today_blocked=today_blocked,
                          future_blocked=future_blocked,
                          date_util=date,
-                         csrf_token=generate_csrf())
+                         csrf_token=generate_csrf)
 
 @dashboard_bp.route('/blocked-days/add', methods=['POST'])
 def add_blocked_day():
@@ -544,9 +550,16 @@ def add_blocked_day():
         
         # Check if already blocked
         all_blocked_data = get_data('blocked_days') or {}
+        
+        # Handle both dict and list
+        if isinstance(all_blocked_data, list):
+            all_blocked_data = {str(i): v for i, v in enumerate(all_blocked_data) if v is not None}
+        
         date_str = blocked_date_obj.strftime('%Y-%m-%d')
         
         for bd in all_blocked_data.values():
+            if not bd:
+                continue
             if bd.get('date') == date_str and str(bd.get('user_id')) == str(user_id):
                 flash('Bu tarih zaten bloklanmış!', 'error')
                 return redirect(url_for('dashboard.blocked_days'))
@@ -575,7 +588,7 @@ def add_blocked_day():
     
     return redirect(url_for('dashboard.blocked_days'))
 
-@dashboard_bp.route('/blocked-days/remove/<int:blocked_day_id>', methods=['POST'])
+@dashboard_bp.route('/blocked-days/remove/<blocked_day_id>', methods=['POST'])
 def remove_blocked_day(blocked_day_id):
     """Bloklanmış günü kaldır"""
     if not session.get('user_id'):
@@ -585,6 +598,11 @@ def remove_blocked_day(blocked_day_id):
     
     # Get blocked day
     all_blocked_data = get_data('blocked_days') or {}
+    
+    # Handle both dict and list
+    if isinstance(all_blocked_data, list):
+        all_blocked_data = {str(i): v for i, v in enumerate(all_blocked_data) if v is not None}
+    
     blocked_day = all_blocked_data.get(str(blocked_day_id))
     
     if not blocked_day or (str(blocked_day.get('user_id')) != str(user_id)):
@@ -649,7 +667,7 @@ def view(appointment_id):
         return render_template('appointments/view.html',
                              appointment=appointment_obj,
                              date_util=date,
-                             csrf_token=generate_csrf(),
+                             csrf_token=generate_csrf,
                              get_status_badge_class=get_status_badge_class,
                              get_status_text=get_status_text)
     except Exception as e:
@@ -773,7 +791,7 @@ def edit(appointment_id):
         return render_template('appointments/edit.html',
                              appointment=appointment_obj,
                              date_util=date,
-                             csrf_token=generate_csrf())
+                             csrf_token=generate_csrf)
     except Exception as e:
         flash(f'Hata oluştu: {str(e)}', 'error')
         return redirect(url_for('dashboard.appointments'))

@@ -60,6 +60,77 @@ def admin_dashboard():
                          recent_users=recent_users,
                          monthly_users=monthly_users.items())
 
+
+@admin_bp.route('/api/users/search')
+@admin_required
+def api_search_users():
+    """Tüm kullanıcılarda anlık arama API'si"""
+    search = request.args.get('q', '').strip()
+    role_filter = request.args.get('role', '')
+    status_filter = request.args.get('status', '')
+    limit = request.args.get('limit', 50, type=int)
+    
+    if limit > 100:
+        limit = 100
+    
+    users = get_data('users') or {}
+    users_list = list(users.values())
+    
+    # Türkçe karakterleri normalize et
+    def tr_lower(s):
+        if not s:
+            return ''
+        return s.replace('İ', 'i').replace('I', 'ı').replace('Ğ', 'ğ').replace('Ü', 'ü').replace('Ş', 'ş').replace('Ö', 'ö').replace('Ç', 'ç').lower()
+    
+    # Arama filtresi
+    if search:
+        search_lower = tr_lower(search)
+        filtered = []
+        for u in users_list:
+            searchable = tr_lower(
+                (u.get('first_name') or '') + ' ' + 
+                (u.get('last_name') or '') + ' ' + 
+                (u.get('email') or '') + ' ' + 
+                (u.get('phone') or '')
+            )
+            if search_lower in searchable:
+                filtered.append(u)
+        users_list = filtered
+    
+    # Rol filtresi
+    if role_filter == 'superadmin':
+        users_list = [u for u in users_list if u.get('is_superadmin')]
+    elif role_filter == 'user':
+        users_list = [u for u in users_list if not u.get('is_superadmin')]
+    
+    # Durum filtresi
+    if status_filter == 'active':
+        users_list = [u for u in users_list if u.get('subscription_status') == 'active']
+    elif status_filter == 'trial':
+        users_list = [u for u in users_list if u.get('subscription_status') == 'trial']
+    elif status_filter == 'expired':
+        users_list = [u for u in users_list if u.get('subscription_status') == 'expired']
+    
+    # Sırala ve limit uygula
+    users_list = sorted(users_list, key=lambda u: u.get('created_at', ''), reverse=True)[:limit]
+    
+    # JSON response
+    result = []
+    for u in users_list:
+        result.append({
+            'id': u.get('id'),
+            'first_name': u.get('first_name', ''),
+            'last_name': u.get('last_name', ''),
+            'email': u.get('email', ''),
+            'phone': u.get('phone', ''),
+            'is_active': u.get('is_active', False),
+            'is_superadmin': u.get('is_superadmin', False),
+            'subscription_status': u.get('subscription_status', ''),
+            'created_at': u.get('created_at', '')[:10] if u.get('created_at') else ''
+        })
+    
+    return jsonify({'users': result, 'total': len(result)})
+
 @admin_bp.route('/users')
 @admin_required
 def users_list():
@@ -176,6 +247,212 @@ def toggle_user_status(user_id):
     
     flash('Kullanıcı durumu güncellendi.', 'success')
     return redirect(request.referrer or url_for('admin.users_list'))
+
+
+@admin_bp.route('/users/<user_id>/reset-password', methods=['POST'])
+@admin_required
+def reset_user_password(user_id):
+    """SuperAdmin tarafından kullanıcı şifresi sıfırlama"""
+    import threading
+    from flask import current_app
+    from flask_mail import Message
+    from services.password_utils import generate_temp_password, hash_password_pbkdf2
+    from firebase_realtime_transaction import atomic_update
+    from services.activity_logger import ActivityLogger
+    
+    users = get_data('users') or {}
+    user = users.get(str(user_id))
+    
+    if not user:
+        flash('Kullanıcı bulunamadı.', 'error')
+        return redirect(url_for('admin.users_list'))
+    
+    # SuperAdmin kendini sıfırlayamaz
+    if str(user_id) == str(session.get('user_id')):
+        flash('Kendi şifrenizi bu yolla sıfırlayamazsınız.', 'error')
+        return redirect(url_for('admin.user_detail', user_id=user_id))
+    
+    # Geçici şifre üret
+    temp_password = generate_temp_password(12)
+    
+    # Şifreyi hashle
+    pw = hash_password_pbkdf2(temp_password)
+    
+    # Kullanıcıyı güncelle
+    def update_password(current):
+        if not current:
+            return user
+        current['password_hash'] = pw['hash']
+        current['password_salt'] = pw['salt']
+        current['password_iterations'] = pw['iterations']
+        current['force_password_change'] = True
+        current['password_reset_at'] = datetime.now().isoformat()
+        return current
+    
+    atomic_update(f"users/{user_id}", update_password)
+    
+    # E-posta gönder
+    user_email = user.get('email')
+    user_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or 'Kullanıcı'
+    
+    if user_email:
+        try:
+            def send_async_email(app, msg):
+                with app.app_context():
+                    app.extensions['mail'].send(msg)
+            
+            msg = Message(
+                'Şifreniz Sıfırlandı',
+                sender=current_app.config.get('MAIL_DEFAULT_SENDER'),
+                recipients=[user_email]
+            )
+            msg.body = f"""Merhaba {user_name},
+
+Sistem yöneticisi tarafından şifreniz sıfırlandı.
+
+Geçici şifreniz: {temp_password}
+
+Lütfen bu şifre ile giriş yapın. Giriş yaptıktan sonra yeni bir şifre belirlemeniz istenecektir.
+
+Güvenliğiniz için bu şifreyi kimseyle paylaşmayın.
+
+Eğer bu işlemi siz talep etmediyseniz, lütfen sistem yöneticisi ile iletişime geçin.
+"""
+            threading.Thread(
+                target=send_async_email,
+                args=(current_app._get_current_object(), msg)
+            ).start()
+        except Exception as e:
+            flash(f'E-posta gönderilirken hata oluştu: {str(e)}', 'warning')
+    
+    # Log aktivite
+    ActivityLogger.log_activity(
+        user_id=session.get('user_id'),
+        action='password_reset_admin',
+        resource=ActivityLogger.RESOURCE_USER,
+        resource_id=user_id,
+        details=f"Kullanıcı şifresi SuperAdmin tarafından sıfırlandı",
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string
+    )
+    
+    flash(f'Şifre sıfırlandı. Geçici şifre kullanıcının e-postasına gönderildi.', 'success')
+    return redirect(url_for('admin.user_detail', user_id=user_id))
+
+
+@admin_bp.route('/users/<user_id>/extend-trial', methods=['POST'])
+@admin_required
+def extend_trial(user_id):
+    """SuperAdmin tarafından kullanıcı deneme süresini uzat"""
+    from datetime import datetime, timedelta
+    from firebase_realtime_transaction import atomic_update
+    from services.activity_logger import ActivityLogger
+    
+    days = request.form.get('days', 7, type=int)
+    if days < 1 or days > 365:
+        days = 7
+    
+    users = get_data('users') or {}
+    user = users.get(str(user_id))
+    
+    if not user:
+        flash('Kullanıcı bulunamadı.', 'error')
+        return redirect(url_for('admin.users_list'))
+    
+    # Aktif aboneliği olan kullanıcıya trial verilemez
+    if user.get('subscription_status') == 'active':
+        flash('Bu kullanıcının aktif bir aboneliği var. Trial uzatılamaz.', 'warning')
+        return redirect(url_for('admin.user_detail', user_id=user_id))
+    
+    # Mevcut trial bitiş tarihinden veya şu andan itibaren uzat
+    current_trial = user.get('trial_ends_at')
+    if current_trial:
+        try:
+            base_date = datetime.fromisoformat(current_trial.replace('Z', '+00:00'))
+            if base_date.tzinfo:
+                base_date = base_date.replace(tzinfo=None)
+            # Eğer trial bitmiş ise şu andan itibaren başlat
+            if base_date < datetime.utcnow():
+                base_date = datetime.utcnow()
+        except (ValueError, TypeError):
+            base_date = datetime.utcnow()
+    else:
+        base_date = datetime.utcnow()
+    
+    new_trial_end = (base_date + timedelta(days=days)).isoformat()
+    
+    def update_trial(current):
+        if not current:
+            return user
+        current['trial_ends_at'] = new_trial_end
+        current['subscription_status'] = 'trial'
+        return current
+    
+    atomic_update(f"users/{user_id}", update_trial)
+    
+    # Log aktivite
+    ActivityLogger.log_activity(
+        user_id=session.get('user_id'),
+        action='trial_extended',
+        resource=ActivityLogger.RESOURCE_USER,
+        resource_id=user_id,
+        details=f"Deneme süresi {days} gün uzatıldı",
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string
+    )
+    
+    flash(f'Deneme süresi {days} gün uzatıldı.', 'success')
+    return redirect(url_for('admin.user_detail', user_id=user_id))
+
+
+@admin_bp.route('/users/<user_id>/grant-subscription', methods=['POST'])
+@admin_required
+def grant_subscription(user_id):
+    """SuperAdmin tarafından kullanıcıya abonelik ver"""
+    from datetime import datetime, timedelta
+    from firebase_realtime_transaction import atomic_update
+    from services.activity_logger import ActivityLogger
+    
+    plan_type = request.form.get('plan_type', 'monthly')  # monthly veya yearly
+    
+    users = get_data('users') or {}
+    user = users.get(str(user_id))
+    
+    if not user:
+        flash('Kullanıcı bulunamadı.', 'error')
+        return redirect(url_for('admin.users_list'))
+    
+    # Abonelik süresini hesapla
+    if plan_type == 'yearly':
+        end_date = (datetime.utcnow() + timedelta(days=365)).isoformat()
+    else:
+        end_date = (datetime.utcnow() + timedelta(days=30)).isoformat()
+    
+    def update_subscription(current):
+        if not current:
+            return user
+        current['subscription_status'] = 'active'
+        current['subscription_ends_at'] = end_date
+        current['subscription_plan'] = plan_type
+        current['subscription_granted_by'] = session.get('user_id')
+        current['subscription_granted_at'] = datetime.utcnow().isoformat()
+        return current
+    
+    atomic_update(f"users/{user_id}", update_subscription)
+    
+    # Log aktivite
+    ActivityLogger.log_activity(
+        user_id=session.get('user_id'),
+        action='subscription_granted',
+        resource=ActivityLogger.RESOURCE_USER,
+        resource_id=user_id,
+        details=f"{plan_type} abonelik verildi",
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string
+    )
+    
+    flash(f'{plan_type.capitalize()} abonelik verildi.', 'success')
+    return redirect(url_for('admin.user_detail', user_id=user_id))
 
 @admin_bp.route('/sms-usage')
 @admin_required

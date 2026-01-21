@@ -215,7 +215,7 @@ class AppFactory:
         
         @app.before_request
         def check_subscription():
-            """Korumalı route'lar için kullanıcının aktif aboneliği olup olmadığını kontrol et"""
+            """Korumalı route'lar için kullanıcının aktif aboneliği veya trial süresi olup olmadığını kontrol et"""
             # Statik dosyalar için atla
             if request.path.startswith('/static'):
                 return
@@ -224,7 +224,7 @@ class AppFactory:
             allowed_paths = [
                 '/auth/', '/subscription/', '/about', '/waitlist/public',
                 '/waitlist/success', '/appointments/book/', '/appointments/cancel/',
-                '/waitlist/claim/'
+                '/waitlist/claim/', '/kvkk'
             ]
             
             # Tam ana yola izin ver
@@ -248,15 +248,38 @@ class AppFactory:
                 # Superadmin kullanıcılarının aboneliğe ihtiyacı yok
                 return
             
-            # Normal kullanıcılar - abonelik kontrolü
-            from services.iyzico_service import get_iyzico_service
-            iyzico = get_iyzico_service()
-            subscription = iyzico.get_user_subscription(str(session['user_id']))
+            # Trial veya abonelik kontrolü
+            if user:
+                subscription_status = user.get('subscription_status', '')
+                
+                # Aktif abonelik varsa geç
+                if subscription_status == 'active':
+                    return
+                
+                # Trial durumunu kontrol et
+                if subscription_status == 'trial':
+                    trial_ends_at = user.get('trial_ends_at')
+                    if trial_ends_at:
+                        from datetime import datetime
+                        try:
+                            trial_end = datetime.fromisoformat(trial_ends_at.replace('Z', '+00:00'))
+                            # Timezone-naive karşılaştırma için
+                            if trial_end.tzinfo:
+                                trial_end = trial_end.replace(tzinfo=None)
+                            
+                            if datetime.utcnow() < trial_end:
+                                # Trial hala geçerli
+                                return
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Trial süresi dolmuş - durumu güncelle
+                    from firebase_realtime import update_data
+                    update_data(f"users/{session['user_id']}", {'subscription_status': 'expired'})
             
-            # Aktif abonelik yoksa erişimi engelle
-            if not subscription or subscription.get('status') != 'active':
-                flash('Sistemi kullanmak için aktif bir aboneliğe ihtiyacınız var.', 'warning')
-                return redirect(url_for('subscription.pricing'))
+            # Aktif abonelik veya geçerli trial yok - kilitle
+            flash('Deneme süreniz doldu veya aktif aboneliğiniz yok. Devam etmek için lütfen bir plan seçin.', 'warning')
+            return redirect(url_for('subscription.trial_expired'))
 
     # Route metodları
     def add_routes(self):

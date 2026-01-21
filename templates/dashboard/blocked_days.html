@@ -1,53 +1,115 @@
 {% extends "base.html" %}
 {% block title %}Bloklanmış Günler{% endblock %}
 {% block content %}
-<div class="container mx-auto p-4">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold"><i class="bi bi-calendar-x"></i> Bloklanmış Günler</h2>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBlockedDayModal">
-            <i class="bi bi-plus-circle"></i> Yeni Bloklanmış Gün Ekle
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-blue-500">event_busy</span>
+                Bloklanmış Günler
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Randevu almak istemediğiniz günleri yönetin
+            </p>
+        </div>
+        <button type="button" onclick="openAddModal()"
+            class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <span class="material-icons">add</span>
+            Yeni Bloklanmış Gün
         </button>
     </div>
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i>
-        <strong>Bilgi:</strong> Bloklanmış günlerde yeni randevu alınamaz. Mevcut randevularınız etkilenmez.
+
+    <!-- Info Alert -->
+    <div
+        class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 mb-6">
+        <span class="material-icons">info</span>
+        <span>Bloklanmış günlerde yeni randevu alınamaz. Mevcut randevularınız etkilenmez.</span>
     </div>
+
+    <!-- Bugün Bloklanmış mı -->
+    {% if today_blocked %}
+    <div class="card-modern p-6 mb-6 border-l-4 border-amber-500">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-icons text-amber-500">warning</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Bugün Bloklanmış</h2>
+        </div>
+        {% for blocked_day in today_blocked %}
+        <div class="flex justify-between items-center py-2">
+            <div>
+                <span class="font-medium text-gray-900 dark:text-white">
+                    {% if blocked_day.date and blocked_day.date.strftime is defined %}
+                    {{ blocked_day.date.strftime('%d.%m.%Y') }}
+                    {% else %}
+                    {{ blocked_day.date }}
+                    {% endif %}
+                </span>
+                {% if blocked_day.reason %}
+                <span class="text-gray-500 dark:text-gray-400 ml-2">- {{ blocked_day.reason }}</span>
+                {% endif %}
+            </div>
+            <form method="POST" action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}"
+                onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                    class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1 text-sm">
+                    <span class="material-icons text-sm">delete</span>
+                    Kaldır
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Gelecek Bloklanmış Günler -->
     {% if future_blocked %}
-    <div class="mb-4">
-        <h5 class="font-semibold text-lg"><i class="bi bi-calendar-check"></i> Gelecek Bloklanmış Günler</h5>
+    <div class="card-modern p-6 mb-6">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-icons text-emerald-500">event</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Gelecek Bloklanmış Günler</h2>
+        </div>
         <div class="overflow-x-auto">
-            <table class="table-auto w-full dark:text-gray-200">
+            <table class="table-modern w-full">
                 <thead>
                     <tr>
-                        <th class="px-4 py-2">Tarih</th>
-                        <th class="px-4 py-2">Gün</th>
-                        <th class="px-4 py-2">Sebep</th>
-                        <th class="px-4 py-2">İşlemler</th>
+                        <th class="rounded-tl-lg">Tarih</th>
+                        <th>Gün</th>
+                        <th>Sebep</th>
+                        <th class="rounded-tr-lg">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% set day_names = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'] %}
                     {% for blocked_day in future_blocked %}
                     <tr>
-                        <td class="border px-4 py-2">
-                            <strong>{% if blocked_day.date and blocked_day.date.strftime is defined %}{{
-                                blocked_day.date.strftime('%d.%m.%Y') }}{% elif blocked_day.date %}{{
-                                blocked_day.date }}{% endif %}</strong>
+                        <td class="font-medium text-gray-900 dark:text-white">
+                            {% if blocked_day.date and blocked_day.date.strftime is defined %}
+                            {{ blocked_day.date.strftime('%d.%m.%Y') }}
+                            {% else %}
+                            {{ blocked_day.date }}
+                            {% endif %}
                         </td>
-                        <td class="border px-4 py-2">
-                            {% set day_names = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma',
-                            'Cumartesi', 'Pazar'] %} {{ day_names[blocked_day.date.weekday()] }}
+                        <td class="text-gray-600 dark:text-gray-300">
+                            {{ day_names[blocked_day.date.weekday()] }}
                         </td>
-                        <td class="border px-4 py-2">
-                            {% if blocked_day.reason %} {{ blocked_day.reason }} {% else %}
-                            <span class="text-muted">Sebep belirtilmemiş</span> {% endif %}
+                        <td class="text-gray-600 dark:text-gray-300">
+                            {% if blocked_day.reason %}
+                            {{ blocked_day.reason }}
+                            {% else %}
+                            <span class="text-gray-400">Sebep belirtilmemiş</span>
+                            {% endif %}
                         </td>
-                        <td class="border px-4 py-2">
+                        <td>
                             <form method="POST"
-                                action="{{ url_for('dashboard.delete_blocked_day', blocked_day_id=blocked_day.id) }}"
-                                style="display:inline-block;">
+                                action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}"
+                                onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i>
-                                    Sil</button>
+                                <button type="submit"
+                                    class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1 text-sm">
+                                    <span class="material-icons text-sm">delete</span>
+                                    Kaldır
+                                </button>
                             </form>
                         </td>
                     </tr>
@@ -57,33 +119,54 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Geçmiş Bloklanmış Günler -->
     {% if past_blocked %}
-    <div class="mb-4">
-        <h5 class="font-semibold text-lg"><i class="bi bi-calendar-x"></i> Geçmiş Bloklanmış Günler</h5>
+    <div class="card-modern p-6 mb-6 opacity-75">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-icons text-gray-400">history</span>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Geçmiş Bloklanmış Günler</h2>
+        </div>
         <div class="overflow-x-auto">
-            <table class="table-auto w-full dark:text-gray-200">
+            <table class="table-modern w-full">
                 <thead>
                     <tr>
-                        <th class="px-4 py-2">Tarih</th>
-                        <th class="px-4 py-2">Gün</th>
-                        <th class="px-4 py-2">Sebep</th>
+                        <th class="rounded-tl-lg">Tarih</th>
+                        <th>Gün</th>
+                        <th>Sebep</th>
+                        <th class="rounded-tr-lg">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% set day_names = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'] %}
                     {% for blocked_day in past_blocked %}
-                    <tr>
-                        <td class="border px-4 py-2">
-                            <strong>{% if blocked_day.date and blocked_day.date.strftime is defined %}{{
-                                blocked_day.date.strftime('%d.%m.%Y') }}{% elif blocked_day.date %}{{
-                                blocked_day.date }}{% endif %}</strong>
+                    <tr class="text-gray-500 dark:text-gray-400">
+                        <td>
+                            {% if blocked_day.date and blocked_day.date.strftime is defined %}
+                            {{ blocked_day.date.strftime('%d.%m.%Y') }}
+                            {% else %}
+                            {{ blocked_day.date }}
+                            {% endif %}
                         </td>
-                        <td class="border px-4 py-2">
-                            {% set day_names = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma',
-                            'Cumartesi', 'Pazar'] %} {{ day_names[blocked_day.date.weekday()] }}
+                        <td>{{ day_names[blocked_day.date.weekday()] }}</td>
+                        <td>
+                            {% if blocked_day.reason %}
+                            {{ blocked_day.reason }}
+                            {% else %}
+                            <span class="text-gray-400">Sebep belirtilmemiş</span>
+                            {% endif %}
                         </td>
-                        <td class="border px-4 py-2">
-                            {% if blocked_day.reason %} {{ blocked_day.reason }} {% else %}
-                            <span class="text-muted">Sebep belirtilmemiş</span> {% endif %}
+                        <td>
+                            <form method="POST"
+                                action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}"
+                                onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit"
+                                    class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-1 text-sm">
+                                    <span class="material-icons text-sm">delete</span>
+                                    Kaldır
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
@@ -92,268 +175,104 @@
         </div>
     </div>
     {% endif %}
-    <div class="modal fade" id="addBlockedDayModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content dark:bg-gray-800 dark:text-white">
-                <form method="POST" action="{{ url_for('dashboard.add_blocked_day') }}">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Yeni Bloklanmış Gün Ekle</h5>
-                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Kapat">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="form-group">
-                            <label for="blocked_date">Tarih</label>
-                            <input type="date"
-                                class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                id="blocked_date" name="blocked_date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reason">Sebep</label>
-                            <input type="text"
-                                class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white" id="reason"
-                                name="reason" maxlength="100">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-                        <button type="submit" class="btn btn-primary">Ekle</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="col-12">
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i>
-            <strong>Bilgi:</strong> Bloklanmış günlerde yeni randevu alınamaz. Mevcut randevularınız etkilenmez.
-        </div>
-    </div>
-</div>
 
-<!-- Gelecek Bloklanmış Günler -->
-{% if future_blocked %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-            <div class="card-header dark:bg-gray-700 dark:border-gray-600">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-calendar-check"></i> Gelecek Bloklanmış Günler
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover dark:text-gray-200">
-                        <thead>
-                            <tr>
-                                <th>Tarih</th>
-                                <th>Gün</th>
-                                <th>Sebep</th>
-                                <th>İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for blocked_day in future_blocked %}
-                            <tr>
-                                <td>
-                                    <strong>{% if blocked_day.date and blocked_day.date.strftime is defined %}{{
-                                        blocked_day.date.strftime('%d.%m.%Y') }}{% elif blocked_day.date %}{{
-                                        blocked_day.date }}{% endif %}</strong>
-                                </td>
-                                <td>
-                                    {% set day_names = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma',
-                                    'Cumartesi', 'Pazar'] %} {{ day_names[blocked_day.date.weekday()] }}
-                                </td>
-                                <td>
-                                    {% if blocked_day.reason %} {{ blocked_day.reason }} {% else %}
-                                    <span class="text-muted">Sebep belirtilmemiş</span> {% endif %}
-                                </td>
-                                <td>
-                                    <form method="POST"
-                                        action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}"
-                                        style="display: inline;"
-                                        onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-trash"></i> Kaldır
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <!-- Hiç bloklanmış gün yoksa -->
+    {% if not future_blocked and not today_blocked and not past_blocked %}
+    <div class="card-modern p-12 text-center">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+            <span class="material-icons text-4xl text-gray-400 dark:text-gray-500">event_available</span>
         </div>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Henüz bloklanmış gün yok</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">Randevu almak istemediğiniz günleri bloklayabilirsiniz.</p>
+        <button type="button" onclick="openAddModal()"
+            class="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+            <span class="material-icons">add</span>
+            İlk Bloklanmış Günü Ekle
+        </button>
     </div>
-</div>
-{% endif %}
-
-<!-- Bugün Bloklanmış mı -->
-{% if today_blocked %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-exclamation-triangle"></i> Bugün Bloklanmış
-                </h5>
-            </div>
-            <div class="card-body">
-                {% for blocked_day in today_blocked %}
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>{% if blocked_day.date and blocked_day.date.strftime is defined %}{{
-                            blocked_day.date.strftime('%d.%m.%Y') }}{% elif blocked_day.date %}{{
-                            blocked_day.date
-                            }}{% endif %} - Bugün</strong> {% if blocked_day.reason %}
-                        <br><small class="text-muted">{{ blocked_day.reason }}</small> {% endif %}
-                    </div>
-                    <form method="POST"
-                        action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}"
-                        style="display: inline;"
-                        onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i> Kaldır
-                        </button>
-                    </form>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Geçmiş Bloklanmış Günler -->
-{% if past_blocked %}
-<div class="row">
-    <div class="col-12">
-        <div class="card dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-            <div class="card-header dark:bg-gray-700 dark:border-gray-600">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-calendar-minus"></i> Geçmiş Bloklanmış Günler
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover dark:text-gray-200">
-                        <thead>
-                            <tr>
-                                <th>Tarih</th>
-                                <th>Gün</th>
-                                <th>Sebep</th>
-                                <th>İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for blocked_day in past_blocked %}
-                            <tr class="text-muted">
-                                <td>{% if blocked_day.date and blocked_day.date.strftime is defined %}{{
-                                    blocked_day.date.strftime('%d.%m.%Y') }}{% elif blocked_day.date %}{{
-                                    blocked_day.date }}{% endif %}</td>
-                                <td>
-                                    {% set day_names = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma',
-                                    'Cumartesi', 'Pazar'] %} {{ day_names[blocked_day.date.weekday()] }}
-                                </td>
-                                <td>
-                                    {% if blocked_day.reason %} {{ blocked_day.reason }} {% else %}
-                                    <span class="text-muted">Sebep belirtilmemiş</span> {% endif %}
-                                </td>
-                                <td>
-                                    <form method="POST"
-                                        action="{{ url_for('dashboard.remove_blocked_day', blocked_day_id=blocked_day.id) }}"
-                                        style="display: inline;"
-                                        onsubmit="return confirm('Bu bloklanmış günü kaldırmak istediğinizden emin misiniz?')">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-trash"></i> Kaldır
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Hiç bloklanmış gün yoksa -->
-{% if not future_blocked and not today_blocked and not past_blocked %}
-<div class="row">
-    <div class="col-12">
-        <div class="card dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-calendar-check fs-1 text-muted"></i>
-                <h4 class="mt-3">Henüz bloklanmış gün yok</h4>
-                <p class="text-muted">Randevu almak istemediğiniz günleri bloklayabilirsiniz.</p>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                    data-bs-target="#addBlockedDayModal">
-                    <i class="bi bi-plus-circle"></i> İlk Bloklanmış Günü Ekle
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
+    {% endif %}
 </div>
 
 <!-- Yeni Bloklanmış Gün Ekleme Modal -->
-<div class="modal fade" id="addBlockedDayModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content dark:bg-gray-800 dark:text-white">
-            <div class="modal-header">
-                <h5 class="modal-title">Yeni Bloklanmış Gün Ekle</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div id="addBlockedDayModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/50" onclick="closeAddModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md relative">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Yeni Bloklanmış Gün Ekle</h3>
+                <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
             <form method="POST" action="{{ url_for('dashboard.add_blocked_day') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="blocked_date" class="form-label">Tarih <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            id="blocked_date" name="blocked_date"
-                            min="{% if date_util.today() and date_util.today().strftime is defined %}{{ date_util.today().strftime('%Y-%m-%d') }}{% elif date_util.today() %}{{ date_util.today() }}{% endif %}"
-                            required>
-                        <div class="form-text">Sadece bugün ve gelecek tarihleri seçebilirsiniz.</div>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="p-4 space-y-4">
+                    <div>
+                        <label for="blocked_date"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Tarih <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" id="blocked_date" name="blocked_date" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Sadece bugün ve gelecek tarihleri
+                            seçebilirsiniz.</p>
                     </div>
-                    <div class="mb-3">
-                        <label for="reason" class="form-label">Sebep (İsteğe bağlı)</label>
-                        <textarea class="form-control dark:bg-gray-700 dark:border-gray-600 dark:text-white" id="reason"
-                            name="reason" rows="3"
-                            placeholder="Bu günü neden blokladığınızı açıklayabilirsiniz..."></textarea>
+                    <div>
+                        <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Sebep (İsteğe bağlı)
+                        </label>
+                        <textarea id="reason" name="reason" rows="3"
+                            placeholder="Bu günü neden blokladığınızı açıklayabilirsiniz..."
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"></textarea>
                     </div>
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Dikkat:</strong> Bu tarih bloklandıktan sonra o gün için yeni randevu alınamaz.
+                    <div
+                        class="flex items-start gap-3 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                        <span class="material-icons text-amber-500 text-xl">warning</span>
+                        <p class="text-sm text-amber-700 dark:text-amber-300">
+                            Bu tarih bloklandıktan sonra o gün için yeni randevu alınamaz.
+                        </p>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-primary">Bloklanmış Gün Ekle</button>
+                <div class="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+                    <button type="button" onclick="closeAddModal()"
+                        class="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        İptal
+                    </button>
+                    <button type="submit"
+                        class="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                        <span class="material-icons text-xl">add</span>
+                        Ekle
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 {% endblock %}
-{% block extra_js %}
+
+{% block extra_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Tarih input'unu bugün ile sınırla
+    function openAddModal() {
+        document.getElementById('addBlockedDayModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        // Min tarih ayarla
         const dateInput = document.getElementById('blocked_date');
         if (dateInput) {
             const today = new Date().toISOString().split('T')[0];
             dateInput.min = today;
+        }
+    }
+
+    function closeAddModal() {
+        document.getElementById('addBlockedDayModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // ESC tuşu ile kapat
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeAddModal();
         }
     });
 </script>
