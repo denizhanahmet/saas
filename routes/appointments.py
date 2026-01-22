@@ -101,8 +101,15 @@ def is_date_blocked(user_id, check_date):
     all_blocked_data = get_data('blocked_days') or {}
     date_str = check_date.strftime('%Y-%m-%d') if isinstance(check_date, date) else check_date
     
-    for bd in all_blocked_data.values():
-        if bd.get('date') == date_str and str(bd.get('user_id')) == str(user_id):
+    # Handle both dict and list data
+    items = []
+    if isinstance(all_blocked_data, dict):
+        items = all_blocked_data.values()
+    elif isinstance(all_blocked_data, list):
+        items = [x for x in all_blocked_data if x is not None]
+    
+    for bd in items:
+        if isinstance(bd, dict) and bd.get('date') == date_str and str(bd.get('user_id')) == str(user_id):
             return True
     return False
 
@@ -703,3 +710,51 @@ def check_conflict():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
+
+@appointments_bp.route('/api/blocked-days/<unique_link>')
+def api_blocked_days(unique_link):
+    """Public API: Kullanıcının bloklu günlerini JSON olarak döndür"""
+    # unique_link ile kullanıcıyı bul
+    all_users_data = get_data('users') or {}
+    user_id = None
+    
+    # users dict veya list olabilir
+    if isinstance(all_users_data, dict):
+        for uid, user_data in all_users_data.items():
+            if isinstance(user_data, dict) and user_data.get('unique_link') == unique_link:
+                user_id = uid
+                break
+    elif isinstance(all_users_data, list):
+        for user_data in all_users_data:
+            if isinstance(user_data, dict) and user_data.get('unique_link') == unique_link:
+                user_id = user_data.get('id')
+                break
+    
+    if not user_id:
+        return jsonify({'error': 'User not found', 'blocked_dates': []}), 404
+    
+    # Kullanıcının bloklu günlerini çek
+    all_blocked_data = get_data('blocked_days') or {}
+    blocked_dates = []
+    
+    # blocked_days dict veya list olabilir
+    items = []
+    if isinstance(all_blocked_data, dict):
+        items = all_blocked_data.values()
+    elif isinstance(all_blocked_data, list):
+        items = [x for x in all_blocked_data if x is not None]
+    
+    for bd in items:
+        if isinstance(bd, dict) and str(bd.get('user_id')) == str(user_id):
+            blocked_date = bd.get('date')
+            if blocked_date:
+                blocked_dates.append({
+                    'date': blocked_date,
+                    'reason': bd.get('reason', 'Bloklu gün')
+                })
+    
+    return jsonify({
+        'blocked_dates': blocked_dates,
+        'count': len(blocked_dates)
+    })

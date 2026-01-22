@@ -104,9 +104,10 @@
                 </label>
                 <div class="relative">
                     <span
-                        class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">event</span>
-                    <input type="date" id="appointment_date" name="appointment_date" required
-                        class="input-modern pl-11" />
+                        class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl pointer-events-none z-10">event</span>
+                    <input type="text" id="appointment_date" name="appointment_date" required readonly
+                        placeholder="Tarih seçin..."
+                        class="input-modern pl-11 cursor-pointer bg-white dark:bg-gray-700" />
                 </div>
                 <p id="date_warning" class="text-xs text-red-500 mt-1 hidden"></p>
             </div>
@@ -166,27 +167,341 @@
     </div>
 </div>
 
-<!-- Working hours data for JavaScript -->
+<!-- Blocked Day Popup Modal -->
+<div id="blockedDayModal" class="fixed inset-0 flex items-center justify-center hidden" style="z-index: 99999;">
+    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeBlockedModal()"></div>
+    <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full mx-4 p-6 animate-scale-in">
+        <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30">
+            <span class="material-icons text-3xl text-red-500">event_busy</span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
+            Bu Tarih Bloklanmış!
+        </h3>
+        <p id="blockedDayReason" class="text-gray-600 dark:text-gray-400 text-center mb-4">
+            Bu tarihte randevu alınamaz.
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-500 text-center mb-6">
+            Lütfen başka bir tarih seçin.
+        </p>
+        <button onclick="closeBlockedModal()"
+            class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all">
+            Tamam
+        </button>
+    </div>
+</div>
+
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* Modern Flatpickr styling */
+    .flatpickr-calendar {
+        font-family: 'Inter', sans-serif;
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        padding: 8px;
+        width: 320px !important;
+    }
+
+    .flatpickr-calendar.arrowTop:before,
+    .flatpickr-calendar.arrowTop:after {
+        display: none;
+    }
+
+    .flatpickr-months {
+        padding: 8px 4px;
+    }
+
+    .flatpickr-months .flatpickr-month {
+        background: transparent;
+        height: 40px;
+    }
+
+    .flatpickr-current-month {
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding-top: 5px;
+    }
+
+    .flatpickr-current-month .flatpickr-monthDropdown-months {
+        font-weight: 600;
+        background: transparent;
+    }
+
+    .flatpickr-months .flatpickr-prev-month,
+    .flatpickr-months .flatpickr-next-month {
+        padding: 8px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .flatpickr-months .flatpickr-prev-month:hover,
+    .flatpickr-months .flatpickr-next-month:hover {
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .flatpickr-months .flatpickr-prev-month svg,
+    .flatpickr-months .flatpickr-next-month svg {
+        fill: #3b82f6;
+    }
+
+    .flatpickr-weekdays {
+        background: transparent;
+        margin-top: 4px;
+    }
+
+    span.flatpickr-weekday {
+        background: transparent;
+        color: #6b7280;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    .flatpickr-days {
+        padding: 4px 0;
+    }
+
+    .dayContainer {
+        gap: 4px;
+        padding: 0 4px;
+    }
+
+    .flatpickr-day {
+        border-radius: 10px;
+        font-weight: 500;
+        height: 38px;
+        line-height: 38px;
+        border: none;
+        margin: 0;
+        transition: all 0.2s ease;
+    }
+
+    .flatpickr-day:hover {
+        background: rgba(59, 130, 246, 0.1);
+        border: none;
+    }
+
+    .flatpickr-day.today {
+        border: 2px solid #3b82f6;
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .flatpickr-day.today:hover {
+        background: rgba(59, 130, 246, 0.15);
+    }
+
+    .flatpickr-day.selected,
+    .flatpickr-day.selected:hover {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .flatpickr-day.flatpickr-disabled,
+    .flatpickr-day.prevMonthDay,
+    .flatpickr-day.nextMonthDay {
+        color: #d1d5db;
+    }
+
+    .flatpickr-day.flatpickr-disabled:hover {
+        background: transparent;
+        cursor: not-allowed;
+    }
+
+    /* Blocked day special styling */
+    .flatpickr-day.blocked-day {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+        color: #dc2626 !important;
+        text-decoration: line-through;
+        cursor: not-allowed !important;
+        position: relative;
+    }
+
+    .flatpickr-day.blocked-day::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        background: #dc2626;
+        border-radius: 50%;
+        opacity: 0;
+    }
+
+    .flatpickr-day.blocked-day:hover::after {
+        opacity: 1;
+    }
+
+    /* Dark mode */
+    .dark .flatpickr-calendar {
+        background: #1f2937;
+        border: 1px solid #374151;
+    }
+
+    .dark .flatpickr-current-month,
+    .dark .flatpickr-current-month input.cur-year {
+        color: #f3f4f6;
+    }
+
+    .dark .flatpickr-current-month .flatpickr-monthDropdown-months {
+        color: #f3f4f6;
+    }
+
+    .dark span.flatpickr-weekday {
+        color: #9ca3af;
+    }
+
+    .dark .flatpickr-day {
+        color: #e5e7eb;
+    }
+
+    .dark .flatpickr-day:hover {
+        background: rgba(59, 130, 246, 0.2);
+    }
+
+    .dark .flatpickr-day.today {
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .dark .flatpickr-day.flatpickr-disabled,
+    .dark .flatpickr-day.prevMonthDay,
+    .dark .flatpickr-day.nextMonthDay {
+        color: #4b5563;
+    }
+
+    .dark .flatpickr-day.blocked-day {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.3) 100%) !important;
+        color: #f87171 !important;
+    }
+
+    .dark .flatpickr-months .flatpickr-prev-month:hover,
+    .dark .flatpickr-months .flatpickr-next-month:hover {
+        background: rgba(59, 130, 246, 0.2);
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+
 <script>
-    const workingHours = {{ (user.working_hours or { })| tojson }};
+    const workingHours = {{ (user.working_hours or { }) | tojson }};
+    const uniqueLink = "{{ user.unique_link }}";
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-    document.getElementById('appointment_date').addEventListener('change', function () {
-        const dateInput = this.value;
-        if (!dateInput) return;
+    let blockedDates = [];
+    let blockedDatesInfo = {};
+    let flatpickrInstance = null;
 
-        const selectedDate = new Date(dateInput);
-        const dayIndex = selectedDate.getDay(); // 0 = Sunday
+    // Blocked day modal functions
+    function showBlockedModal(reason) {
+        document.getElementById('blockedDayReason').textContent = reason || 'Bu tarihte randevu alınamaz.';
+        // Close the calendar first so modal appears on top
+        if (flatpickrInstance) {
+            flatpickrInstance.close();
+        }
+        document.getElementById('blockedDayModal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function closeBlockedModal() {
+        document.getElementById('blockedDayModal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    // Fetch blocked days from API
+    async function fetchBlockedDays() {
+        try {
+            const response = await fetch(`/appointments/api/blocked-days/${uniqueLink}`);
+            const data = await response.json();
+
+            if (data.blocked_dates) {
+                blockedDates = data.blocked_dates.map(bd => bd.date);
+                data.blocked_dates.forEach(bd => {
+                    blockedDatesInfo[bd.date] = bd.reason;
+                });
+            }
+            initFlatpickr();
+        } catch (error) {
+            console.error('Blocked days fetch error:', error);
+            initFlatpickr();
+        }
+    }
+
+    // Get disabled days of week based on working hours
+    function getDisabledDays() {
+        if (!workingHours || Object.keys(workingHours).length === 0) return [];
+
+        const disabled = [];
+        const dayMap = { 'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4, 'friday': 5, 'saturday': 6 };
+
+        for (const [day, hours] of Object.entries(workingHours)) {
+            if (!hours.enabled && dayMap[day] !== undefined) {
+                disabled.push(dayMap[day]);
+            }
+        }
+        return disabled;
+    }
+
+    function initFlatpickr() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const disabledDays = getDisabledDays();
+
+        flatpickrInstance = flatpickr("#appointment_date", {
+            locale: "tr",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "j F Y",
+            minDate: "today",
+            disableMobile: true,
+            disable: [
+                // Disable specific blocked dates
+                ...blockedDates,
+                // Disable days based on working hours
+                function (date) {
+                    return disabledDays.includes(date.getDay());
+                }
+            ],
+            onDayCreate: function (dObj, dStr, fp, dayElem) {
+                // Local date format to avoid timezone issues
+                const d = dayElem.dateObj;
+                const dateStr = d.getFullYear() + '-' +
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(d.getDate()).padStart(2, '0');
+                if (blockedDates.includes(dateStr)) {
+                    dayElem.classList.add('blocked-day');
+                    dayElem.title = blockedDatesInfo[dateStr] || 'Bloklu gün';
+                    // Click handler for blocked days
+                    dayElem.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showBlockedModal(blockedDatesInfo[dateStr]);
+                    });
+                }
+            },
+            onChange: function (selectedDates, dateStr) {
+                if (blockedDates.includes(dateStr)) {
+                    showBlockedModal(blockedDatesInfo[dateStr]);
+                    flatpickrInstance.clear();
+                    return;
+                }
+                updateTimeInfo(dateStr);
+            }
+        });
+    }
+
+    function updateTimeInfo(dateStr) {
+        if (!dateStr) return;
+
+        const selectedDate = new Date(dateStr);
+        const dayIndex = selectedDate.getDay();
         const dayName = dayNames[dayIndex];
 
         const dayNamesTr = {
-            'monday': 'Pazartesi',
-            'tuesday': 'Salı',
-            'wednesday': 'Çarşamba',
-            'thursday': 'Perşembe',
-            'friday': 'Cuma',
-            'saturday': 'Cumartesi',
-            'sunday': 'Pazar'
+            'monday': 'Pazartesi', 'tuesday': 'Salı', 'wednesday': 'Çarşamba',
+            'thursday': 'Perşembe', 'friday': 'Cuma', 'saturday': 'Cumartesi', 'sunday': 'Pazar'
         };
 
         const dateWarning = document.getElementById('date_warning');
@@ -196,28 +511,30 @@
         if (!workingHours || Object.keys(workingHours).length === 0) {
             dateWarning.classList.add('hidden');
             timeInfo.textContent = '';
-            timeInput.removeAttribute('min');
-            timeInput.removeAttribute('max');
             return;
         }
 
         const dayHours = workingHours[dayName] || {};
 
         if (!dayHours.enabled) {
-            dateWarning.textContent = `⚠️ ${dayNamesTr[dayName]} günü kapalıdır. Lütfen başka bir gün seçin.`;
+            dateWarning.textContent = `⚠️ ${dayNamesTr[dayName]} günü kapalıdır.`;
             dateWarning.classList.remove('hidden');
             timeInfo.textContent = '';
-            timeInput.value = '';
         } else {
             dateWarning.classList.add('hidden');
             timeInput.setAttribute('min', dayHours.start || '09:00');
             timeInput.setAttribute('max', dayHours.end || '18:00');
             timeInfo.textContent = `Çalışma saatleri: ${dayHours.start || '09:00'} - ${dayHours.end || '18:00'}`;
         }
-    });
+    }
 
-    // Set minimum date to today
-    document.getElementById('appointment_date').min = new Date().toISOString().split('T')[0];
+    // Initialize
+    document.addEventListener('DOMContentLoaded', fetchBlockedDays);
+
+    // ESC tuşu ile modal'ı kapat
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeBlockedModal();
+    });
 
     // Double-submit protection
     let isSubmitting = false;
