@@ -249,36 +249,21 @@ def calendar():
     
     user_id = str(session.get('user_id'))
     
-    # Get current month boundaries
-    today = date.today()
-    start_of_month = today.replace(day=1)
-    
-    # Calculate next month
-    if start_of_month.month == 12:
-        next_month = start_of_month.replace(year=start_of_month.year + 1, month=1)
-    else:
-        next_month = start_of_month.replace(month=start_of_month.month + 1)
-    
-    # Get all appointments
+    # Get all appointments (no month filter — FullCalendar handles navigation)
     all_appointments_data = get_data('appointments') or {}
-    user_appointments = [
-        apt for apt in all_appointments_data.values()
-        if str(apt.get('user_id')) == str(user_id)
-    ]
     
-    # Group appointments by date
-    appointments_by_date = defaultdict(list)
-    
-    for apt in user_appointments:
+    appointments = []
+    for apt in all_appointments_data.values():
+        if str(apt.get('user_id')) != str(user_id):
+            continue
         try:
             apt_date = parse_date(apt.get('appointment_date'))
             apt_time = parse_time(apt.get('appointment_time'))
             
-            if apt_date is None or apt_date < start_of_month or apt_date >= next_month:
+            if apt_date is None:
                 continue
             
-            # Create appointment object
-            apt_obj = {
+            appointments.append({
                 'id': apt.get('id'),
                 'title': apt.get('title', 'Untitled'),
                 'description': apt.get('description', ''),
@@ -288,22 +273,17 @@ def calendar():
                 'status': apt.get('status', 'scheduled'),
                 'location': apt.get('location', ''),
                 'notes': apt.get('notes', ''),
-            }
-            
-            date_str = apt_date.strftime('%Y-%m-%d')
-            appointments_by_date[date_str].append(apt_obj)
-        except Exception as e:
+            })
+        except Exception:
             continue
     
-    # Sort appointments for each date
-    for date_key in appointments_by_date:
-        appointments_by_date[date_key].sort(
-            key=lambda x: x.get('appointment_time') or datetime.min.time()
-        )
+    # Sort by date and time
+    appointments.sort(
+        key=lambda x: (x.get('appointment_date'), x.get('appointment_time') or datetime.min.time())
+    )
     
     return render_template('dashboard/calendar.html',
-                         appointments_by_date=dict(appointments_by_date),
-                         current_month=start_of_month,
+                         appointments=appointments,
                          date_util=date)
 
 @dashboard_bp.route('/stats')

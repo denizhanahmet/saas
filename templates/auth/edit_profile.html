@@ -29,9 +29,10 @@
         <div class="flex gap-4">
             <div class="w-1/2">
                 <label for="phone" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Telefon</label>
-                <input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" maxlength="11" minlength="11"
-                    pattern="[0-9]{11}" title="11 haneli telefon numarası giriniz (örn: 05301234567)"
+                <input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}"
+                    placeholder="05XX XXX XX XX"
                     class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                <p id="phone-error" class="text-xs text-red-500 mt-1 hidden"></p>
             </div>
             <div class="w-1/2">
                 <label for="company_name" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Şirket
@@ -188,5 +189,40 @@
             this.setCustomValidity('');
         }
     });
+
+    // Telefon numarası real-time doğrulama
+    (function() {
+        const phoneInput = document.getElementById('phone');
+        const phoneError = document.getElementById('phone-error');
+        const phoneRegex = /^(\+90|0)?5\d{9}$/;
+
+        function validatePhone() {
+            const value = phoneInput.value.trim();
+            if (value === '') {
+                phoneError.classList.add('hidden');
+                phoneInput.classList.remove('border-red-500', 'focus:ring-red-500');
+                return true;
+            }
+            if (!phoneRegex.test(value)) {
+                phoneError.textContent = 'Geçerli bir Türk GSM numarası giriniz. (05XXXXXXXXX veya +905XXXXXXXXX)';
+                phoneError.classList.remove('hidden');
+                phoneInput.classList.add('border-red-500', 'focus:ring-red-500');
+                return false;
+            }
+            phoneError.classList.add('hidden');
+            phoneInput.classList.remove('border-red-500', 'focus:ring-red-500');
+            return true;
+        }
+
+        phoneInput.addEventListener('input', validatePhone);
+        phoneInput.addEventListener('blur', validatePhone);
+
+        phoneInput.closest('form').addEventListener('submit', function(e) {
+            if (!validatePhone()) {
+                e.preventDefault();
+                phoneInput.focus();
+            }
+        });
+    })();
 </script>
 {% endblock %}

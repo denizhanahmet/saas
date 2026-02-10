@@ -33,6 +33,11 @@
         </span>
     </div>
 
+    {% set starter_m = plans.get('starter_monthly', {}) %}
+    {% set starter_y = plans.get('starter_yearly', {}) %}
+    {% set pro_m = plans.get('pro_monthly', {}) %}
+    {% set pro_y = plans.get('pro_yearly', {}) %}
+
     <!-- Plans Grid -->
     <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
 
@@ -50,34 +55,31 @@
             <!-- Price -->
             <div class="text-center mb-6">
                 <div x-show="!yearly">
-                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺99</span>
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺{{
+                        starter_m.price|default('99.00')|replace('.00', '') }}</span>
                     <span class="text-gray-500">/ay</span>
                 </div>
                 <div x-show="yearly">
-                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺990</span>
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺{{
+                        starter_y.price|default('990.00')|replace('.00', '') }}</span>
                     <span class="text-gray-500">/yıl</span>
-                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">Aylık ₺82.50 (2 ay ücretsiz)</p>
+                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">Aylık ₺{{
+                        "%.2f"|format(starter_y.price|default('990')|float / 12) }} (2 ay ücretsiz)</p>
                 </div>
             </div>
 
             <!-- Features -->
             <ul class="space-y-3 mb-8">
+                {% set starter_features = starter_m.features or starter_y.features or ['50 Randevu/ay', 'E-posta
+                bildirimleri', 'Temel raporlar', '1 Kullanıcı'] %}
+                {% for feature in starter_features %}
+                {% if '2 ay ücretsiz' not in feature %}
                 <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
                     <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    50 Randevu/ay
+                    {{ feature }}
                 </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    E-posta bildirimleri
-                </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    Temel raporlar
-                </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    1 Kullanıcı
-                </li>
+                {% endif %}
+                {% endfor %}
                 <li class="flex items-center gap-3 text-gray-400">
                     <span class="material-icons text-lg">cancel</span>
                     SMS bildirimleri
@@ -135,42 +137,32 @@
             <!-- Price -->
             <div class="text-center mb-6">
                 <div x-show="!yearly">
-                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺199</span>
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺{{
+                        pro_m.price|default('199.00')|replace('.00', '') }}</span>
                     <span class="text-gray-500">/ay</span>
                 </div>
                 <div x-show="yearly">
-                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺1990</span>
+                    <span class="text-5xl font-bold text-gray-900 dark:text-white">₺{{
+                        pro_y.price|default('1990.00')|replace('.00', '') }}</span>
                     <span class="text-gray-500">/yıl</span>
-                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">Aylık ₺165.83 (2 ay ücretsiz)</p>
+                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">Aylık ₺{{
+                        "%.2f"|format(pro_y.price|default('1990')|float / 12) }} (2 ay ücretsiz)</p>
                 </div>
             </div>
 
             <!-- Features -->
             <ul class="space-y-3 mb-8">
+                {% set pro_features = pro_m.features or pro_y.features or ['Sınırsız randevu', 'E-posta + SMS
+                bildirimleri', 'Gelişmiş raporlar', 'Bekleme listesi', 'Akıllı zamanlama', '5 Kullanıcı'] %}
+                {% for feature in pro_features %}
+                {% if '2 ay ücretsiz' not in feature %}
                 <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
                     <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    <strong>Sınırsız</strong> randevu
+                    {% if feature == 'Sınırsız randevu' %}<strong>{{ feature }}</strong>{% else %}{{ feature }}{% endif
+                    %}
                 </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    E-posta + SMS bildirimleri
-                </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    Gelişmiş raporlar
-                </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    Bekleme listesi
-                </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    Akıllı zamanlama
-                </li>
-                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-                    <span class="material-icons text-green-500 text-lg">check_circle</span>
-                    5 Kullanıcı
-                </li>
+                {% endif %}
+                {% endfor %}
             </ul>
 
             <!-- CTA Button -->

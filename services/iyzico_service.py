@@ -19,43 +19,80 @@ logger = logging.getLogger(__name__)
 class IyzicoService:
     """iyzico ödemeleri ve abonelikleri yönetmek için servis sınıfı"""
     
-    # Abonelik planları
-    PLANS = {
-        'monthly': {
-            'id': 'monthly',
-            'name': 'Aylık Plan',
-            'price': '1500.00',
+    # Varsayılan planlar — Firebase boşsa bu değerlerle seed'lenir
+    DEFAULT_PLANS = {
+        'starter_monthly': {
+            'id': 'starter_monthly',
+            'name': 'Starter Aylık',
+            'price': '99.00',
             'currency': 'TRY',
             'interval': 'monthly',
             'interval_count': 1,
+            'tier': 'starter',
             'features': [
-                'Sınırsız randevu',
-                'E-posta + SMS bildirimleri',
-                'Gelişmiş raporlar',
-                'Bekleme listesi',
-                'Akıllı zamanlama',
-                'Öncelikli destek'
+                '50 Randevu/ay',
+                'E-posta bildirimleri',
+                'Temel raporlar',
+                '1 Kullanıcı'
             ]
         },
-        'yearly': {
-            'id': 'yearly',
-            'name': 'Yıllık Plan',
-            'price': '15000.00',
+        'starter_yearly': {
+            'id': 'starter_yearly',
+            'name': 'Starter Yıllık',
+            'price': '990.00',
             'currency': 'TRY',
             'interval': 'yearly',
             'interval_count': 1,
-            'monthly_equivalent': 1250.00,
+            'tier': 'starter',
+            'features': [
+                '50 Randevu/ay',
+                'E-posta bildirimleri',
+                'Temel raporlar',
+                '1 Kullanıcı',
+                '2 ay ücretsiz'
+            ]
+        },
+        'pro_monthly': {
+            'id': 'pro_monthly',
+            'name': 'Pro Aylık',
+            'price': '199.00',
+            'currency': 'TRY',
+            'interval': 'monthly',
+            'interval_count': 1,
+            'tier': 'pro',
             'features': [
                 'Sınırsız randevu',
                 'E-posta + SMS bildirimleri',
                 'Gelişmiş raporlar',
                 'Bekleme listesi',
                 'Akıllı zamanlama',
-                'Öncelikli destek',
-                '2 ay ücretsiz (3.000 TL tasarruf)'
+                '5 Kullanıcı'
+            ]
+        },
+        'pro_yearly': {
+            'id': 'pro_yearly',
+            'name': 'Pro Yıllık',
+            'price': '1990.00',
+            'currency': 'TRY',
+            'interval': 'yearly',
+            'interval_count': 1,
+            'tier': 'pro',
+            'features': [
+                'Sınırsız randevu',
+                'E-posta + SMS bildirimleri',
+                'Gelişmiş raporlar',
+                'Bekleme listesi',
+                'Akıllı zamanlama',
+                '5 Kullanıcı',
+                '2 ay ücretsiz'
             ]
         }
     }
+    
+    # Bellek içi cache — her instance'da yenilenir
+    _plans_cache = None
+    _plans_cache_time = None
+    CACHE_TTL = 300  # 5 dakika
     
     def __init__(self):
         self.api_key = os.getenv('IYZICO_API_KEY', '').strip()
@@ -92,13 +129,82 @@ class IyzicoService:
         """Conversation ID için rastgele string oluştur"""
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     
+    def _get_plans_from_firebase(self) -> Dict:
+        """Firebase'den planları getir, yoksa default'ları seed'le"""
+        now = datetime.now()
+        
+        # Cache kontrolü
+        if (IyzicoService._plans_cache is not None and 
+            IyzicoService._plans_cache_time is not None and
+            (now - IyzicoService._plans_cache_time).total_seconds() < self.CACHE_TTL):
+            return IyzicoService._plans_cache
+        
+        try:
+            plans = get_data('plans')
+            if not plans:
+                # Firebase boş — default planları seed'le
+                logger.info("Firebase'de plan bulunamadı, varsayılan planlar oluşturuluyor...")
+                set_data('plans', self.DEFAULT_PLANS)
+                plans = self.DEFAULT_PLANS.copy()
+            
+            IyzicoService._plans_cache = plans
+            IyzicoService._plans_cache_time = now
+            return plans
+        except Exception as e:
+            logger.error(f"Firebase plan okuma hatası: {e}")
+            # Hata durumunda cache veya default kullan
+            if IyzicoService._plans_cache:
+                return IyzicoService._plans_cache
+            return self.DEFAULT_PLANS.copy()
+    
+    @classmethod
+    def invalidate_cache(cls):
+        """Plan cache'ini temizle — admin güncelleme sonrası çağrılır"""
+        cls._plans_cache = None
+        cls._plans_cache_time = None
+    
     def get_plan(self, plan_id: str) -> Optional[Dict]:
         """ID'ye göre plan detaylarını getir"""
-        return self.PLANS.get(plan_id)
+        plans = self._get_plans_from_firebase()
+        return plans.get(plan_id)
     
     def get_all_plans(self) -> Dict:
         """Tüm mevcut planları getir"""
-        return self.PLANS
+        return self._get_plans_from_firebase()
+    
+    def update_plan(self, plan_id: str, updates: Dict) -> Dict:
+        """Plan fiyat/özelliklerini güncelle (SuperAdmin)"""
+        plans = self._get_plans_from_firebase()
+        if plan_id not in plans:
+            return {'status': 'error', 'message': 'Plan bulunamadı'}
+        
+        # Güncellenebilir alanlar
+        allowed_fields = {'price', 'name', 'features'}
+        filtered = {k: v for k, v in updates.items() if k in allowed_fields}
+        
+        if not filtered:
+            return {'status': 'error', 'message': 'Güncellenecek alan bulunamadı'}
+        
+        # Fiyat formatı doğrulama
+        if 'price' in filtered:
+            try:
+                price_val = float(filtered['price'])
+                if price_val <= 0:
+                    return {'status': 'error', 'message': 'Fiyat 0\'dan büyük olmalı'}
+                filtered['price'] = f"{price_val:.2f}"
+            except (ValueError, TypeError):
+                return {'status': 'error', 'message': 'Geçersiz fiyat formatı'}
+        
+        filtered['updated_at'] = datetime.now().isoformat()
+        
+        try:
+            update_data(f'plans/{plan_id}', filtered)
+            self.invalidate_cache()
+            logger.info(f"Plan güncellendi: {plan_id} -> {filtered}")
+            return {'status': 'success', 'message': 'Plan başarıyla güncellendi'}
+        except Exception as e:
+            logger.error(f"Plan güncelleme hatası: {e}")
+            return {'status': 'error', 'message': 'Güncelleme sırasında hata oluştu'}
     
     def create_checkout_form(self, user_id: str, plan_id: str, 
                               buyer_info: Dict, callback_url: str) -> Dict[str, Any]:
@@ -348,7 +454,8 @@ class IyzicoService:
         # Kullanıcı hesabını da aktifleştir
         update_data(f'users/{user_id}', {
             'subscription': subscription_data,
-            'is_active': True
+            'is_active': True,
+            'subscription_status': 'active'
         })
         
         # Bekleyen aboneliği sil

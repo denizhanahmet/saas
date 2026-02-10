@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Plan Yönetimi - Admin{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span class="material-icons text-purple-500">sell</span>
+                Plan & Fiyat Yönetimi
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Abonelik planlarını ve fiyatlarını güncelleyin</p>
+        </div>
+        <a href="{{ url_for('admin.admin_dashboard') }}"
+            class="btn-modern bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 px-4 py-2 text-sm">
+            <span class="material-icons text-sm mr-1">arrow_back</span> Dashboard
+        </a>
+    </div>
+
+    <!-- Flash Messages -->
+    <div id="flash-container"></div>
+
+    <!-- Plans Grid -->
+    <div class="grid md:grid-cols-2 gap-6">
+        {% for plan_id, plan in plans.items() %}
+        <div class="card-modern p-6" id="plan-card-{{ plan_id }}">
+            <!-- Plan Header -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-12 h-12 rounded-xl flex items-center justify-center
+                        {% if plan.tier == 'pro' %}bg-gradient-to-br from-purple-500 to-pink-500{% else %}bg-gradient-to-br from-blue-500 to-cyan-500{% endif %}">
+                        <span class="material-icons text-xl text-white">
+                            {% if plan.tier == 'pro' %}diamond{% else %}rocket_launch{% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white"
+                            id="plan-name-display-{{ plan_id }}">
+                            {{ plan.name }}
+                        </h3>
+                        <span class="text-xs font-medium px-2 py-0.5 rounded-full
+                            {% if plan.interval == 'yearly' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                            {% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">
+                            {{ plan.interval|capitalize }}
+                        </span>
+                    </div>
+                </div>
+                <button onclick="toggleEdit('{{ plan_id }}')"
+                    class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    id="edit-btn-{{ plan_id }}" title="Düzenle">
+                    <span class="material-icons">edit</span>
+                </button>
+            </div>
+
+            <!-- Current Price (Display) -->
+            <div id="display-{{ plan_id }}">
+                <div class="text-center py-4 mb-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                    <span class="text-4xl font-bold text-gray-900 dark:text-white">₺{{ plan.price }}</span>
+                    <span class="text-gray-500">/{{ 'ay' if plan.interval == 'monthly' else 'yıl' }}</span>
+                    {% if plan.interval == 'yearly' %}
+                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">
+                        Aylık ₺{{ "%.2f"|format(plan.price|float / 12) }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Features -->
+                <ul class="space-y-2 mb-4">
+                    {% for feature in plan.features %}
+                    <li class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <span class="material-icons text-green-500 text-base">check_circle</span>
+                        {{ feature }}
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                {% if plan.updated_at %}
+                <p class="text-xs text-gray-400 mt-4">
+                    Son güncelleme: {{ plan.updated_at[:16].replace('T', ' ') }}
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Edit Form (Hidden) -->
+            <div id="edit-{{ plan_id }}" class="hidden">
+                <form onsubmit="savePlan(event, '{{ plan_id }}')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Plan Name -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan Adı</label>
+                        <input type="text" name="name" value="{{ plan.name }}" required
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                    </div>
+
+                    <!-- Price -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiyat (₺)</label>
+                        <input type="number" name="price" value="{{ plan.price }}" step="0.01" min="0.01" required
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-2xl font-bold">
+                    </div>
+
+                    <!-- Features -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Özellikler <span class="text-xs text-gray-400">(her satır bir özellik)</span>
+                        </label>
+                        <textarea name="features" rows="5"
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm">{{ plan.features|join('\n') }}</textarea>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex gap-3">
+                        <button type="submit"
+                            class="flex-1 btn-modern bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2.5 justify-center hover:from-purple-600 hover:to-pink-600">
+                            <span class="material-icons text-sm mr-1">save</span> Kaydet
+                        </button>
+                        <button type="button" onclick="toggleEdit('{{ plan_id }}')"
+                            class="btn-modern bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2.5 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            İptal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Info Note -->
+    <div class="mt-8 card-modern p-4 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800">
+        <div class="flex items-start gap-3">
+            <span class="material-icons text-blue-500 mt-0.5">info</span>
+            <div class="text-sm text-blue-700 dark:text-blue-300">
+                <p class="font-medium mb-1">Not:</p>
+                <p>Fiyat değişiklikleri anında geçerli olur. Yeni kayıt olan veya plan değiştiren kullanıcılar güncel
+                    fiyatları görür.
+                    Mevcut aktif aboneliklerin fiyatı mevcut dönem sonuna kadar değişmez.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleEdit(planId) {
+        const display = document.getElementById('display-' + planId);
+        const edit = document.getElementById('edit-' + planId);
+        const btn = document.getElementById('edit-btn-' + planId);
+
+        if (edit.classList.contains('hidden')) {
+            display.classList.add('hidden');
+            edit.classList.remove('hidden');
+            btn.innerHTML = '<span class="material-icons">close</span>';
+        } else {
+            display.classList.remove('hidden');
+            edit.classList.add('hidden');
+            btn.innerHTML = '<span class="material-icons">edit</span>';
+        }
+    }
+
+    function showFlash(message, type) {
+        const container = document.getElementById('flash-container');
+        const colors = {
+            success: 'bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300',
+            error: 'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300'
+        };
+        const icons = { success: 'check_circle', error: 'error' };
+
+        container.innerHTML = `
+        <div class="flex items-center gap-3 px-4 py-3 rounded-xl border ${colors[type]} mb-6 animate-fade-in-up">
+            <span class="material-icons">${icons[type]}</span>
+            <span class="font-medium">${message}</span>
+        </div>`;
+
+        setTimeout(() => { container.innerHTML = ''; }, 4000);
+    }
+
+    async function savePlan(event, planId) {
+        event.preventDefault();
+        const form = event.target;
+        const name = form.querySelector('[name="name"]').value.trim();
+        const price = form.querySelector('[name="price"]').value;
+        const featuresRaw = form.querySelector('[name="features"]').value;
+        const features = featuresRaw.split('\n').map(f => f.trim()).filter(f => f.length > 0);
+        const csrfToken = form.querySelector('[name="csrf_token"]').value;
+
+        try {
+            const response = await fetch(`/admin/plans/${planId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ name, price, features })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showFlash(result.message, 'success');
+                // Sayfayı yeniden yükle
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showFlash(result.message || 'Güncelleme başarısız.', 'error');
+            }
+        } catch (err) {
+            showFlash('Bağlantı hatası. Lütfen tekrar deneyin.', 'error');
+        }
+    }
+</script>
+{% endblock %}

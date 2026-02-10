@@ -653,6 +653,47 @@ def sms_event_delete(event_id):
     flash('SMS eventi silindi.', 'success')
     return redirect(url_for('admin.sms_events'))
 
+# =====================
+# Plan Management
+# =====================
+
+@admin_bp.route('/plans')
+@admin_required
+def plan_management():
+    """Plan ve fiyat yönetimi sayfası"""
+    from services.iyzico_service import get_iyzico_service
+    iyzico = get_iyzico_service()
+    plans = iyzico.get_all_plans()
+    return render_template('admin/plan_management.html', plans=plans)
+
+@admin_bp.route('/plans/<plan_id>/update', methods=['POST'])
+@admin_required
+def update_plan(plan_id):
+    """Plan fiyat/özellik güncelleme (AJAX)"""
+    from services.iyzico_service import get_iyzico_service
+    from services.activity_logger import ActivityLogger
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'status': 'error', 'message': 'Geçersiz veri'}), 400
+    
+    iyzico = get_iyzico_service()
+    result = iyzico.update_plan(plan_id, data)
+    
+    if result['status'] == 'success':
+        # Log aktivite
+        ActivityLogger.log_activity(
+            user_id=session.get('user_id'),
+            action='plan_updated',
+            resource='subscription',
+            resource_id=plan_id,
+            details=f"Plan güncellendi: fiyat={data.get('price', '?')}",
+            ip_address=request.remote_addr,
+            user_agent=request.user_agent.string
+        )
+    
+    return jsonify(result)
+
 
 # =====================
 # Activity Logs

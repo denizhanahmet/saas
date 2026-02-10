@@ -62,9 +62,9 @@
                     <span
                         class="absolute left-3 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-xl">phone</span>
                     <input type="tel" id="phone" name="phone" value="{{ request.form.phone if request.form.phone }}"
-                        placeholder="05XX XXX XX XX" maxlength="11" minlength="11" pattern="[0-9]{11}"
-                        title="11 haneli telefon numarası giriniz (örn: 05301234567)" class="input-modern pl-11" />
+                        placeholder="05XX XXX XX XX" class="input-modern pl-11" />
                 </div>
+                <p id="phone-error" class="text-xs text-red-500 mt-1 hidden"></p>
             </div>
 
             <!-- Password -->
@@ -310,5 +310,42 @@
     document.querySelector('form').addEventListener('submit', function () {
         localStorage.removeItem(storageKey);
     });
+
+    // Telefon numarası real-time doğrulama
+    (function() {
+        const phoneInput = document.getElementById('phone');
+        const phoneError = document.getElementById('phone-error');
+        const phoneRegex = /^(\+90|0)?5\d{9}$/;
+
+        function validatePhone() {
+            const value = phoneInput.value.trim();
+            if (value === '') {
+                // Opsiyonel alan, boşsa hata gösterme
+                phoneError.classList.add('hidden');
+                phoneInput.classList.remove('border-red-500', 'focus:ring-red-500');
+                return true;
+            }
+            if (!phoneRegex.test(value)) {
+                phoneError.textContent = 'Geçerli bir Türk GSM numarası giriniz. (05XXXXXXXXX veya +905XXXXXXXXX)';
+                phoneError.classList.remove('hidden');
+                phoneInput.classList.add('border-red-500', 'focus:ring-red-500');
+                return false;
+            }
+            phoneError.classList.add('hidden');
+            phoneInput.classList.remove('border-red-500', 'focus:ring-red-500');
+            return true;
+        }
+
+        phoneInput.addEventListener('input', validatePhone);
+        phoneInput.addEventListener('blur', validatePhone);
+
+        // Form submit'te de kontrol et
+        phoneInput.closest('form').addEventListener('submit', function(e) {
+            if (!validatePhone()) {
+                e.preventDefault();
+                phoneInput.focus();
+            }
+        });
+    })();
 </script>
 {% endblock %}

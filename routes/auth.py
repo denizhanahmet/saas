@@ -381,7 +381,11 @@ def register():
         import random
         import string
         def generate_unique_link():
-            base = (first_name + last_name).lower().replace(' ', '')
+            # Türkçe karakterleri ASCII'ye çevir
+            tr_map = str.maketrans('çğıöşüÇĞİÖŞÜ', 'cgiosuCGIOSU')
+            base = (first_name + last_name).translate(tr_map).lower().replace(' ', '')
+            # Sadece alfanümerik ASCII karakterleri koru
+            base = ''.join(c for c in base if c.isascii() and c.isalnum())
             suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
             return f"{base}{suffix}"
         unique_link = generate_unique_link()

@@ -256,6 +256,24 @@ class AppFactory:
                 if subscription_status == 'active':
                     return
                 
+                # Nested subscription objesinden de kontrol et (ödeme sonrası uyum)
+                subscription_obj = user.get('subscription', {})
+                if isinstance(subscription_obj, dict) and subscription_obj.get('status') == 'active':
+                    expires_at = subscription_obj.get('expires_at')
+                    if expires_at:
+                        from datetime import datetime as dt_check
+                        try:
+                            exp = dt_check.fromisoformat(expires_at.replace('Z', '+00:00'))
+                            if exp.tzinfo:
+                                exp = exp.replace(tzinfo=None)
+                            if dt_check.utcnow() < exp:
+                                # Top-level alanı da senkronize et
+                                from firebase_realtime import update_data as sync_update
+                                sync_update(f"users/{session['user_id']}", {'subscription_status': 'active'})
+                                return
+                        except (ValueError, TypeError):
+                            pass
+                
                 # Trial durumunu kontrol et
                 if subscription_status == 'trial':
                     trial_ends_at = user.get('trial_ends_at')
