@@ -3,14 +3,14 @@
 {% block title %}Fiyatlandırma - Planınızı Seçin{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 py-12" x-data="{ yearly: false }">
+<div class="max-w-6xl mx-auto px-4 py-12" x-data="pricingPage()">
     <!-- Header -->
-    <div class="text-center mb-12">
+    <div class="text-center mb-12 animate-fade-in">
         <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Planınızı Seçin
         </h1>
         <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            İşletmeniz için en uygun planı seçin. Yıllık ödemede 2 ay ücretsiz!
+            İşletmeniz için en uygun planı seçin veya ücretsiz deneme ile başlayın.
         </p>
     </div>
 
@@ -38,11 +38,58 @@
     {% set pro_m = plans.get('pro_monthly', {}) %}
     {% set pro_y = plans.get('pro_yearly', {}) %}
 
-    <!-- Plans Grid -->
-    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+    <!-- Plans Grid: 3 columns -->
+    <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+
+        <!-- FREE TRIAL Card -->
+        <div class="card-modern p-8 relative animate-fade-in-up" style="animation-delay: 0.1s">
+            <div class="text-center mb-6">
+                <div
+                    class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                    <span class="material-icons text-2xl text-white">card_giftcard</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Ücretsiz Deneme</h3>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">Hemen başlayın</p>
+            </div>
+
+            <!-- Price -->
+            <div class="text-center mb-6">
+                <span class="text-5xl font-bold text-gray-900 dark:text-white">₺0</span>
+                <span class="text-gray-500">/3 gün</span>
+            </div>
+
+            <!-- Features -->
+            <ul class="space-y-3 mb-8">
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    Tüm özelliklere erişim
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    3 gün ücretsiz kullanım
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    Kredi kartı gerekmez
+                </li>
+                <li class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                    <span class="material-icons text-green-500 text-lg">check_circle</span>
+                    İstediğiniz zaman yükseltin
+                </li>
+            </ul>
+
+            <!-- CTA Button -->
+            <button @click="startTrial()" :disabled="trialLoading" class="btn-modern w-full py-3 justify-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white 
+                           hover:from-emerald-600 hover:to-teal-700 shadow-md hover:shadow-lg transition-all
+                           disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                <span class="material-icons text-sm" x-show="!trialLoading">rocket_launch</span>
+                <span class="material-icons text-sm animate-spin" x-show="trialLoading" x-cloak>hourglass_empty</span>
+                <span x-text="trialLoading ? 'Başlatılıyor...' : 'Deneme Sürümünü Başlat'"></span>
+            </button>
+        </div>
 
         <!-- Starter Plan -->
-        <div class="card-modern p-8 relative">
+        <div class="card-modern p-8 relative animate-fade-in-up" style="animation-delay: 0.2s">
             <div class="text-center mb-6">
                 <div
                     class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
@@ -116,7 +163,8 @@
         </div>
 
         <!-- Pro Plan -->
-        <div class="card-modern p-8 relative border-2 border-purple-500 dark:border-purple-400">
+        <div class="card-modern p-8 relative border-2 border-purple-500 dark:border-purple-400 animate-fade-in-up"
+            style="animation-delay: 0.3s">
             <!-- Popular Badge -->
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <span
@@ -200,6 +248,17 @@
         <div class="space-y-4">
             <details class="card-modern p-4 group">
                 <summary class="flex items-center justify-between cursor-pointer list-none">
+                    <span class="font-medium text-gray-900 dark:text-white">Deneme sürümü nasıl çalışır?</span>
+                    <span class="material-icons transform transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <p class="mt-3 text-gray-600 dark:text-gray-400">
+                    3 günlük ücretsiz deneme sürümünde tüm özelliklere erişebilirsiniz. Kredi kartı gerekmez.
+                    Süre dolduğunda planlardan birini seçerek devam edebilirsiniz.
+                </p>
+            </details>
+
+            <details class="card-modern p-4 group">
+                <summary class="flex items-center justify-between cursor-pointer list-none">
                     <span class="font-medium text-gray-900 dark:text-white">İstediğim zaman iptal edebilir miyim?</span>
                     <span class="material-icons transform transition-transform group-open:rotate-180">expand_more</span>
                 </summary>
@@ -230,5 +289,116 @@
             </details>
         </div>
     </div>
+
+    <!-- Trial Success Popup -->
+    <div x-show="showTrialPopup" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="closePopupAndRedirect()"></div>
+
+        <!-- Modal -->
+        <div class="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+            x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+
+            <!-- Success Icon Header -->
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-8 pt-8 pb-6 text-center">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-white/20 flex items-center justify-center">
+                    <span class="material-icons text-5xl text-white">celebration</span>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Deneme Sürümü Başlatıldı! 🎉</h2>
+            </div>
+
+            <!-- Content -->
+            <div class="p-8">
+                <div class="space-y-4 mb-6">
+                    <!-- Trial end date -->
+                    <div class="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                        <span class="material-icons text-emerald-600 dark:text-emerald-400">event_available</span>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Deneme süresi bitiş tarihi</p>
+                            <p class="font-semibold text-gray-900 dark:text-white" x-text="trialEndDate"></p>
+                        </div>
+                    </div>
+
+                    <!-- Info items -->
+                    <div class="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400">
+                        <span class="material-icons text-blue-500 text-base mt-0.5 flex-shrink-0">info</span>
+                        <span>3 gün boyunca tüm özellikleri ücretsiz kullanabilirsiniz.</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400">
+                        <span class="material-icons text-purple-500 text-base mt-0.5 flex-shrink-0">upgrade</span>
+                        <span>İstediğiniz zaman <strong>Profil</strong> sayfanızdan bir plan seçerek yükseltme
+                            yapabilirsiniz.</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400">
+                        <span class="material-icons text-amber-500 text-base mt-0.5 flex-shrink-0">timer</span>
+                        <span>Süre dolduğunda otomatik ücretlendirme <strong>yapılmaz</strong>.</span>
+                    </div>
+                </div>
+
+                <!-- CTA Button -->
+                <button @click="closePopupAndRedirect()" class="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold
+                               hover:from-emerald-600 hover:to-teal-700 shadow-md hover:shadow-lg transition-all
+                               flex items-center justify-center gap-2">
+                    <span class="material-icons text-sm">dashboard</span>
+                    Panele Git
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function pricingPage() {
+        return {
+            yearly: false,
+            trialLoading: false,
+            showTrialPopup: false,
+            trialEndDate: '',
+
+            async startTrial() {
+                this.trialLoading = true;
+
+                try {
+                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+                    const response = await fetch('/subscription/start-trial', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.trialEndDate = data.trial_ends_formatted;
+                        this.showTrialPopup = true;
+                    } else {
+                        alert(data.error || 'Bir hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Trial başlatma hatası:', error);
+                    alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                } finally {
+                    this.trialLoading = false;
+                }
+            },
+
+            closePopupAndRedirect() {
+                window.location.href = '{{ url_for("dashboard.dashboard") }}';
+            }
+        };
+    }
+</script>
 {% endblock %}

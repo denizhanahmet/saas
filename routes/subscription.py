@@ -2,12 +2,13 @@
 Subscription Routes - Payment and subscription management
 """
 import logging
+from datetime import datetime, timedelta
 from functools import wraps
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for, jsonify
 from flask_wtf.csrf import CSRFProtect
 
-from firebase_realtime import get_data
+from firebase_realtime import get_data, update_data
 from services.iyzico_service import get_iyzico_service
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,42 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+@subscription_bp.route('/start-trial', methods=['POST'])
+@login_required
+def start_trial():
+    """3 günlük ücretsiz deneme sürümünü başlat"""
+    user_id = str(session['user_id'])
+    user = get_data(f'users/{user_id}')
+    
+    if not user:
+        return jsonify({'success': False, 'error': 'Kullanıcı bulunamadı'}), 404
+    
+    # Zaten trial veya aktif abonelik varsa engelle
+    status = user.get('subscription_status', 'pending')
+    if status in ('trial', 'active'):
+        return jsonify({'success': False, 'error': 'Zaten aktif aboneliğiniz var'}), 400
+    
+    # Trial başlat
+    trial_end = datetime.utcnow() + timedelta(days=3)
+    update_data(f'users/{user_id}', {
+        'subscription_status': 'trial',
+        'trial_ends_at': trial_end.isoformat(),
+        'trial_started_at': datetime.utcnow().isoformat()
+    })
+    
+    # Türkçe tarih formatı
+    months_tr = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+                 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+    trial_end_local = trial_end + timedelta(hours=3)  # UTC+3
+    formatted_date = f"{trial_end_local.day} {months_tr[trial_end_local.month - 1]} {trial_end_local.year}, {trial_end_local.strftime('%H:%M')}"
+    
+    return jsonify({
+        'success': True,
+        'trial_ends_at': trial_end.isoformat(),
+        'trial_ends_formatted': formatted_date
+    })
 
 
 @subscription_bp.route('/trial-expired')

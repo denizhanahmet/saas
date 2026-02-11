@@ -237,4 +237,160 @@
         </a>
     </div>
 </div>
+
+{% if show_onboarding %}
+<!-- Onboarding Wizard Modal -->
+<div x-data="onboardingWizard('{{ unique_link }}')" x-show="isVisible" x-cloak
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    :class="isClosing ? 'animate-fade-out' : 'animate-fade-in'">
+
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
+
+    <!-- Modal -->
+    <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden"
+        :class="isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'" style="transition: all 0.3s ease;">
+
+        <!-- Skip button -->
+        <button @click="skipOnboarding()"
+            class="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm flex items-center gap-1">
+            <span>Atla</span>
+            <span class="material-icons text-sm">close</span>
+        </button>
+
+        <!-- Progress bar -->
+        <div class="h-1 bg-gray-200 dark:bg-gray-700">
+            <div class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out"
+                :style="'width: ' + progress + '%'"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 sm:p-8">
+            <!-- Step indicator -->
+            <div class="flex items-center justify-center gap-2 mb-6">
+                <template x-for="(step, index) in steps" :key="index">
+                    <button @click="goToStep(index)" class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                        :class="index === currentStep 
+                                ? 'bg-blue-500 w-8' 
+                                : index < currentStep 
+                                    ? 'bg-blue-300 dark:bg-blue-600' 
+                                    : 'bg-gray-300 dark:bg-gray-600'">
+                    </button>
+                </template>
+            </div>
+
+            <!-- Step content (single reactive container — no layout shift) -->
+            <div class="onboarding-step-content" :class="stepAnimClass"
+                x-effect="stepAnimClass = 'onboarding-enter'; setTimeout(() => stepAnimClass = 'onboarding-active', 20)"
+                :key="currentStep">
+
+                <!-- Icon -->
+                <div class="flex justify-center mb-5">
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center"
+                        :class="steps[currentStep].iconBg">
+                        <span class="material-icons text-3xl" :class="steps[currentStep].iconColor"
+                            x-text="steps[currentStep].icon"></span>
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white text-center mb-3"
+                    x-text="steps[currentStep].title"></h2>
+
+                <!-- Description -->
+                <p class="text-gray-600 dark:text-gray-400 text-center mb-5 leading-relaxed"
+                    x-text="steps[currentStep].description"></p>
+
+                <!-- Unique link display (step 3 = index 2) -->
+                <template x-if="currentStep === 2 && uniqueLink">
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-5 text-center">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Sizin Randevu Linkiniz</p>
+                        <p class="text-blue-600 dark:text-blue-400 font-mono text-sm break-all"
+                            x-text="window.location.origin + '/appointment/' + uniqueLink"></p>
+                    </div>
+                </template>
+
+                <!-- Details list -->
+                <div class="space-y-2.5">
+                    <template x-for="(detail, dIndex) in steps[currentStep].details" :key="currentStep + '-' + dIndex">
+                        <div class="flex items-start gap-3 text-sm">
+                            <span
+                                class="material-icons text-emerald-500 text-base mt-0.5 flex-shrink-0">check_circle</span>
+                            <span class="text-gray-700 dark:text-gray-300" x-text="detail"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer buttons -->
+        <div class="px-6 sm:px-8 pb-6 sm:pb-8 flex items-center justify-between gap-3">
+            <!-- Back button -->
+            <button @click="prevStep()" x-show="!isFirstStep"
+                class="px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium flex items-center gap-1">
+                <span class="material-icons text-sm">arrow_back</span>
+                Geri
+            </button>
+            <div x-show="isFirstStep"></div>
+
+            <!-- Next / Complete button -->
+            <template x-if="!isLastStep">
+                <button @click="nextStep()"
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg text-sm flex items-center gap-1">
+                    İleri
+                    <span class="material-icons text-sm">arrow_forward</span>
+                </button>
+            </template>
+            <template x-if="isLastStep">
+                <button @click="completeOnboarding()"
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg text-sm flex items-center gap-1">
+                    <span class="material-icons text-sm">rocket_launch</span>
+                    Başlayalım!
+                </button>
+            </template>
+        </div>
+    </div>
+</div>
+
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+
+        to {
+            opacity: 0;
+        }
+    }
+
+    .animate-fade-out {
+        animation: fadeOut 0.3s ease-out forwards;
+    }
+
+    /* Smooth step transitions */
+    .onboarding-step-content {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .onboarding-enter {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    .onboarding-active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if show_onboarding %}
+<script src="{{ url_for('static', filename='js/onboarding.js') }}"></script>
+{% endif %}
 {% endblock %}

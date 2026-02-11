@@ -56,6 +56,10 @@ def dashboard():
     
     user_id = str(session.get('user_id'))
     
+    # Onboarding kontrolü
+    user_data = get_data(f'users/{user_id}') or {}
+    show_onboarding = not user_data.get('onboarding_completed', True)
+    
     # Get all appointments for this user
     all_appointments_data = get_data('appointments') or {}
     user_appointments = [
@@ -121,7 +125,22 @@ def dashboard():
                          scheduled_count=scheduled_count,
                          monthly_appointments=monthly_appointments,
                          status_counts=status_counts,
+                         show_onboarding=show_onboarding,
+                         unique_link=user_data.get('unique_link', ''),
                          date_util=date)
+
+@dashboard_bp.route('/complete-onboarding', methods=['POST'])
+def complete_onboarding():
+    """Onboarding sihirbazını tamamla (AJAX)"""
+    if not session.get('user_id'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    user_id = str(session.get('user_id'))
+    try:
+        update_data(f'users/{user_id}', {'onboarding_completed': True})
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_bp.route('/appointments')
 def appointments():

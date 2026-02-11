@@ -415,10 +415,11 @@ def register():
             'password_hash': pw['hash'],
             'password_salt': pw['salt'],
             'password_iterations': pw['iterations'],
-            'is_active': True,  # Deneme süresinde aktif
-            'subscription_status': 'trial',  # trial, active, expired
-            'trial_ends_at': (datetime.utcnow() + timedelta(days=3)).isoformat(),  # 3 günlük deneme
-            'working_hours': working_hours
+            'is_active': True,
+            'subscription_status': 'pending',  # pending, trial, active, expired
+            'trial_ends_at': None,  # Deneme sürümü başlatıldığında set edilecek
+            'working_hours': working_hours,
+            'onboarding_completed': False  # Onboarding sihirbazı henüz tamamlanmadı
         }
         try:
             from firebase_realtime_transaction import atomic_update
