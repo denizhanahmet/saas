@@ -564,18 +564,67 @@ def edit_profile():
             user['password_salt'] = pw['salt']
             user['password_iterations'] = pw['iterations']
 
-        # Logo dosyası yükleme
+        # Logo dosyası yükleme (güvenli)
         logo_file = request.files.get('logo')
         if logo_file and logo_file.filename:
             import os
+            import uuid
             from werkzeug.utils import secure_filename
+
+            # 1. İzin verilen uzantılar (sadece resim)
+            ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+            MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB
+
+            # Orijinal dosya adından uzantıyı al (secure_filename Türkçe karakterleri silebilir)
+            raw_filename = logo_file.filename
+            ext = raw_filename.rsplit('.', 1)[-1].lower() if '.' in raw_filename else ''
+
+            if not ext or ext not in ALLOWED_EXTENSIONS:
+                flash('Sadece resim dosyaları yüklenebilir (png, jpg, jpeg, gif, webp).', 'error')
+                return render_template('auth/edit_profile.html', user=user, csrf_token=generate_csrf)
+
+            # 2. Dosya boyutu kontrolü
+            logo_file.seek(0, 2)  # dosya sonuna git
+            file_size = logo_file.tell()
+            logo_file.seek(0)  # başa geri dön
+            if file_size > MAX_FILE_SIZE:
+                flash('Dosya boyutu en fazla 2 MB olabilir.', 'error')
+                return render_template('auth/edit_profile.html', user=user, csrf_token=generate_csrf)
+
+            # 3. MIME type doğrulama (magic bytes)
+            header = logo_file.read(16)
+            logo_file.seek(0)
+            MAGIC_BYTES = {
+                b'\x89PNG': 'png',
+                b'\xff\xd8\xff': 'jpg',
+                b'GIF87a': 'gif',
+                b'GIF89a': 'gif',
+                b'RIFF': 'webp',
+            }
+            is_valid_image = any(header.startswith(magic) for magic in MAGIC_BYTES)
+            if not is_valid_image:
+                flash('Geçersiz dosya içeriği. Lütfen gerçek bir resim dosyası yükleyin.', 'error')
+                return render_template('auth/edit_profile.html', user=user, csrf_token=generate_csrf)
+
+            # 4. Güvenli dosya adı (UUID ile çakışma önleme)
+            safe_filename = f"{uuid.uuid4().hex}.{ext}"
             upload_folder = os.path.join('static', 'uploads')
             if not os.path.exists(upload_folder):
                 os.makedirs(upload_folder)
-            filename = secure_filename(logo_file.filename)
-            save_path = os.path.join(upload_folder, filename)
+            save_path = os.path.join(upload_folder, safe_filename)
             logo_file.save(save_path)
-            user['logo_path'] = filename
+
+            # 5. Eski logoyu sil (varsa)
+            old_logo = user.get('logo_path')
+            if old_logo:
+                old_path = os.path.join(upload_folder, old_logo)
+                if os.path.exists(old_path) and os.path.isfile(old_path):
+                    try:
+                        os.remove(old_path)
+                    except OSError:
+                        pass
+
+            user['logo_path'] = safe_filename
 
         # Email kontrolü - başka bir kullanıcı tarafından kullanılıp kullanılmadığını kontrol et
         new_email = user.get('email')

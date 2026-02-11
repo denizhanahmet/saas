@@ -118,6 +118,7 @@ class AppFactory:
         app.config['SECRET_KEY'] = secret_key
         # SQLAlchemy konfigürasyonu kaldırıldı. Sadece Firebase kullanılıyor.
         app.config['JSON_AS_ASCII'] = False
+        app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max request size
         
         # Session Cookie Güvenlik Ayarları
         # Üretim ortamında HTTPS zorunlu, geliştirmede HTTP kabul edilir
@@ -173,6 +174,10 @@ class AppFactory:
             # Hata detaylarını logla ama kullanıcıya gösterme
             app.logger.error(f"500 hatası: {str(error)}")
             return render_template('errors/500.html'), 500
+
+        @app.errorhandler(413)
+        def request_entity_too_large(error):
+            return render_template('errors/413.html'), 413
         
         # Güvenlik Başlıkları - Yaygın web saldırılarına karşı koruma
         @app.after_request

@@ -29,8 +29,7 @@
         <div class="flex gap-4">
             <div class="w-1/2">
                 <label for="phone" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Telefon</label>
-                <input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}"
-                    placeholder="05XX XXX XX XX"
+                <input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" placeholder="05XX XXX XX XX"
                     class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                 <p id="phone-error" class="text-xs text-red-500 mt-1 hidden"></p>
             </div>
@@ -43,8 +42,13 @@
         </div>
         <div>
             <label for="logo" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Logo</label>
-            <input type="file" id="logo" name="logo" accept="image/*"
+            <input type="file" id="logo" name="logo" accept=".png,.jpg,.jpeg,.gif,.webp"
                 class="block w-full text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700" />
+            <p id="logo-error" class="hidden mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                <span class="material-icons text-sm">error</span>
+                <span id="logo-error-text"></span>
+            </p>
+            <p class="text-xs text-gray-400 mt-1">PNG, JPG, GIF, WEBP — maks. 2 MB</p>
             {% if user.logo_path %}
             <small class="text-gray-500">Mevcut logo: <a
                     href="{{ url_for('static', filename='uploads/' + user.logo_path) }}" target="_blank"
@@ -191,7 +195,7 @@
     });
 
     // Telefon numarası real-time doğrulama
-    (function() {
+    (function () {
         const phoneInput = document.getElementById('phone');
         const phoneError = document.getElementById('phone-error');
         const phoneRegex = /^(\+90|0)?5\d{9}$/;
@@ -217,10 +221,60 @@
         phoneInput.addEventListener('input', validatePhone);
         phoneInput.addEventListener('blur', validatePhone);
 
-        phoneInput.closest('form').addEventListener('submit', function(e) {
+        phoneInput.closest('form').addEventListener('submit', function (e) {
             if (!validatePhone()) {
                 e.preventDefault();
                 phoneInput.focus();
+            }
+        });
+    })();
+
+    // Logo dosya doğrulama (client-side)
+    (function () {
+        const logoInput = document.getElementById('logo');
+        const logoError = document.getElementById('logo-error');
+        const logoErrorText = document.getElementById('logo-error-text');
+        const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+        const ALLOWED_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+        const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
+
+        function showError(msg) {
+            logoErrorText.textContent = msg;
+            logoError.classList.remove('hidden');
+            logoInput.classList.add('border-red-500', 'focus:ring-red-500');
+        }
+
+        function clearError() {
+            logoError.classList.add('hidden');
+            logoInput.classList.remove('border-red-500', 'focus:ring-red-500');
+        }
+
+        function validateLogo() {
+            if (!logoInput.files || !logoInput.files[0]) { clearError(); return true; }
+            const file = logoInput.files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (!ALLOWED_EXTS.includes(ext) && !ALLOWED_TYPES.includes(file.type)) {
+                showError('Sadece resim dosyaları yüklenebilir (PNG, JPG, GIF, WEBP).');
+                logoInput.value = '';
+                return false;
+            }
+            if (file.size > MAX_SIZE) {
+                const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+                showError(`Dosya çok büyük (${sizeMB} MB). Maksimum boyut 2 MB.`);
+                logoInput.value = '';
+                return false;
+            }
+            clearError();
+            return true;
+        }
+
+        logoInput.addEventListener('change', validateLogo);
+
+        logoInput.closest('form').addEventListener('submit', function (e) {
+            if (!validateLogo()) {
+                e.preventDefault();
+                logoInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
     })();

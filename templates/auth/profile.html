@@ -108,19 +108,37 @@
         </div>
     </div>
 
-    <!-- Subscription Info Section -->
-    <div
-        class="mt-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
-        <div class="flex items-center justify-between">
+    <!-- Subscription / Trial Info Section -->
+    <div class="mt-6 p-6 rounded-xl border transition-colors duration-200
+        {% if subscription and subscription.status == 'active' %}
+            bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800
+        {% elif user.subscription_status == 'trial' and user.trial_ends_at %}
+            bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800
+        {% else %}
+            bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 border-gray-200 dark:border-gray-700
+        {% endif %}">
+        <div class="flex items-center justify-between flex-wrap gap-4">
             <div class="flex items-center gap-4">
-                <div
-                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <span class="material-icons text-white">diamond</span>
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center
+                    {% if subscription and subscription.status == 'active' %}
+                        bg-gradient-to-br from-purple-500 to-pink-500
+                    {% elif user.subscription_status == 'trial' %}
+                        bg-gradient-to-br from-emerald-500 to-teal-500
+                    {% else %}
+                        bg-gradient-to-br from-gray-400 to-gray-500
+                    {% endif %}">
+                    <span class="material-icons text-white">
+                        {% if subscription and subscription.status == 'active' %}diamond
+                        {% elif user.subscription_status == 'trial' %}hourglass_top
+                        {% else %}lock{% endif %}
+                    </span>
                 </div>
                 <div>
                     <h3 class="font-bold text-gray-900 dark:text-white">
                         {% if subscription and subscription.status == 'active' %}
                         {{ subscription.plan_name or 'Aktif Abonelik' }}
+                        {% elif user.subscription_status == 'trial' %}
+                        Ücretsiz Deneme Sürümü
                         {% else %}
                         Abonelik Yok
                         {% endif %}
@@ -129,18 +147,33 @@
                         {% if subscription and subscription.status == 'active' %}
                         {% set expires = subscription.expires_at[:10] if subscription.expires_at else 'Belirsiz' %}
                         Bitiş: {{ expires }}
+                        {% elif user.subscription_status == 'trial' and user.trial_ends_at %}
+                        {% set aylar_uzun = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos',
+                        'Eylül', 'Ekim', 'Kasım', 'Aralık'] %}
+                        {% set dt = user.trial_ends_at|string %}
+                        {% set date_part = dt.split('T')[0] if 'T' in dt else dt.split(' ')[0] %}
+                        Bitiş: {{ date_part[8:10]|int }} {{ aylar_uzun[(date_part[5:7]|int) - 1] }} {{ date_part[0:4] }}
                         {% else %}
                         Tüm özelliklere erişim için plan seçin
                         {% endif %}
                     </p>
                 </div>
             </div>
-            <div>
+            <div class="flex items-center gap-2">
                 {% if subscription and subscription.status == 'active' %}
                 <span
                     class="px-3 py-1 text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-full">
                     ✓ Aktif
                 </span>
+                {% elif user.subscription_status == 'trial' and user.trial_ends_at %}
+                <span
+                    class="px-3 py-1 text-xs font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
+                    ⏳ Deneme
+                </span>
+                <a href="{{ url_for('subscription.pricing') }}"
+                    class="px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition">
+                    Yükselt
+                </a>
                 {% else %}
                 <a href="{{ url_for('subscription.pricing') }}"
                     class="px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition">

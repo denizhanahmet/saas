@@ -92,14 +92,19 @@ def pricing():
     
     # Check if user is logged in and has subscription
     current_plan = None
+    user_status = None
     if session.get('user_id'):
         subscription = iyzico.get_user_subscription(str(session['user_id']))
         if subscription:
             current_plan = subscription.get('plan_id')
+        user = get_data(f"users/{session['user_id']}")
+        if user:
+            user_status = user.get('subscription_status', 'pending')
     
     return render_template('subscription/pricing.html',
                            plans=plans,
-                           current_plan=current_plan)
+                           current_plan=current_plan,
+                           user_status=user_status)
 
 
 @subscription_bp.route('/checkout/<plan_id>')
