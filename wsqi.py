@@ -190,6 +190,16 @@ class AppFactory:
             response.headers['X-XSS-Protection'] = '1; mode=block'
             # Referrer bilgisi sızıntısını azalt
             response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+            # Content Security Policy — XSS saldırılarını engelle
+            response.headers['Content-Security-Policy'] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://npmcdn.com https://*.iyzipay.com https://*.iyzico.com; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://*.iyzipay.com https://*.iyzico.com; "
+                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://*.iyzipay.com; "
+                "img-src 'self' data: blob: https://*.iyzipay.com https://*.iyzico.com https://www.iyzico.com; "
+                "connect-src 'self' https://cdn.tailwindcss.com https://*.iyzipay.com https://*.iyzico.com; "
+                "frame-src 'self' https://*.iyzipay.com https://*.iyzico.com"
+            )
             # Cache kontrolü - hassas sayfalarda önbellek devre dışı
             if request.path.startswith('/admin') or request.path.startswith('/dashboard'):
                 response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'

@@ -5,8 +5,11 @@ from firebase_realtime import get_data, set_data, update_data, delete_data
 
 admin_bp = Blueprint('admin', __name__)
 
+from functools import wraps
+
 def admin_required(f):
     """Superadmin yetkisi gerektiren decorator"""
+    @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('user_id'):
             return redirect(url_for('auth.login'))
@@ -18,7 +21,6 @@ def admin_required(f):
             flash('Bu sayfaya erişim için superadmin yetkisi gerekli!', 'error')
             return redirect(url_for('dashboard.dashboard'))
         return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
     return decorated_function
 
 @admin_bp.route('/')

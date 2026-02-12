@@ -17,6 +17,19 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
+# Open Redirect koruması
+from urllib.parse import urlparse
+
+def _is_safe_url(target):
+    """Yönlendirme URL'inin güvenli (aynı host) olduğunu doğrular."""
+    host_url = urlparse(request.host_url)
+    test_url = urlparse(target)
+    if test_url.scheme and test_url.scheme not in ('http', 'https'):
+        return False
+    if test_url.netloc and test_url.netloc != host_url.netloc:
+        return False
+    return True
+
 # Rate limiter yardımcı fonksiyonu
 def get_limiter():
     """Mevcut uygulama context'inden limiter'ı getir"""
@@ -148,7 +161,9 @@ def login():
                 
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
+                if next_page and _is_safe_url(next_page):
+                    return redirect(next_page)
+                return redirect(url_for('dashboard.dashboard'))
             # Başarısız giriş denemesini logla - güvenlik izleme için
             logging.warning(f"Başarısız giriş denemesi: {email} - IP: {request.remote_addr}")
             from services.activity_logger import ActivityLogger
@@ -171,10 +186,14 @@ def login():
                 if not user_id:
                     flash('Kullanıcı kaydında eksik id. Lütfen tekrar kayıt olun.', 'error')
                     return render_template('auth/login.html', csrf_token=generate_csrf)
-                flash('Parola güvenliği için lütfen şifrenizi değiştirin.', 'warning')
                 if not user.get('is_active', True):
                     flash('Hesabınız deaktif edilmiş!', 'error')
                     return render_template('auth/login.html', csrf_token=generate_csrf)
+                # --- SHA-256 → bcrypt otomatik yükseltme ---
+                new_bcrypt_hash = generate_password_hash(password)
+                user['password'] = new_bcrypt_hash
+                user.pop('password_hash', None)  # Eski güvensiz hash'i sil
+                logging.info(f"Şifre hash upgrade (SHA256→bcrypt): user_id={user_id}")
                 import secrets
                 from firebase_realtime_transaction import atomic_update
                 user['session_token'] = secrets.token_hex(32)
@@ -184,7 +203,9 @@ def login():
                 cache_user_to_session(user)  # Session cache
                 flash(f"Hoş geldiniz, {user.get('first_name','')} {user.get('last_name','')}!", 'success')
                 next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('dashboard.dashboard'))
+                if next_page and _is_safe_url(next_page):
+                    return redirect(next_page)
+                return redirect(url_for('dashboard.dashboard'))
             # Başarısız giriş denemesini logla - güvenlik izleme için
             logging.warning(f"Başarısız giriş denemesi: {email} - IP: {request.remote_addr}")
             flash('Geçersiz email veya şifre!', 'error')

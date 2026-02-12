@@ -827,14 +827,15 @@ def approve_appointment(appointment_id):
     """Randevuyu onayla"""
     if not session.get('user_id'):
         return redirect(url_for('auth.login'))
+    user_id = str(session.get('user_id'))
     appointments = get_data('appointments') or {}
     appointment = appointments.get(appointment_id)
-    if appointment:
-        appointment['status'] = 'approved'
-        set_data(f'appointments/{appointment_id}', appointment)
-        flash('Randevu onaylandı.', 'success')
-    else:
-        flash('Randevu bulunamadı.', 'danger')
+    if not appointment or str(appointment.get('user_id')) != user_id:
+        flash('Randevu bulunamadı veya erişim yetkiniz yok.', 'error')
+        return redirect(url_for('dashboard.dashboard'))
+    appointment['status'] = 'approved'
+    set_data(f'appointments/{appointment_id}', appointment)
+    flash('Randevu onaylandı.', 'success')
     return redirect(url_for('dashboard.dashboard'))
 
 @dashboard_bp.route('/appointments/<appointment_id>/reject', methods=['POST'])
@@ -842,14 +843,15 @@ def reject_appointment(appointment_id):
     """Randevuyu reddet"""
     if not session.get('user_id'):
         return redirect(url_for('auth.login'))
+    user_id = str(session.get('user_id'))
     appointments = get_data('appointments') or {}
     appointment = appointments.get(appointment_id)
-    if appointment:
-        appointment['status'] = 'rejected'
-        set_data(f'appointments/{appointment_id}', appointment)
-        flash('Randevu reddedildi.', 'warning')
-    else:
-        flash('Randevu bulunamadı.', 'danger')
+    if not appointment or str(appointment.get('user_id')) != user_id:
+        flash('Randevu bulunamadı veya erişim yetkiniz yok.', 'error')
+        return redirect(url_for('dashboard.dashboard'))
+    appointment['status'] = 'rejected'
+    set_data(f'appointments/{appointment_id}', appointment)
+    flash('Randevu reddedildi.', 'warning')
     return redirect(url_for('dashboard.dashboard'))
 
 from flask import g
