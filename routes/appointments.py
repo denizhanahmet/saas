@@ -5,7 +5,6 @@ import uuid
 
 from flask import (Blueprint, abort, current_app, flash, jsonify, redirect, render_template,
                    request, session, url_for)
-from flask_mail import Message
 from flask_wtf.csrf import generate_csrf
 
 # Firebase Realtime Database integration
@@ -19,12 +18,21 @@ def get_limiter():
     """Get limiter from current app context"""
     return current_app.limiter if hasattr(current_app, 'limiter') else None
 
-def send_async_email(app, msg):
+def send_async_email(app, subject, to_email, html_body, text_body=None):
+    """Send email asynchronously using Resend"""
     with app.app_context():
-        try:
-            app.extensions['mail'].send(msg)
-        except Exception as e:
-            print(f"Mail sending error: {e}")
+        from services.resend_service import get_email_service
+        service = get_email_service()
+        
+        sender = app.config.get('RESEND_DEFAULT_SENDER') or app.config.get('MAIL_DEFAULT_SENDER')
+        
+        service.send_email(
+            to=to_email,
+            subject=subject,
+            html=html_body,
+            text=text_body,
+            from_email=sender
+        )
 
 # Randevu durumunu güncelle (tamamlandı/iptal)
 @appointments_bp.route('/update-status/<int:appointment_id>', methods=['POST'])
@@ -305,8 +313,19 @@ Randevunuzu iptal etmek isterseniz aşağıdaki linke tıklayabilirsiniz:
 
 Teşekkürler,
 {company_name}"""
-                msg = Message(subject, recipients=[client_email], body=body)
-                threading.Thread(target=send_async_email, args=(current_app._get_current_object(), msg)).start()
+                html_body = f"""
+<html>
+<body style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #10B981;">Randevunuz Onaylandı ✓</h2>
+    <p>Merhaba <strong>{appointment.get('client_name', 'Müşteri')}</strong>,</p>
+    <p>{appointment.get('appointment_date')} tarihinde saat <strong>{appointment.get('appointment_time')}</strong> için oluşturduğunuz randevu talebiniz onaylanmıştır.</p>
+    <p>Randevunuzu iptal etmek isterseniz <a href="{cancel_url}" style="color: #3B82F6;">buraya tıklayabilirsiniz</a>.</p>
+    <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
+    <p style="color: #6B7280; font-size: 12px;">Teşekkürler,<br><strong>{company_name}</strong></p>
+</body>
+</html>
+"""
+                threading.Thread(target=send_async_email, args=(current_app._get_current_object(), subject, client_email, html_body, body)).start()
             except Exception as e:
                 print(f"Email error: {e}")
         
@@ -376,8 +395,19 @@ Anlayışınız için teşekkür ederiz.
 
 Saygılarımızla,
 {company_name}"""
-                msg = Message(subject, recipients=[client_email], body=body)
-                threading.Thread(target=send_async_email, args=(current_app._get_current_object(), msg)).start()
+                html_body = f"""
+<html>
+<body style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #EF4444;">Randevu Talebiniz Hakkında</h2>
+    <p>Merhaba <strong>{appointment.get('client_name', 'Müşteri')}</strong>,</p>
+    <p>{appointment.get('appointment_date')} tarihinde saat <strong>{appointment.get('appointment_time')}</strong> için oluşturduğunuz randevu talebiniz maalesef onaylanamamıştır.</p>
+    <p>Anlayışınız için teşekkür ederiz.</p>
+    <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
+    <p style="color: #6B7280; font-size: 12px;">Saygılarımızla,<br><strong>{company_name}</strong></p>
+</body>
+</html>
+"""
+                threading.Thread(target=send_async_email, args=(current_app._get_current_object(), subject, client_email, html_body, body)).start()
             except Exception as e:
                 print(f"Email error: {e}")
         

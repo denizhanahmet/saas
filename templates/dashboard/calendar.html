@@ -178,10 +178,82 @@
         background: #374151 !important;
     }
 
-    .dark .calendar-wrap .fc .fc-button-active {
+    .dark .calendar-wrap .fc-button-active {
         background: #3B82F6 !important;
         border-color: #3B82F6 !important;
         color: #fff !important;
+    }
+
+    /* ---------- Navigation Arrow Icons - Using Material Icons ---------- */
+    .calendar-wrap .fc .fc-button .fc-icon {
+        display: none !important;  /* Hide default SVG icons */
+    }
+
+    /* Use Material Icons for navigation buttons */
+    .calendar-wrap .fc .fc-prev-button::before {
+        font-family: 'Material Icons' !important;
+        font-weight: normal !important;
+        font-style: normal !important;
+        font-size: 22px !important;
+        line-height: 1 !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+        white-space: nowrap !important;
+        word-wrap: normal !important;
+        direction: ltr !important;
+        -webkit-font-feature-settings: 'liga' !important;
+        font-feature-settings: 'liga' !important;
+        -webkit-font-smoothing: antialiased !important;
+        content: 'chevron_left' !important;
+    }
+
+    .calendar-wrap .fc .fc-next-button::before {
+        font-family: 'Material Icons' !important;
+        font-weight: normal !important;
+        font-style: normal !important;
+        font-size: 22px !important;
+        line-height: 1 !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+        white-space: nowrap !important;
+        word-wrap: normal !important;
+        direction: ltr !important;
+        -webkit-font-feature-settings: 'liga' !important;
+        font-feature-settings: 'liga' !important;
+        -webkit-font-smoothing: antialiased !important;
+        content: 'chevron_right' !important;
+    }
+
+    /* Navigation button styling */
+    .calendar-wrap .fc .fc-prev-button,
+    .calendar-wrap .fc .fc-next-button {
+        min-width: 40px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Dark mode support */
+    .dark .calendar-wrap .fc .fc-prev-button::before,
+    .dark .calendar-wrap .fc .fc-next-button::before {
+        color: #D1D5DB !important;
+    }
+
+    .calendar-wrap .fc .fc-prev-button::before,
+    .calendar-wrap .fc .fc-next-button::before {
+        color: #4B5563 !important;
+    }
+
+    /* Today button icon */
+    .calendar-wrap .fc .fc-today-button {
+        padding: 0.45rem 0.9rem !important;
+    }
+
+    /* Month / Week / Day buttons */
+    .calendar-wrap .fc .fc-dayGridMonth-button,
+    .calendar-wrap .fc .fc-timeGridWeek-button,
+    .calendar-wrap .fc .fc-timeGridDay-button {
+        padding: 0.45rem 0.75rem !important;
     }
 
     /* ---------- Column Headers (Day Names) ---------- */

@@ -9,11 +9,30 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from flask import current_app
-from flask_mail import Message
 
 from firebase_realtime import get_data, set_data, update_data, delete_data
 
 logger = logging.getLogger(__name__)
+
+
+def send_waitlist_email(subject, to_email, html_body, text_body=None):
+    """Helper function to send waitlist emails using Resend"""
+    try:
+        from services.resend_service import get_email_service
+        service = get_email_service()
+        
+        app = current_app._get_current_object()
+        with app.app_context():
+            sender = current_app.config.get('RESEND_DEFAULT_SENDER') or current_app.config.get('MAIL_DEFAULT_SENDER')
+            service.send_email(
+                to=to_email,
+                subject=subject,
+                html=html_body,
+                text=text_body,
+                from_email=sender
+            )
+    except Exception as e:
+        logger.error(f"Failed to send waitlist email: {e}")
 
 
 class WaitlistService:
@@ -315,28 +334,30 @@ Teşekkürler,
 {instructor_name}
             """
             
-            # Send async email
-            from flask import current_app
-            app = current_app._get_current_object()
-            
-            msg = Message(
-                subject=subject,
-                recipients=[client_email],
-                body=text_body,
-                html=html_body
-            )
-            
-            def send_async(app, msg):
-                with app.app_context():
-                    try:
-                        mail = app.extensions.get('mail')
-                        if mail:
-                            mail.send(msg)
+            # Send async email using Resend
+            def send_async():
+                try:
+                    from services.resend_service import get_email_service
+                    service = get_email_service()
+                    
+                    app = current_app._get_current_object()
+                    with app.app_context():
+                        sender = current_app.config.get('RESEND_DEFAULT_SENDER') or current_app.config.get('MAIL_DEFAULT_SENDER')
+                        result = service.send_email(
+                            to=client_email,
+                            subject=subject,
+                            html=html_body,
+                            text=text_body,
+                            from_email=sender
+                        )
+                        if result.get('status') == 'sent':
                             logger.info(f"Waitlist notification sent to {client_email}")
-                    except Exception as e:
-                        logger.error(f"Failed to send waitlist email: {e}")
+                        else:
+                            logger.error(f"Failed to send waitlist email: {result.get('error')}")
+                except Exception as e:
+                    logger.error(f"Failed to send waitlist email: {e}")
             
-            thread = threading.Thread(target=send_async, args=(app, msg))
+            thread = threading.Thread(target=send_async)
             thread.start()
             
             return True

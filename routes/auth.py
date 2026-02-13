@@ -2,15 +2,26 @@ import logging
 import threading
 
 
-def send_async_email(app, msg):
+def send_async_email(app, subject, to_email, html_body, text_body=None):
+    """Send email asynchronously using Resend"""
     with app.app_context():
-        current_app.extensions['mail'].send(msg)
+        from services.resend_service import get_email_service
+        service = get_email_service()
+        
+        sender = app.config.get('RESEND_DEFAULT_SENDER') or app.config.get('MAIL_DEFAULT_SENDER')
+        
+        service.send_email(
+            to=to_email,
+            subject=subject,
+            html=html_body,
+            text=text_body,
+            from_email=sender
+        )
 from datetime import datetime, timedelta
 
 from flask import (Blueprint, current_app, flash, redirect, render_template,
                    request, session, url_for)
 # Flask-Login kaldırıldı, session tabanlı custom oturum yönetimi kullanıyoruz
-from flask_mail import Message
 from flask_wtf.csrf import generate_csrf
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -233,9 +244,21 @@ def forgot_password():
         token = s.dumps(email, salt='password-reset-salt')
         reset_url = url_for('auth.reset_password', token=token, _external=True)
         # Mail gönder
-        msg = Message('Şifre Yenileme Talebi', sender=current_app.config['MAIL_DEFAULT_SENDER'], recipients=[email])
-        msg.body = f"Merhaba {user.get('first_name','')} {user.get('last_name','')},\n\nŞifrenizi yenilemek için aşağıdaki bağlantıya tıklayın:\n{reset_url}\n\nEğer bu isteği siz yapmadıysanız, bu maili dikkate almayın."
-        threading.Thread(target=send_async_email, args=(current_app._get_current_object(), msg)).start()
+        subject = 'Şifre Yenileme Talebi'
+        body = f"Merhaba {user.get('first_name','')} {user.get('last_name','')},\n\nŞifrenizi yenilemek için aşağıdaki bağlantıya tıklayın:\n{reset_url}\n\nEğer bu isteği siz yapmadıysanız, bu maili dikkate almayın."
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Şifre Yenileme Talebi</h2>
+            <p>Merhaba {user.get('first_name','')} {user.get('last_name','')},</p>
+            <p>Şifrenizi yenilemek için aşağıdaki bağlantıya tıklayın:</p>
+            <p><a href="{reset_url}" style="background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Şifremi Yenile</a></p>
+            <p style="color: #666; font-size: 12px;">Bu link 1 saat geçerlidir.</p>
+            <p style="color: #999; font-size: 11px;">Eğer bu isteği siz yapmadıysanız, bu maili dikkate almayın.</p>
+        </body>
+        </html>
+        """
+        threading.Thread(target=send_async_email, args=(current_app._get_current_object(), subject, email, html_body, body)).start()
         flash('Şifre yenileme bağlantısı e-posta adresinize gönderildi.', 'success')
         return redirect(url_for('auth.login'))
     return render_template('auth/forgot_password.html')

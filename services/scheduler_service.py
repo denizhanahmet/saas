@@ -6,7 +6,6 @@ import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
-from flask_mail import Message
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.executors.pool import ThreadPoolExecutor
 
@@ -14,6 +13,7 @@ from apscheduler.schedulers import SchedulerAlreadyRunningError
 from apscheduler.schedulers.background import BackgroundScheduler
 
 logger = logging.getLogger(__name__)
+
 
 class SchedulerService:
     """Randevu hatırlatma zamanlamalarını yönetmek için servis"""
@@ -153,7 +153,6 @@ class SchedulerService:
             appointment_id: Randevunun ID'si
         """
         try:
-            # SQL Modelleri yerine Firebase fonksiyonlarını kullanıyoruz
             from firebase_realtime import get_data, add_data
             from services.sms_service import get_sms_service
             
@@ -184,10 +183,7 @@ class SchedulerService:
                 if not self.sms_service:
                     self.sms_service = get_sms_service()
                 
-                # 4. SMS Gönder (Verileri dict olarak gönderiyoruz, SMS servisi buna uygun olmalı)
-                # Not: SMS servisi nesne bekliyorsa, burada basit bir wrapper sınıfı veya
-                # SMS servisini dict kabul edecek şekilde güncellemek gerekebilir.
-                # Şimdilik SMS servisine dict gönderdiğimizi varsayıyoruz.
+                # 4. SMS Gönder
                 result = self.sms_service.send_reminder_sms(appointment, user, client)
                 
                 # 5. Logu Firebase'e kaydet
@@ -239,12 +235,23 @@ Konu: {appointment.get('title')}
 
 Saygılarımızla,
 {company_name}"""
-                        msg = Message(subject, recipients=[client_email], body=body)
-                        self.app.extensions['mail'].send(msg)
-                        logger.info(f"Reminder email sent to {client_email}")
+                        
+                        # Send email using Resend
+                        from services.resend_service import get_email_service
+                        service = get_email_service()
+                        sender = self.app.config.get('RESEND_DEFAULT_SENDER') or self.app.config.get('MAIL_DEFAULT_SENDER')
+                        result = service.send_email(
+                            to=client_email,
+                            subject=subject,
+                            text=body,
+                            from_email=sender
+                        )
+                        if result.get('status') == 'sent':
+                            logger.info(f"Reminder email sent to {client_email}")
+                        else:
+                            logger.error(f"Failed to send reminder email: {result.get('error')}")
                     except Exception as e:
                         logger.error(f"Failed to send reminder email: {str(e)}")
-            
         except Exception as e:
             logger.error(f"Failed to send reminder SMS for appointment {appointment_id}: {str(e)}")
             # Hata logunu Firebase'e kaydet

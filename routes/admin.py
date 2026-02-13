@@ -1,6 +1,7 @@
 from datetime import date, datetime, datetime as dt, timedelta
+import threading
 from flask import (Blueprint, flash, jsonify, redirect, render_template,
-                   request, session, url_for)
+                   request, session, url_for, current_app)
 from firebase_realtime import get_data, set_data, update_data, delete_data
 
 admin_bp = Blueprint('admin', __name__)
@@ -299,16 +300,15 @@ def reset_user_password(user_id):
     
     if user_email:
         try:
-            def send_async_email(app, msg):
+            def send_async_email(app, subject, to_email, html_body, text_body=None):
                 with app.app_context():
-                    app.extensions['mail'].send(msg)
+                    from services.resend_service import get_email_service
+                    service = get_email_service()
+                    sender = app.config.get('RESEND_DEFAULT_SENDER') or app.config.get('MAIL_DEFAULT_SENDER')
+                    service.send_email(to=to_email, subject=subject, html=html_body, text=text_body, from_email=sender)
             
-            msg = Message(
-                'Şifreniz Sıfırlandı',
-                sender=current_app.config.get('MAIL_DEFAULT_SENDER'),
-                recipients=[user_email]
-            )
-            msg.body = f"""Merhaba {user_name},
+            subject = 'Şifreniz Sıfırlandı'
+            body = f"""Merhaba {user_name},
 
 Sistem yöneticisi tarafından şifreniz sıfırlandı.
 
@@ -320,9 +320,25 @@ Güvenliğiniz için bu şifreyi kimseyle paylaşmayın.
 
 Eğer bu işlemi siz talep etmediyseniz, lütfen sistem yöneticisi ile iletişime geçin.
 """
+            html_body = f"""
+<html>
+<body style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #3B82F6;">Şifreniz Sıfırlandı</h2>
+    <p>Merhaba <strong>{user_name}</strong>,</p>
+    <p>Sistem yöneticisi tarafından şifreniz sıfırlandı.</p>
+    <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 18px; font-family: monospace;"><strong>Geçici şifreniz: {temp_password}</strong></p>
+    </div>
+    <p>Lütfen bu şifre ile giriş yapın. Giriş yaptıktan sonra yeni bir şifre belirlemeniz istenecektir.</p>
+    <p style="color: #EF4444; font-weight: bold;">Güvenliğiniz için bu şifreyi kimseyle paylaşmayın.</p>
+    <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
+    <p style="color: #6B7280; font-size: 12px;">Eğer bu işlemi siz talep etmediyseniz, lütfen sistem yöneticisi ile iletişime geçin.</p>
+</body>
+</html>
+"""
             threading.Thread(
                 target=send_async_email,
-                args=(current_app._get_current_object(), msg)
+                args=(current_app._get_current_object(), subject, user_email, html_body, body)
             ).start()
         except Exception as e:
             flash(f'E-posta gönderilirken hata oluştu: {str(e)}', 'warning')

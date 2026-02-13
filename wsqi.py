@@ -131,6 +131,12 @@ class AppFactory:
         # CSRF Koruması - AKTİF
         app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 saat token geçerliliği
         app.config['WTF_CSRF_ENABLED'] = True  # CSRF koruması aktif
+        
+        # Resend Email Configuration
+        app.config['RESEND_API_KEY'] = os.getenv('RESEND_API_KEY')
+        app.config['RESEND_DEFAULT_SENDER'] = os.getenv('RESEND_DEFAULT_SENDER', 'onboarding@resend.dev')
+        
+        # Legacy SMTP config (kept for backward compatibility)
         app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
         app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
         app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'

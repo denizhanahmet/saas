@@ -15,4 +15,5 @@ firebase-admin
 reportlab>=4.0.0
 openpyxl>=3.1.0
 iyzipay==1.0.45
+resend>=0.5.0
 
