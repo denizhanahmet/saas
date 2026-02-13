@@ -855,7 +855,10 @@ def reject_appointment(appointment_id):
     return redirect(url_for('dashboard.dashboard'))
 
 from flask import g
+import logging
 from services.auth_service import token_required
+
+logger = logging.getLogger(__name__)
 
 @dashboard_bp.route('/api/me')
 @token_required
@@ -876,3 +879,128 @@ def get_me():
         "picture": user_info.get('picture'),
         "email_verified": user_info.get('email_verified')
     })
+
+
+# ==================
+# Analytics Dashboard Widgets
+# ==================
+
+@dashboard_bp.route('/api/debug-session')
+def debug_session():
+    """Debug endpoint to check session status"""
+    user_id = session.get('user_id')
+    return jsonify({
+        'has_session': bool(user_id),
+        'user_id': str(user_id) if user_id else None,
+        'session_keys': list(session.keys())
+    })
+
+
+@dashboard_bp.route('/api/analytics/summary')
+def analytics_summary():
+    """Get comprehensive analytics summary for dashboard widgets"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Unauthorized - login required', 'code': 'NO_SESSION'}), 401
+    
+    user_id = str(session.get('user_id'))
+    
+    try:
+        from services.analytics_service import get_analytics_service
+        analytics = get_analytics_service(user_id)
+        summary = analytics.get_dashboard_summary()
+        return jsonify(summary)
+    except Exception as e:
+        import traceback
+        logger.error(f"Analytics summary error: {e}\n{traceback.format_exc()}")
+        return jsonify({'error': str(e), 'type': type(e).__name__}), 500
+
+
+@dashboard_bp.route('/api/analytics/occupancy')
+def analytics_occupancy():
+    """Get occupancy prediction for upcoming days"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user_id = str(session.get('user_id'))
+    days = request.args.get('days', 7, type=int)
+    
+    try:
+        from services.analytics_service import get_analytics_service
+        analytics = get_analytics_service(user_id)
+        prediction = analytics.get_occupancy_prediction(days_ahead=min(days, 30))
+        return jsonify(prediction)
+    except Exception as e:
+        logger.error(f"Occupancy prediction error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@dashboard_bp.route('/api/analytics/preferred-hours')
+def analytics_preferred_hours():
+    """Get most preferred appointment hours"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user_id = str(session.get('user_id'))
+    
+    try:
+        from services.analytics_service import get_analytics_service
+        analytics = get_analytics_service(user_id)
+        hours = analytics.get_most_preferred_hours()
+        return jsonify(hours)
+    except Exception as e:
+        logger.error(f"Preferred hours error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@dashboard_bp.route('/api/analytics/weekday-distribution')
+def analytics_weekday():
+    """Get weekday distribution analysis"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user_id = str(session.get('user_id'))
+    
+    try:
+        from services.analytics_service import get_analytics_service
+        analytics = get_analytics_service(user_id)
+        distribution = analytics.get_weekday_distribution()
+        return jsonify(distribution)
+    except Exception as e:
+        logger.error(f"Weekday distribution error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@dashboard_bp.route('/api/analytics/completion-rate')
+def analytics_completion():
+    """Get completion rate trend"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user_id = str(session.get('user_id'))
+    
+    try:
+        from services.analytics_service import get_analytics_service
+        analytics = get_analytics_service(user_id)
+        completion = analytics.get_completion_rate_trend()
+        return jsonify(completion)
+    except Exception as e:
+        logger.error(f"Completion rate error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@dashboard_bp.route('/api/analytics/clients')
+def analytics_clients():
+    """Get client insights"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user_id = str(session.get('user_id'))
+    
+    try:
+        from services.analytics_service import get_analytics_service
+        analytics = get_analytics_service(user_id)
+        clients = analytics.get_client_insights()
+        return jsonify(clients)
+    except Exception as e:
+        logger.error(f"Client insights error: {e}")
+        return jsonify({'error': str(e)}), 500

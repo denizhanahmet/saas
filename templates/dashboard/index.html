@@ -48,6 +48,83 @@
         </a>
     </div>
 
+    <!-- AI Analytics Widgets -->
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span class="material-icons text-purple-500">psychology</span>
+            Yapay Zeka Analizleri
+            <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">Beta</span>
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="analytics-widgets">
+            <!-- Occupancy Prediction Widget -->
+            <div class="card-modern p-5 animate-fade-in-up" style="animation-delay: 0.1s" id="widget-occupancy">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="material-icons text-2xl text-blue-500">trending_up</span>
+                    <span class="text-xs px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" id="occupancy-confidence">...</span>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Doluluk Tahmini</h3>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white mb-2" id="occupancy-prediction">-</div>
+                <p class="text-xs text-gray-500 dark:text-gray-400" id="occupancy-message">Yükleniyor...</p>
+                <div class="mt-3 flex items-center gap-1 text-xs" id="occupancy-trend">
+                    <span class="material-icons text-sm">schedule</span>
+                    <span class="text-gray-500">Son 7 gün</span>
+                </div>
+            </div>
+
+            <!-- Preferred Hours Widget -->
+            <div class="card-modern p-5 animate-fade-in-up" style="animation-delay: 0.2s" id="widget-hours">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="material-icons text-2xl text-emerald-500">schedule</span>
+                    <span class="material-icons text-green-500 text-sm" id="peak-icon">bolt</span>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">En Çok Tercih Edilen Saat</h3>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white mb-2" id="peak-hour">-</div>
+                <p class="text-xs text-gray-500 dark:text-gray-400" id="hours-insight">Yükleniyor...</p>
+                <div class="mt-3 flex flex-wrap gap-1" id="top-hours">
+                </div>
+            </div>
+
+            <!-- Weekday Distribution Widget -->
+            <div class="card-modern p-5 animate-fade-in-up" style="animation-delay: 0.3s" id="widget-weekday">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="material-icons text-2xl text-orange-500">calendar_view_week</span>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">En Popüler Gün</h3>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white mb-2" id="best-day">-</div>
+                <p class="text-xs text-gray-500 dark:text-gray-400" id="worst-day-text">En az tercih edilen: -</p>
+                <div class="mt-3 space-y-1" id="weekday-bars">
+                    <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-orange-500 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion Rate Widget -->
+            <div class="card-modern p-5 animate-fade-in-up" style="animation-delay: 0.4s" id="widget-completion">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="material-icons text-2xl text-purple-500">check_circle</span>
+                    <span class="material-icons text-sm" id="completion-trend-icon">trending_flat</span>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Tamamlanma Oranı</h3>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white mb-2" id="completion-rate">-</div>
+                <p class="text-xs text-gray-500 dark:text-gray-400" id="completion-prediction">Yükleniyor...</p>
+                <div class="mt-3">
+                    <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-purple-500 rounded-full transition-all duration-500" id="completion-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Predictions -->
+        <div class="mt-4 card-modern p-5" id="daily-predictions" style="display: none;">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Haftalık Doluluk Tahmini</h3>
+            <div class="grid grid-cols-7 gap-2" id="daily-prediction-grid">
+            </div>
+        </div>
+    </div>
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <!-- Total Appointments -->
@@ -393,4 +470,194 @@
 {% if show_onboarding %}
 <script src="{{ url_for('static', filename='js/onboarding.js') }}"></script>
 {% endif %}
+
+<!-- Analytics Dashboard Widgets Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalyticsWidgets();
+});
+
+async function loadAnalyticsWidgets() {
+    try {
+        console.log('Checking session...');
+        
+        // First check if user is logged in
+        const sessionResp = await fetch('/dashboard/api/debug-session?t=' + Date.now(), {
+            credentials: 'same-origin'
+        });
+        const sessionData = await sessionResp.json();
+        console.log('Session status:', sessionData);
+        
+        if (!sessionData.has_session) {
+            console.log('No session - user not logged in for API');
+            // Try regular dashboard page to see if user is logged in there
+            return;
+        }
+        
+        console.log('Fetching analytics data...');
+        const response = await fetch('/dashboard/api/analytics/summary?t=' + Date.now(), {
+            credentials: 'same-origin'
+        });
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Analytics data received:', data);
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        updateOccupancyWidget(data.occupancy);
+        updatePreferredHoursWidget(data.preferred_hours);
+        updateWeekdayWidget(data.weekday);
+        updateCompletionWidget(data.completion);
+        
+    } catch (error) {
+        console.error('Analytics error:', error);
+        
+        // Check if it's a session issue
+        if (error.message && error.message.includes('401')) {
+            document.getElementById('analytics-widgets').innerHTML = `
+                <div class="col-span-4 text-center py-8 text-gray-500">
+                    <span class="material-icons text-4xl mb-2">login</span>
+                    <p>Oturumunuz sona ermiş olabilir</p>
+                    <a href="/login" class="text-blue-500 hover:underline text-sm">Tekrar giriş yapın</a>
+                </div>
+            `;
+        } else {
+            document.getElementById('analytics-widgets').innerHTML = `
+                <div class="col-span-4 text-center py-8 text-gray-500">
+                    <span class="material-icons text-4xl mb-2">cloud_off</span>
+                    <p>Hata: ${error.message}</p>
+                    <p class="text-xs mt-2">Lütfen sayfayı yenileyin</p>
+                </div>
+            `;
+        }
+    }
+}
+
+function updateOccupancyWidget(data) {
+    const prediction = document.getElementById('occupancy-prediction');
+    const confidence = document.getElementById('occupancy-confidence');
+    const message = document.getElementById('occupancy-message');
+    const trend = document.getElementById('occupancy-trend');
+    const dailyPredictions = document.getElementById('daily-predictions');
+    const dailyGrid = document.getElementById('daily-prediction-grid');
+    
+    prediction.textContent = data.prediction || 0;
+    
+    // Confidence badge
+    const confColors = {
+        'high': 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+        'medium': 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+        'low': 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+    };
+    confidence.className = `text-xs px-2 py-1 rounded-full ${confColors[data.confidence] || confColors.low}`;
+    confidence.textContent = data.confidence === 'high' ? 'Güvenilir' : data.confidence === 'medium' ? 'Orta' : 'Düşük';
+    
+    message.textContent = data.message || 'Veri analiz edildi';
+    
+    // Trend indicator
+    const trendIcons = {
+        'up': { icon: 'trending_up', color: 'text-green-500' },
+        'down': { icon: 'trending_down', color: 'text-red-500' },
+        'stable': { icon: 'trending_flat', color: 'text-gray-400' }
+    };
+    const trendData = trendIcons[data.trend] || trendIcons.stable;
+    trend.innerHTML = `
+        <span class="material-icons text-sm ${trendData.color}">${trendData.icon}</span>
+        <span class="text-gray-500">${data.trend === 'up' ? 'Artış trendi' : data.trend === 'down' ? 'Düşüş trendi' : 'Stabil'}</span>
+    `;
+    
+    // Daily predictions
+    if (data.daily_predictions && data.daily_predictions.length > 0) {
+        dailyPredictions.style.display = 'block';
+        dailyGrid.innerHTML = data.daily_predictions.map(day => {
+            const isBlocked = day.is_blocked;
+            const height = isBlocked ? 0 : Math.min(100, day.predicted * 20);
+            return `
+                <div class="text-center">
+                    <div class="h-24 flex items-end justify-center mb-2">
+                        <div class="w-8 ${isBlocked ? 'bg-gray-300' : 'bg-blue-500'} rounded-t transition-all" 
+                             style="height: ${height}%; min-height: 4px;"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">${day.day_name}</div>
+                    <div class="text-xs font-medium ${isBlocked ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}">
+                        ${isBlocked ? '-' : day.predicted}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function updatePreferredHoursWidget(data) {
+    const peakHour = document.getElementById('peak-hour');
+    const insight = document.getElementById('hours-insight');
+    const topHours = document.getElementById('top-hours');
+    
+    peakHour.textContent = data.peak_hour || '-';
+    insight.textContent = data.insight || 'Veri analiz edildi';
+    
+    // Top hours badges
+    if (data.preferred_hours && data.preferred_hours.length > 0) {
+        topHours.innerHTML = data.preferred_hours.slice(0, 3).map(h => 
+            `<span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">${h.hour}</span>`
+        ).join('');
+    }
+}
+
+function updateWeekdayWidget(data) {
+    const bestDay = document.getElementById('best-day');
+    const worstDayText = document.getElementById('worst-day-text');
+    const weekdayBars = document.getElementById('weekday-bars');
+    
+    bestDay.textContent = data.best_day || '-';
+    worstDayText.textContent = `En az tercih edilen: ${data.worst_day || '-'}`;
+    
+    // Weekday bars
+    if (data.weekday_stats && data.weekday_stats.length > 0) {
+        const maxCount = Math.max(...data.weekday_stats.map(d => d.count));
+        weekdayBars.innerHTML = data.weekday_stats.map(d => {
+            const width = maxCount > 0 ? (d.count / maxCount * 100) : 0;
+            return `
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-500 w-16">${d.day}</span>
+                    <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-orange-500 rounded-full transition-all" style="width: ${width}%"></div>
+                    </div>
+                    <span class="text-xs text-gray-500 w-6 text-right">${d.count}</span>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function updateCompletionWidget(data) {
+    const rate = document.getElementById('completion-rate');
+    const prediction = document.getElementById('completion-prediction');
+    const bar = document.getElementById('completion-bar');
+    const trendIcon = document.getElementById('completion-trend-icon');
+    
+    rate.textContent = `${data.current_rate}%`;
+    prediction.textContent = data.prediction || 'Veri analiz edildi';
+    bar.style.width = `${data.current_rate}%`;
+    
+    const trendColors = {
+        'up': { icon: 'trending_up', color: 'text-green-500' },
+        'down': { icon: 'trending_down', color: 'text-red-500' },
+        'stable': { icon: 'trending_flat', color: 'text-gray-400' }
+    };
+    const trendData = trendColors[data.trend] || trendColors.stable;
+    trendIcon.className = `material-icons text-sm ${trendData.color}`;
+    trendIcon.textContent = trendData.icon;
+}
+</script>
 {% endblock %}
