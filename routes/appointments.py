@@ -544,39 +544,39 @@ def public_appointment_request(unique_link):
         if errors:
             for error in errors:
                 flash(error, 'error')
-            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
         
         # Güvenli ve açıklayıcı validasyon
         if not appointment_date or not appointment_time:
             flash('Tarih ve saat alanları zorunludur.', 'error')
-            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
         try:
             appt_date_obj = datetime.strptime(appointment_date, '%Y-%m-%d').date()
         except ValueError:
             flash('Tarih formatı geçersiz. Lütfen YYYY-AA-GG şeklinde girin.', 'error')
-            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
         try:
             appt_time_obj = datetime.strptime(appointment_time, '%H:%M').time()
         except ValueError:
             flash('Saat formatı geçersiz. Lütfen SS:dd şeklinde girin.', 'error')
-            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
 
         try:
             # Check if date is blocked
             if is_date_blocked(instructor_id, appt_date_obj):
                 flash('Seçilen tarih bloklanmış! Bu tarihte randevu alınamaz.', 'error')
-                return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+                return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
             
             # Check working hours
             is_valid, error_msg = is_within_working_hours(instructor, appt_date_obj, appt_time_obj)
             if not is_valid:
                 flash(error_msg, 'error')
-                return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+                return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
             
             # Check for time conflicts
             if has_time_conflict(instructor_id, appt_date_obj, appt_time_obj, 60):
                 flash('Bu saatte zaten bir randevu var!', 'error')
-                return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+                return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
             # Create new appointment
             all_appointments_data = get_data('appointments') or {}
             new_id = max([int(k) for k in all_appointments_data.keys() if str(k).isdigit()], default=0) + 1
@@ -602,9 +602,9 @@ def public_appointment_request(unique_link):
             return redirect(url_for('appointments.public_appointment_request', unique_link=unique_link))
         except Exception as e:
             flash(f'Bir hata oluştu, lütfen tekrar deneyin: {str(e)}', 'error')
-            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+            return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
     
-    return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf())
+    return render_template('public_appointment_form.html', user=instructor, csrf_token=generate_csrf)
 
 @appointments_bp.route('/create', methods=['GET', 'POST'])
 def create():
